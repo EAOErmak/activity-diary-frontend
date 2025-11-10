@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function DiaryEntryForm() {
   const nav = useNavigate();
@@ -97,23 +105,17 @@ export default function DiaryEntryForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-gray-300 text-sm">Когда начал</label>
-              <Input
-                type="datetime-local"
-                value={whenStarted}
-                onChange={(e) => setWhenStarted(e.target.value)}
-                required
-                className="bg-[#1C2435] border-none rounded-2xl p-3 focus:ring-2 focus:ring-blue-500 text-gray-100"
+              <DatePicker
+                date={whenStarted ? new Date(whenStarted) : undefined}
+                setDate={(d) => setWhenStarted(d?.toISOString() || "")}
               />
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="text-gray-300 text-sm">Когда закончил</label>
-              <Input
-                type="datetime-local"
-                value={whenEnded}
-                onChange={(e) => setWhenEnded(e.target.value)}
-                required
-                className="bg-[#1C2435] border-none rounded-2xl p-3 focus:ring-2 focus:ring-blue-500 text-gray-100"
+              <DatePicker
+                date={whenEnded ? new Date(whenEnded) : undefined}
+                setDate={(d) => setWhenEnded(d?.toISOString() || "")}
               />
             </div>
           </div>
@@ -159,15 +161,16 @@ export default function DiaryEntryForm() {
           {/* Статус */}
           <div className="flex flex-col gap-2">
             <label className="text-gray-300 text-sm">Статус</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as any)}
-              className="w-full bg-[#1C2435] border-none rounded-2xl p-3 focus:ring-2 focus:ring-blue-500 text-gray-100"
-            >
-              <option value="ACTIVE">Активный</option>
-              <option value="PLANNED">Запланированный</option>
-              <option value="FINISHED">Завершённый</option>
-            </select>
+            <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+              <SelectTrigger className="bg-[#1C2435] border-none text-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500">
+                <SelectValue placeholder="Выбери статус" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1C2435] border border-slate-700/60 text-gray-200 rounded-2xl">
+                <SelectItem value="ACTIVE">Активный</SelectItem>
+                <SelectItem value="PLANNED">Запланированный</SelectItem>
+                <SelectItem value="FINISHED">Завершённый</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Активности */}
