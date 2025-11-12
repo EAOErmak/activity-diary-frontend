@@ -16,14 +16,15 @@ import {
 
 export default function DiaryEntryForm() {
   const nav = useNavigate();
+  const now = new Date().toISOString().slice(0, 16); // Текущие дата и время в формате YYYY-MM-DDTHH:mm
 
   const [what, setWhat] = useState("");
   const [whatHappened, setWhatHappened] = useState("");
   const [anyDescription, setAnyDescription] = useState("");
   const [howYouWereFeeling, setFeeling] = useState<number>(3);
   const [status, setStatus] = useState<"ACTIVE" | "PLANNED" | "FINISHED">("ACTIVE");
-  const [whenStarted, setWhenStarted] = useState("");
-  const [whenEnded, setWhenEnded] = useState("");
+  const [whenStarted, setWhenStarted] = useState(now);
+  const [whenEnded, setWhenEnded] = useState(now);
   const [activities, setActivities] = useState([{ title: "", description: "", count: 1 }]);
 
   const handleAddActivity = () => {
@@ -70,19 +71,19 @@ export default function DiaryEntryForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0E1420] via-[#101725] to-[#131B2F] text-white flex justify-center py-20 px-6 md:px-12">
-      <Card className="w-full max-w-2xl bg-[#151C2C]/90 backdrop-blur-md border border-slate-800/50 text-gray-100 rounded-3xl p-10 md:p-12 shadow-[0_8px_40px_rgba(0,0,0,0.5)] transition-all hover:shadow-[0_8px_45px_rgba(59,130,246,0.25)]">
-        
+    <div className="min-h-screen text-white flex justify-center">
+      <Card className="w-full bg-[#151C2C]/90 backdrop-blur-md border border-slate-800/50 text-gray-100 rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_8px_40px_rgba(0,0,0,0.5)] transition-all hover:shadow-[0_8px_45px_rgba(59,130,246,0.25)]" style={{ borderRadius: 0 }}>
+      
         {/* Заголовок */}
-        <h2 className="text-3xl font-extrabold mb-3 text-center text-blue-400 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center text-blue-400 tracking-tight">
           Новая запись
         </h2>
-        <p className="text-center text-gray-400 mb-10 text-sm">
+        <p className="text-center text-gray-400 mb-6 sm:mb-10 text-sm sm:text-base">
           Добавь впечатления, чувства и активность за день ✨
         </p>
 
         {/* Форма */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 sm:gap-8">
           {/* Что сделал */}
           <Input
             value={what}
@@ -102,7 +103,7 @@ export default function DiaryEntryForm() {
           />
 
           {/* Даты */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-gray-300 text-sm">Когда начал</label>
               <DatePicker
@@ -123,7 +124,7 @@ export default function DiaryEntryForm() {
           {/* Самочувствие */}
           <div className="flex flex-col gap-3">
             <label className="text-gray-300 text-sm">Самочувствие</label>
-            <div className="flex justify-between gap-4">
+            <div className="flex justify-between gap-2 sm:gap-3">
               {[1, 2, 3, 4, 5].map((lvl) => {
                 const colors = [
                   "bg-red-500",
@@ -137,9 +138,7 @@ export default function DiaryEntryForm() {
                     key={lvl}
                     type="button"
                     onClick={() => setFeeling(lvl)}
-                    className={`w-12 h-12 rounded-full transition-all transform hover:scale-110 ${
-                      colors[lvl - 1]
-                    } ${
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all transform hover:scale-110 ${colors[lvl - 1]} ${
                       lvl === howYouWereFeeling
                         ? "ring-4 ring-blue-400 shadow-lg"
                         : "opacity-70"
@@ -165,7 +164,7 @@ export default function DiaryEntryForm() {
               <SelectTrigger className="bg-[#1C2435] border-none text-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500">
                 <SelectValue placeholder="Выбери статус" />
               </SelectTrigger>
-              <SelectContent className="bg-[#1C2435] border border-slate-700/60 text-gray-200 rounded-2xl">
+              <SelectContent className="bg-[#1C2435] border border-slate-700/60 text-gray-200 rounded-2xl shadow-lg">
                 <SelectItem value="ACTIVE">Активный</SelectItem>
                 <SelectItem value="PLANNED">Запланированный</SelectItem>
                 <SelectItem value="FINISHED">Завершённый</SelectItem>
@@ -179,19 +178,19 @@ export default function DiaryEntryForm() {
             {activities.map((act, idx) => (
               <div
                 key={idx}
-                className="relative flex flex-wrap md:flex-nowrap items-center gap-4 p-5 bg-[#1C2435] rounded-2xl border border-slate-700/60 hover:border-blue-500/60 transition-all duration-300"
+                className="relative flex flex-col sm:flex-row items-center gap-3 p-4 bg-[#1C2435] rounded-2xl border border-slate-700/60 hover:border-blue-500/60 transition-all duration-300"
               >
                 <Input
                   placeholder="Название"
                   value={act.title}
                   onChange={(e) => handleActivityChange(idx, "title", e.target.value)}
-                  className="flex-1 bg-[#232C45] border-none rounded-xl px-3 py-2 text-gray-100 focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-[#232C45] border-none rounded-xl px-3 py-2 text-gray-100 focus:ring-2 focus:ring-blue-500"
                 />
                 <Input
                   placeholder="Описание"
                   value={act.description}
                   onChange={(e) => handleActivityChange(idx, "description", e.target.value)}
-                  className="flex-[2] bg-[#232C45] border-none rounded-xl px-3 py-2 text-gray-100 focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-[#232C45] border-none rounded-xl px-3 py-2 text-gray-100 focus:ring-2 focus:ring-blue-500"
                 />
                 <Input
                   type="number"
@@ -199,13 +198,13 @@ export default function DiaryEntryForm() {
                   value={act.count}
                   onChange={(e) => handleActivityChange(idx, "count", Number(e.target.value))}
                   placeholder="Кол-во"
-                  className="w-24 bg-[#232C45] border-none rounded-xl px-3 py-2 text-gray-100 focus:ring-2 focus:ring-blue-500 text-center"
+                  className="w-full sm:w-24 bg-[#232C45] border-none rounded-xl px-3 py-2 text-gray-100 focus:ring-2 focus:ring-blue-500 text-center"
                 />
                 {activities.length > 1 && (
                   <Button
                     type="button"
                     onClick={() => handleRemoveActivity(idx)}
-                    className="bg-red-600 hover:bg-red-700 w-8 h-8 p-0 rounded-full flex items-center justify-center text-sm"
+                    className="bg-red-600 hover:bg-red-700 w-8 h-8 p-0 rounded-full flex items-center justify-center text-sm mt-2 sm:mt-0"
                   >
                     ✕
                   </Button>
@@ -216,7 +215,7 @@ export default function DiaryEntryForm() {
             <Button
               type="button"
               onClick={handleAddActivity}
-              className="mt-3 w-full bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-500 hover:to-lime-500 rounded-2xl py-3 font-medium shadow-md shadow-green-700/20 transition"
+              className="mt-2 w-full bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-500 hover:to-lime-500 rounded-2xl py-3 font-medium shadow-md shadow-green-700/20 transition"
             >
               + Добавить активность
             </Button>
@@ -225,7 +224,7 @@ export default function DiaryEntryForm() {
           {/* Кнопка */}
           <Button
             type="submit"
-            className="w-full mt-8 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-full py-4 text-lg font-semibold shadow-md shadow-blue-800/30 transition-all duration-300"
+            className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-full py-4 text-lg font-semibold shadow-md shadow-blue-800/30 transition-all duration-300"
           >
             💾 Добавить запись
           </Button>

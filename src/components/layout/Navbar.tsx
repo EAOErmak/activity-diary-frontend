@@ -1,54 +1,116 @@
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Moon, User, LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar";
+import { useAuthStore } from "@/store/authStore";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+  const nav = useNavigate();
+
+  const handleProfileClick = () => {
+    if (!user) {
+      alert("Вы не авторизованы. Пожалуйста, войдите в систему.");
+    }
+  };
 
   return (
-    <nav className="w-full bg-gray-900/80 backdrop-blur-md border-b border-gray-800 px-6 py-3 flex justify-between items-center shadow-lg">
-      <Link to="/" className="text-2xl font-semibold text-white hover:text-blue-400 transition-colors">
-        Activity<span className="text-blue-500">Diary</span>
-      </Link>
+    <header className="bg-[#0E1420] border-b border-slate-800/70 shadow-md">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
+        {/* ЛОГО */}
+        <Link to="/" className="text-xl font-bold text-white">
+          Activity<span className="text-blue-500">Diary</span>
+        </Link>
 
-      <div className="flex items-center gap-3">
-        <ThemeToggle />
+        <div className="flex items-center gap-4">
+          {/* Переключатель темы */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="bg-[#151C2C] text-yellow-400 hover:bg-[#1C2435]"
+          >
+            <Moon className="h-5 w-5" />
+          </Button>
 
-        {!user ? (
-          <>
-            <Button variant="outline" onClick={() => navigate("/login")}>
-              Войти
-            </Button>
-            <Button onClick={() => navigate("/register")}>Регистрация</Button>
-          </>
-        ) : (
+          {/* ПРОФИЛЬ */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Avatar className="h-8 w-8 border border-gray-700">
-                  <AvatarImage src={user?.avatarUrl || ""} />
-                  <AvatarFallback>
-                    {user?.email?.[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-gray-200">{user.email}</span>
-              </div>
+              <button
+                onClick={handleProfileClick}
+                className="bg-[#151C2C] hover:bg-[#1C2435] p-2 rounded-full text-gray-300 transition"
+              >
+                <User className="h-5 w-5" />
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-gray-800 text-white border-gray-700">
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
-                Настройки
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={logout} className="text-red-400">
-                Выйти
-              </DropdownMenuItem>
+
+            <DropdownMenuContent className="w-48 bg-[#1C2435] text-gray-200 border border-slate-700/60 rounded-2xl shadow-lg mt-2">
+              {user ? (
+                <>
+                  <DropdownMenuLabel className="text-sm text-blue-400 font-semibold">
+                    {user.username || user.email || "Пользователь"}
+                  </DropdownMenuLabel>
+
+                  <DropdownMenuSeparator className="bg-slate-700/60" />
+
+                  <DropdownMenuItem
+                    onClick={() => nav("/profile")}
+                    className="hover:bg-blue-600/30 cursor-pointer"
+                  >
+                    Профиль
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => nav("/diary")}
+                    className="hover:bg-blue-600/30 cursor-pointer"
+                  >
+                    Мои записи
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator className="bg-slate-700/60" />
+
+                  <DropdownMenuItem
+                    onClick={() => {
+                      logout();
+                      nav("/login");
+                    }}
+                    className="text-red-400 hover:bg-red-600/30 cursor-pointer flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Выйти
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuLabel className="text-gray-400 text-sm">
+                    Гость
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-700/60" />
+                  <DropdownMenuItem
+                    onClick={() => nav("/login")}
+                    className="hover:bg-blue-600/30 cursor-pointer"
+                  >
+                    Войти
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => nav("/register")}
+                    className="hover:bg-blue-600/30 cursor-pointer"
+                  >
+                    Регистрация
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
 }

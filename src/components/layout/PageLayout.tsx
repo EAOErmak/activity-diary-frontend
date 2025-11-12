@@ -9,7 +9,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
   return (
     <div className="min-h-screen bg-background text-gray-100">
       <Navbar />
-      <main className="container mx-auto px-4 py-6 animate-fade-in">
+      <main className="w-full px-0 py-0 animate-fade-in">
         {children}
       </main>
     </div>

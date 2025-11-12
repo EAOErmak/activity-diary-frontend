@@ -35,7 +35,10 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) =>
         set((state) => ({ ...state, user })),
 
-      logout: () => set({ token: null, user: null, isAuthenticated: false }),
+      logout: () => {
+        localStorage.removeItem("auth-storage");
+        set({ token: null, user: null, isAuthenticated: false });
+      },
     }),
     {
       name: "auth-storage", // ключ в localStorage

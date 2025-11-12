@@ -1,17 +1,20 @@
-import React, { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 
-// ✅ Тип пропсов с ReactNode, а не JSX.Element — безопаснее и гибче
-interface ProtectedRouteProps {
-  children: ReactNode;
-}
-
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const token = useAuthStore((s) => s.token);
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { token } = useAuthStore();
+  const location = useLocation();
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    // пользователь не авторизован — редиректим на login
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location, message: "Для доступа нужно войти или зарегистрироваться" }}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;

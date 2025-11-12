@@ -2,14 +2,18 @@ import axios, { AxiosError } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../store/authStore";
 
+// ✅ Точка обновления токена
 const REFRESH_ENDPOINT = "/auth/refresh";
 
+// ✅ Автоматически подхватывает прод или локал
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://activity-diary-backend.onrender.com/api",
   headers: { "Content-Type": "application/json" },
 });
 
-// Один активный refresh
+// ✅ Один активный запрос на refresh за раз
 let refreshPromise: Promise<string> | null = null;
 
 const refreshAccessToken = async (): Promise<string> => {
@@ -20,6 +24,7 @@ const refreshAccessToken = async (): Promise<string> => {
     useAuthStore.getState().setAuth(newToken, useAuthStore.getState().user);
     return newToken;
   } catch (error) {
+    console.warn("❌ Ошибка обновления токена, выполняется logout");
     useAuthStore.getState().logout();
     throw error;
   }
@@ -32,12 +37,13 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   console.log("🟢 Sending request to:", config.url);
-  console.log("🔸 With headers:", config.headers);
+  console.log("🔸 Headers:", config.headers);
   return config;
 });
 
-// ✅ Обработка 401
+// ✅ Авто-обновление токена при 401
 api.interceptors.response.use(
   (r) => r,
   async (error: AxiosError) => {
@@ -47,6 +53,7 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
       try {
         if (!refreshPromise) refreshPromise = refreshAccessToken();
         const newToken = await refreshPromise;
@@ -60,6 +67,7 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
     }
+
     return Promise.reject(error);
   }
 );

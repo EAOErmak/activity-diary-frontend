@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DiaryListPage from "@/pages/Diary/DiaryListPage";
 import DiaryFormPage from "@/pages/Diary/DiaryFormPage";
 import DiaryViewPage from "@/pages/Diary/DiaryViewPage";
+import DiaryDetailsPage from "@/pages/Diary/DiaryDetailsPage";
+import DiaryEditPage from "@/pages/Diary/DiaryEditPage";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/Auth/LoginPage";
 import RegisterPage from "@/pages/Auth/RegisterPage";
@@ -14,6 +16,7 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Главная */}
         <Route
           path="/"
           element={
@@ -22,30 +25,60 @@ export default function AppRouter() {
             </MainLayout>
           }
         />
+
+        {/* --- Защищённые маршруты дневника --- */}
         <Route
           path="/diary"
           element={
-            <MainLayout>
-              <DiaryListPage />
-            </MainLayout>
+            <ProtectedRoute>
+              <MainLayout>
+                <DiaryListPage />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/diary/new"
           element={
-            <MainLayout>
-              <DiaryFormPage />
-            </MainLayout>
+            <ProtectedRoute>
+              <MainLayout>
+                <DiaryFormPage />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/diary/:id"
           element={
-            <MainLayout>
-              <DiaryViewPage />
-            </MainLayout>
+            <ProtectedRoute>
+              <MainLayout>
+                <DiaryDetailsPage />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
+        <Route
+          path="/diary/:id/edit"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <DiaryEditPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/diary/edit/:id"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <DiaryEditPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* --- Остальные страницы --- */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
