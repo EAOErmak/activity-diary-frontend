@@ -31,11 +31,9 @@ export default function AppRouter() {
         <Route
           path="/verify"
           element={
-            <ProtectedRoute>
-              <MainLayout>
-                <VerifyPage />
-              </MainLayout>
-            </ProtectedRoute>
+            <MainLayout>
+              <VerifyPage />
+            </MainLayout>
           }
         />
         <Route
