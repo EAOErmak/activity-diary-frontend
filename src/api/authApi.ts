@@ -9,12 +9,16 @@ export const loginRequest = async (dto: LoginRequest): Promise<LoginResponse> =>
 };
 
 export type RegisterRequest = { email: string; password: string; name?: string };
-export const registerRequest = async (dto: RegisterRequest): Promise<any> => {
-  const r = await api.post("/auth/register", dto);
-  return r.data;
+export const registerRequest = async (dto: {
+    email: string;
+    password: string;
+    name?: string;
+}) => {
+    const r = await api.post("/auth/register", dto);
+    return r.data as {
+        email: string;
+        userId: number;
+        verifyLink: string;
+    };
 };
 
-export const verifyEmail = async (token: string) => {
-  const r = await api.post(`/auth/verify?token=${encodeURIComponent(token)}`);
-  return r.data;
-};

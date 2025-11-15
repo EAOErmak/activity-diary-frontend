@@ -1,4 +1,4 @@
-import api from "./axiosInstance.new";
+import api from "./axiosInstance";
 export const getMyEntries = async () => {
     const r = await api.get("/diary/mine");
     return r.data;

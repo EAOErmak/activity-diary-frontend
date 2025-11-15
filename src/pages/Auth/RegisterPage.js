@@ -6,9 +6,14 @@ export default function RegisterPage() {
     const nav = useNavigate();
     async function handle(data) {
         try {
-            await registerRequest(data);
-            alert("Проверьте почту для верификации (если включено). Сейчас можно войти.");
-            nav("/login");
+            const resp = await registerRequest(data);
+            nav("/verify", {
+                state: {
+                    email: resp.email,
+                    verifyLink: resp.verifyLink,
+                    userId: resp.userId,
+                },
+            });
         }
         catch (err) {
             console.error(err);

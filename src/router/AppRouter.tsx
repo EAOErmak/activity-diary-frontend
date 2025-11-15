@@ -11,6 +11,7 @@ import RegisterPage from "@/pages/Auth/RegisterPage";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import MainLayout from "@/components/layout/PageLayout";
+import VerifyPage from "@/pages/Auth/VerifyPage";
 
 export default function AppRouter() {
   return (
@@ -27,6 +28,16 @@ export default function AppRouter() {
         />
 
         {/* --- Защищённые маршруты дневника --- */}
+        <Route
+          path="/verify"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <VerifyPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/diary"
           element={

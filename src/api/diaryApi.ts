@@ -1,4 +1,4 @@
-import api from "./axiosInstance.new";
+import api from "./axiosInstance";
 import type { DiaryEntryCreate, DiaryEntryResponse } from "../types/diary";
 
 export const getMyEntries = async (): Promise<DiaryEntryResponse[]> => {
