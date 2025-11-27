@@ -1,26 +1,42 @@
-// src/pages/Auth/RegisterPage.tsx
-import React from "react";
 import RegisterForm from "@/components/forms/RegisterForm";
 import { registerRequest } from "@/api/authApi";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
 import type { RegisterFormData } from "@/types/auth";
 
 export default function RegisterPage() {
   const nav = useNavigate();
+  const setAuthData = useAuthStore((s) => s.setAuthData);
 
   async function handle(data: RegisterFormData) {
     try {
-      const resp = await registerRequest(data);
-
-      nav("/verify", {
-        state: {
-          email: resp.email,
-          verifyLink: resp.verifyLink,
-          userId: resp.userId,
-        },
+      const res = await registerRequest({
+        username: data.username,
+        password: data.password,
+        fullName: data.fullName,
       });
+
+      const payload = res.data;
+
+      // ✅ ЕСЛИ НУЖНА TELEGRAM-ВЕРИФИКАЦИЯ
+      if (payload.twoFactorRequired) {
+        setAuthData({
+          accessToken: null,
+          refreshToken: null,
+          userId: payload.userId,
+          username: payload.username,
+          twoFactorRequired: true,
+        });
+
+        nav("/verify");
+        return;
+      }
+
+      // ✅ ЕСЛИ ВЕРИФИКАЦИЯ НЕ НУЖНА — СРАЗУ ЛОГИНИМ
+      setAuthData(payload);
+      nav("/diary");
+
     } catch (err: any) {
-      console.error(err);
       alert(err?.response?.data?.message || "Ошибка регистрации");
     }
   }

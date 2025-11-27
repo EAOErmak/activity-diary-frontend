@@ -1,21 +1,43 @@
+// ✅ Под новый backend (username + jwt + refresh + telegram 2FA)
+
+// ==============================
+// Requests
+// ==============================
+
+export type LoginRequest = {
+  username: string;
+  password: string;
+};
+
 export type RegisterRequest = {
-  email: string;
+  username: string;
   password: string;
   fullName: string;
 };
 
-export type LoginRequest = {
-  email: string;
-  password: string;
-};
+// ==============================
+// Responses
+// ==============================
 
 export type AuthResponse = {
-  token: string;
-  email: string;
+  accessToken: string | null;
+  refreshToken: string | null;
+  username: string;
+  userId: number;
+  twoFactorRequired: boolean;
 };
 
+// ==============================
+// Forms
+// ==============================
+
 export type RegisterFormData = {
-  email: string;
+  username: string;
   password: string;
-  fullName?: string;
+  fullName: string;
+};
+
+export type LoginFormData = {
+  username: string;
+  password: string;
 };

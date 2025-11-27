@@ -1,8 +1,12 @@
-// src/components/forms/RegisterForm.tsx
 import React from "react";
 import { useForm } from "react-hook-form";
 
-type Form = { email: string; password: string; fullName?: string };
+type Form = {
+  username: string;
+  password: string;
+  fullName: string;
+  chatId?: number;
+};
 
 export default function RegisterForm({
   onSubmit,
@@ -10,7 +14,12 @@ export default function RegisterForm({
   onSubmit: (data: Form) => Promise<void> | void;
 }) {
   const { register, handleSubmit, formState } = useForm<Form>({
-    defaultValues: { email: "", password: "", fullName: "" },
+    defaultValues: {
+      username: "",
+      password: "",
+      fullName: "",
+      chatId: undefined,
+    },
   });
 
   const { isSubmitting } = formState;
@@ -18,22 +27,29 @@ export default function RegisterForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <input
-        {...register("fullName")}
-        placeholder="Имя (опционально)"
+        {...register("fullName", { required: true, minLength: 2 })}
+        placeholder="Полное имя"
         className="w-full p-2 rounded bg-slate-800 border border-slate-700"
       />
 
       <input
-        {...register("email", { required: true })}
-        type="email"
-        placeholder="Email"
+        {...register("username", { required: true, minLength: 3 })}
+        type="text"
+        placeholder="Username"
         className="w-full p-2 rounded bg-slate-800 border border-slate-700"
       />
 
       <input
-        {...register("password", { required: true, minLength: 6 })}
+        {...register("password", { required: true, minLength: 8 })}
         type="password"
-        placeholder="Пароль (мин 6)"
+        placeholder="Пароль (мин 8)"
+        className="w-full p-2 rounded bg-slate-800 border border-slate-700"
+      />
+
+      <input
+        {...register("chatId", { valueAsNumber: true })}
+        type="number"
+        placeholder="Telegram Chat ID (опционально)"
         className="w-full p-2 rounded bg-slate-800 border border-slate-700"
       />
 

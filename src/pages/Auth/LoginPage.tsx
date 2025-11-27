@@ -1,20 +1,40 @@
-import React from "react";
 import LoginForm from "@/components/forms/LoginForm";
 import { loginRequest } from "@/api/authApi";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 
 export default function LoginPage() {
-  const setToken = useAuthStore((s) => s.setToken);
-  const nav = useNavigate();
+  const navigate = useNavigate();
+  const setAuthData = useAuthStore((s) => s.setAuthData);
 
-  async function handle(data: { email: string; password: string }) {
+  async function handle(data: { username: string; password: string }) {
     try {
-      const res = await loginRequest(data);
-      setToken(res.token);
-      nav("/diary");
+      const res = await loginRequest({
+        username: data.username,
+        password: data.password,
+      });
+
+      const payload = res.data;
+
+      // ✅ ЕСЛИ ТРЕБУЕТСЯ TELEGRAM-ПОДТВЕРЖДЕНИЕ
+      if (payload.twoFactorRequired) {
+        setAuthData({
+          accessToken: null,
+          refreshToken: null,
+          userId: null,
+          username: payload.username,
+          twoFactorRequired: true,
+        });
+
+        navigate("/verify");
+        return;
+      }
+
+      // ✅ ЕСЛИ 2FA НЕ НУЖНА — СРАЗУ ЛОГИНИМ
+      setAuthData(payload);
+      navigate("/diary");
+
     } catch (err: any) {
-      console.error(err);
       alert(err?.response?.data?.message || "Ошибка логина");
     }
   }

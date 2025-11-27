@@ -1,47 +1,87 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  avatarUrl?: string;
-}
-
 interface AuthState {
-  token: string | null;
-  user: User | null;
+  // ✅ JWT
+  accessToken: string | null;
+  refreshToken: string | null;
+
+  // ✅ пользователь
+  userId: number | null;
+  username: string | null;
+
+  // ✅ Telegram 2FA
+  twoFactorRequired: boolean;
+
+  // ✅ состояние
   isAuthenticated: boolean;
 
-  setAuth: (token: string, user: User | null) => void;
-  setToken: (token: string) => void;
-  setUser: (user: User | null) => void;
+  // ✅ методы
+  setTokens: (access: string, refresh: string) => void;
+
+  setAuthData: (data: {
+    accessToken: string | null;
+    refreshToken: string | null;
+    userId: number | null;
+    username: string | null;
+    twoFactorRequired: boolean;
+  }) => void;
+
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: null,
-      user: null,
+      // =========================
+      // STATE
+      // =========================
+      accessToken: null,
+      refreshToken: null,
+
+      userId: null,
+      username: null,
+
+      twoFactorRequired: false,
       isAuthenticated: false,
 
-      setAuth: (token, user) =>
-        set({ token, user, isAuthenticated: !!token }),
+      // =========================
+      // ACTIONS
+      // =========================
 
-      setToken: (token) =>
-        set((state) => ({ ...state, token, isAuthenticated: !!token })),
+      // ✅ используется axios interceptor при refresh
+      setTokens: (access, refresh) =>
+        set({
+          accessToken: access,
+          refreshToken: refresh,
+          isAuthenticated: true,
+        }),
 
-      setUser: (user) =>
-        set((state) => ({ ...state, user })),
+      // ✅ используется при login / register / confirm
+      setAuthData: (data) =>
+        set({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          userId: data.userId,
+          username: data.username,
+          twoFactorRequired: data.twoFactorRequired,
+          isAuthenticated: !!data.accessToken,
+        }),
 
       logout: () => {
         localStorage.removeItem("auth-storage");
-        set({ token: null, user: null, isAuthenticated: false });
+        set({
+          accessToken: null,
+          refreshToken: null,
+          userId: null,
+          username: null,
+          twoFactorRequired: false,
+          isAuthenticated: false,
+        });
       },
     }),
     {
-      name: "auth-storage", // ключ в localStorage
+      name: "auth-storage",
     }
   )
 );
