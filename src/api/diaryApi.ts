@@ -1,10 +1,11 @@
-import api from "./axiosInstance";
+import api from "./http/axiosInstance";
 import type {
-  DiaryEntryCreate,
-  DiaryEntryUpdate,
-  DiaryEntryResponse,
+  DiaryEntryCreateDto,
+  DiaryEntryUpdateDto,
+  DiaryEntryDto,
   Page,
-} from "../types/diary";
+} from "@/shared/types/diary";
+import type { ApiResponse } from "@/shared/types/api";
 
 // ==============================
 // GET MY ENTRIES (PAGE)
@@ -12,30 +13,37 @@ import type {
 export const getMyEntries = async (
   page = 0,
   size = 20
-): Promise<Page<DiaryEntryResponse>> => {
-  const r = await api.get("/diary/mine", {
-    params: { page, size },
-  });
+): Promise<Page<DiaryEntryDto>> => {
+  const { data } = await api.get<ApiResponse<Page<DiaryEntryDto>>>(
+    "/diary/mine",
+    {
+      params: { page, size },
+    }
+  );
 
-  return r.data.data; // ApiResponse<Page<DiaryEntryResponse>>
+  return data.data;
 };
 
 // ==============================
 // GET ONE ENTRY
 // ==============================
-export const getEntry = async (id: number): Promise<DiaryEntryResponse> => {
-  const r = await api.get(`/diary/${id}`);
-  return r.data.data; // ApiResponse<DiaryEntryResponse>
+export const getEntry = async (id: number): Promise<DiaryEntryDto> => {
+  const { data } = await api.get<ApiResponse<DiaryEntryDto>>(`/diary/${id}`);
+  return data.data;
 };
 
 // ==============================
 // CREATE
 // ==============================
 export const createEntry = async (
-  payload: DiaryEntryCreate
-): Promise<DiaryEntryResponse> => {
-  const r = await api.post("/diary", payload);
-  return r.data.data;
+  payload: DiaryEntryCreateDto
+): Promise<DiaryEntryDto> => {
+  const { data } = await api.post<ApiResponse<DiaryEntryDto>>(
+    "/diary",
+    payload
+  );
+
+  return data.data;
 };
 
 // ==============================
@@ -43,10 +51,14 @@ export const createEntry = async (
 // ==============================
 export const updateEntry = async (
   id: number,
-  payload: DiaryEntryUpdate
-): Promise<DiaryEntryResponse> => {
-  const r = await api.put(`/diary/${id}`, payload);
-  return r.data.data;
+  payload: DiaryEntryUpdateDto
+): Promise<DiaryEntryDto> => {
+  const { data } = await api.put<ApiResponse<DiaryEntryDto>>(
+    `/diary/${id}`,
+    payload
+  );
+
+  return data.data;
 };
 
 // ==============================
@@ -56,6 +68,9 @@ export const deleteEntry = async (id: number): Promise<void> => {
   await api.delete(`/diary/${id}`);
 };
 
+// ==============================
+// SINGLE EXPORT OBJECT
+// ==============================
 export const diaryApi = {
   getMyEntries,
   getEntry,

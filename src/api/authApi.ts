@@ -1,7 +1,9 @@
-import api from "./axiosInstance";
+import api from "./http/axiosInstance";
+import type { ApiResponse } from "@/shared/types/api";
+
 
 // ==============================
-// TYPES ПОД ТВОИ DTO
+// TYPES
 // ==============================
 
 export type AuthRequestDto = {
@@ -13,7 +15,6 @@ export type RegisterRequestDto = {
   username: string;
   password: string;
   fullName: string;
-  chatId?: number;
 };
 
 export type VerificationRequestDto = {
@@ -34,51 +35,52 @@ export type AuthResponseDto = {
   refreshToken: string | null;
   username: string;
   userId: number;
+  role: "ADMIN" | "USER";
   twoFactorRequired: boolean;
 };
 
-// твой ApiResponse<T>
-export type ApiResponse<T> = {
-  success: boolean;
-  message: string | null;
-  data: T;
-};
-
 // ==============================
-// API METHODS — 1-в-1 С BACKEND
+// ✅ API METHODS (ЧИСТЫЕ DATA НА ВЫХОДЕ)
 // ==============================
 
 export const loginRequest = async (
   dto: AuthRequestDto
-): Promise<ApiResponse<AuthResponseDto>> => {
-  const r = await api.post("/auth/login", dto);
-  return r.data;
+): Promise<AuthResponseDto> => {
+  const r = await api.post<ApiResponse<AuthResponseDto>>("/auth/login", dto);
+  return r.data.data;
 };
 
 export const confirmLoginRequest = async (
   dto: VerificationConfirmDto
-): Promise<ApiResponse<AuthResponseDto>> => {
-  const r = await api.post("/auth/login/confirm", dto);
-  return r.data;
+): Promise<AuthResponseDto> => {
+  const r = await api.post<ApiResponse<AuthResponseDto>>("/auth/login/confirm", dto);
+  return r.data.data;
+};
+
+export const confirmVerificationRequest = async (
+  dto: VerificationConfirmDto
+): Promise<void> => {
+  const r = await api.post<ApiResponse<void>>("/auth/verification/confirm", dto);
+  return r.data.data;
 };
 
 export const registerRequest = async (
   dto: RegisterRequestDto
-): Promise<ApiResponse<AuthResponseDto>> => {
-  const r = await api.post("/auth/register", dto);
-  return r.data;
+): Promise<AuthResponseDto> => {
+  const r = await api.post<ApiResponse<AuthResponseDto>>("/auth/register", dto);
+  return r.data.data;
 };
 
 export const requestVerificationRequest = async (
   dto: VerificationRequestDto
-): Promise<ApiResponse<void>> => {
-  const r = await api.post("/auth/verification/request", dto);
-  return r.data;
+): Promise<void> => {
+  const r = await api.post<ApiResponse<void>>("/auth/verification/request", dto);
+  return r.data.data;
 };
 
 export const refreshTokenRequest = async (
   dto: RefreshTokenRequest
-): Promise<ApiResponse<AuthResponseDto>> => {
-  const r = await api.post("/auth/refresh", dto);
-  return r.data;
+): Promise<AuthResponseDto> => {
+  const r = await api.post<ApiResponse<AuthResponseDto>>("/auth/refresh", dto);
+  return r.data.data;
 };

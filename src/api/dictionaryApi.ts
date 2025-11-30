@@ -1,39 +1,45 @@
 // src/api/dictionaryApi.ts
-import api from "./axiosInstance";
-import type { DictionaryItem, DictionaryResponse } from "@/types/dictionary";
+import api from "./http/axiosInstance";
+import type {
+  DictionaryItem,
+  DictionaryResponse,
+  DictionaryType,
+} from "@/shared/types/dictionary";
+import type { ApiResponse } from "@/shared/types/api";
 
-type ApiResponse<T> = {
-  success: boolean;
-  message: string | null;
-  data: T;
+const getByType = async (type: DictionaryType): Promise<DictionaryItem[]> => {
+  const r = await api.get<ApiResponse<DictionaryResponse[]>>(`/dict/${type}`);
+  return r.data.data.map((d) => ({
+    id: d.id,
+    name: d.label,
+  }));
 };
 
-// WHAT HAPPENED
+// ========= ПУБЛИЧНЫЕ ФУНКЦИИ =========
+
+// Что происходило (WHAT_HAPPENED)
 export const getWhatHappened = async (): Promise<DictionaryItem[]> => {
-  const r = await api.get<ApiResponse<DictionaryResponse[]>>("/dict/what-happened");
-  return r.data.data.map((d) => ({ id: d.id, name: d.name }));
+  return getByType("WHAT_HAPPENED");
 };
 
-// WHAT (by parent)
+// Раньше было "по parentId", теперь back не использует parent,
+// поэтому параметр просто игнорируем, а отдаём все WHAT.
 export const getWhatByParent = async (
   parentId: number
 ): Promise<DictionaryItem[]> => {
-  const r = await api.get<ApiResponse<DictionaryResponse[]>>("/dict/what", {
-    params: { parentId },
-  });
-  return r.data.data.map((d) => ({ id: d.id, name: d.name }));
+  // parentId оставлен только для совместимости с существующим кодом
+  void parentId;
+  return getByType("WHAT");
 };
 
-// ITEM NAMES (activities)
+// Активности (ITEM_NAME)
 export const getItemNames = async (): Promise<DictionaryItem[]> => {
-  const r = await api.get<ApiResponse<DictionaryResponse[]>>("/dict/item-name");
-  return r.data.data.map((d) => ({ id: d.id, name: d.name }));
+  return getByType("ITEM_NAME");
 };
 
-// UNITS
+// Единицы измерения (UNIT)
 export const getUnits = async (): Promise<DictionaryItem[]> => {
-  const r = await api.get<ApiResponse<DictionaryResponse[]>>("/dict/unit");
-  return r.data.data.map((d) => ({ id: d.id, name: d.name }));
+  return getByType("UNIT");
 };
 
 export const dictionaryApi = {

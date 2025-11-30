@@ -1,4 +1,5 @@
-import api from "./axiosInstance";
+import api from "./http/axiosInstance";
+import type { ApiResponse } from "@/shared/types/api";
 
 export type DiaryStats = {
   totalEntries: number;
@@ -8,6 +9,6 @@ export type DiaryStats = {
 };
 
 export async function fetchDiaryStats(): Promise<DiaryStats> {
-  const r = await api.get("/diary/stats");
-  return r.data;
+  const r = await api.get<ApiResponse<DiaryStats>>("/diary/stats");
+  return r.data.data;
 }
