@@ -61,9 +61,14 @@ export default function DiaryDetailsPage() {
         transition={{ duration: 0.3 }}
         className="max-w-3xl mx-auto bg-[#151C2C]/90 border border-slate-700/60 rounded-3xl p-8 shadow-xl"
       >
-        <h1 className="text-3xl font-bold text-blue-400 mb-2">
+        <h1 className="text-3xl font-bold text-blue-400 mb-1">
           {entry.whatName}
         </h1>
+
+        <p className="text-xs text-slate-500 mb-3">
+          ID: {entry.id}
+        </p>
+
         <p className="text-gray-400 text-lg mb-6">
           {entry.whatHappenedName}
         </p>
@@ -72,7 +77,7 @@ export default function DiaryDetailsPage() {
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-400" />
             {entry.whenStarted
-              ? new Date(entry.whenStarted).toLocaleString()
+              ? `Начато: ${new Date(entry.whenStarted).toLocaleString()}`
               : "Дата не указана"}
           </div>
 
@@ -112,7 +117,8 @@ export default function DiaryDetailsPage() {
                   <span className="font-medium text-blue-400">
                     {act.name}
                   </span>{" "}
-                  — {act.count} {act.unit}
+                  — {act.count}
+                  {act.unit ? ` ${act.unit}` : ""}
                 </li>
               ))}
             </ul>

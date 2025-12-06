@@ -31,6 +31,25 @@ export type ActivityItemResponseDto = {
 };
 
 // ==============================
+// DIARY ENTRY FIELD CONFIG
+// ==============================
+
+export type EntryFieldConfigDto = {
+  id?: number;          // ✅ теперь есть
+  name: string;         // ✅ ты добавил это в БД
+
+  whatHappenedId?: number;
+
+  showWhat: boolean;
+  showActivities: boolean;
+  showFeeling: boolean;
+  showDescription: boolean;
+
+  requiredWhat: boolean;
+  requiredActivities: boolean;
+};
+
+// ==============================
 // DIARY ENTRY
 // ==============================
 
@@ -53,7 +72,9 @@ export type DiaryEntryUpdateDto = {
   howYouWereFeeling?: number;
   anyDescription?: string;
   status?: EntryStatus;
-  whatDidYouDo?: ActivityItemUpdateDto[];
+
+  // ✅ ВАЖНО: теперь поддерживает И create, И update
+  whatDidYouDo?: (ActivityItemUpdateDto | ActivityItemCreateDto)[];
 };
 
 export type DiaryEntryDto = {

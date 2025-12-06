@@ -5,11 +5,6 @@ import {
   updateDictionaryItem,
 } from "@/api/admin/dictionaryAdminApi";
 
-import {
-  ADMIN_DICTIONARY_TYPES,
-  AdminDictionaryType,
-} from "@/features/admin/dictionary/constants/adminDictionaries";
-
 import { Switch } from "@/shared/components/ui/switch";
 import {
   Select,
@@ -25,11 +20,23 @@ import type {
   DictionaryResponseDto,
 } from "@/shared/types/adminDictionary";
 
+import { getAllAdminEntryConfigs } from "@/api/admin/entryFieldConfigAdminApi";
+import type { EntryFieldConfigDto } from "@/shared/types/diary";
+
+type Tab = "WHAT_HAPPENED" | "WHAT" | "ITEM_NAME" | "UNIT";
+
 export default function AdminDictionaryPage() {
-  const [type, setType] = useState<AdminDictionaryType>("WHAT_HAPPENED");
+  const [tab, setTab] = useState<Tab>("WHAT_HAPPENED");
   const [items, setItems] = useState<DictionaryResponseDto[]>([]);
+  const [parents, setParents] = useState<DictionaryResponseDto[]>([]);
+  const [entryConfigs, setEntryConfigs] = useState<EntryFieldConfigDto[]>([]);
+
   const [label, setLabel] = useState("");
   const [allowedRole, setAllowedRole] = useState<string | null>(null);
+  const [parentId, setParentId] = useState<number | null>(null);
+  const [chartType, setChartType] = useState<string | null>(null);
+  const [entryConfigId, setEntryConfigId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(false);
 
   // ============================
@@ -38,11 +45,28 @@ export default function AdminDictionaryPage() {
 
   useEffect(() => {
     load();
-  }, [type]);
+  }, [tab]);
 
   async function load() {
-    const data = await getDictionaryByTypeAdmin(type);
+    const data = await getDictionaryByTypeAdmin(tab);
     setItems(data);
+
+    if (tab === "WHAT") {
+      const parents = await getDictionaryByTypeAdmin("WHAT_HAPPENED");
+      setParents(parents);
+    } else {
+      setParents([]);
+      setParentId(null);
+    }
+
+    if (tab === "WHAT_HAPPENED") {
+      const configs = await getAllAdminEntryConfigs();
+      setEntryConfigs(configs.data.data);
+    } else {
+      setEntryConfigs([]);
+      setEntryConfigId(null);
+      setChartType(null);
+    }
   }
 
   // ============================
@@ -50,15 +74,24 @@ export default function AdminDictionaryPage() {
   // ============================
 
   async function handleCreate() {
-    if (!label.trim()) {
-      alert("Введите название");
-      return;
-    }
+    if (!label.trim()) return alert("Введите название");
+
+    if (tab === "WHAT" && !parentId)
+      return alert("Выберите родительскую категорию");
+
+    if (tab === "WHAT_HAPPENED" && !chartType)
+      return alert("Выберите тип графика");
+
+    if (tab === "WHAT_HAPPENED" && !entryConfigId)
+      return alert("Выберите конфигурацию полей");
 
     const dto: DictionaryCreateDto = {
-      type,
+      type: tab,
       label: label.trim(),
       allowedRole,
+      parentId: tab === "WHAT" ? parentId! : undefined,
+      chartType: tab === "WHAT_HAPPENED" ? (chartType as any) : undefined,
+      entryFieldConfigId: tab === "WHAT_HAPPENED" ? entryConfigId! : undefined,
     };
 
     try {
@@ -66,6 +99,9 @@ export default function AdminDictionaryPage() {
       await createDictionaryItem(dto);
       setLabel("");
       setAllowedRole(null);
+      setParentId(null);
+      setChartType(null);
+      setEntryConfigId(null);
       await load();
     } finally {
       setLoading(false);
@@ -73,10 +109,17 @@ export default function AdminDictionaryPage() {
   }
 
   // ============================
-  // TOGGLE ACTIVE
+  // TOGGLE ACTIVE (SAFE)
   // ============================
 
   async function handleToggle(item: DictionaryResponseDto) {
+    const ok = confirm(
+      `Вы уверены, что хотите ${
+        item.active ? "деактивировать" : "активировать"
+      } элемент "${item.label}"?`
+    );
+    if (!ok) return;
+
     const dto: DictionaryUpdateDto = {
       active: !item.active,
     };
@@ -86,10 +129,18 @@ export default function AdminDictionaryPage() {
   }
 
   // ============================
-  // UPDATE ROLE
+  // CHANGE ROLE (SAFE)
   // ============================
 
-  async function handleRoleChange(item: DictionaryResponseDto, role: string | null) {
+  async function handleRoleChange(
+    item: DictionaryResponseDto,
+    role: string | null
+  ) {
+    const ok = confirm(
+      `Вы уверены, что хотите изменить доступ для "${item.label}"?`
+    );
+    if (!ok) return;
+
     const dto: DictionaryUpdateDto = {
       allowedRole: role,
     };
@@ -98,50 +149,113 @@ export default function AdminDictionaryPage() {
     await load();
   }
 
-  console.log("ADMIN_DICTIONARY_TYPES =", ADMIN_DICTIONARY_TYPES);
-
   return (
     <div className="p-6 text-white">
-      <h1 className="text-2xl font-bold mb-6">Словари</h1>
+      <h1 className="text-2xl font-bold mb-2">Словари</h1>
+      <p className="text-slate-400 mb-6 text-sm">
+        Управление структурой данных, формой записей и аналитикой
+      </p>
 
-      {/* ============================
-          SELECT TYPE
-      ============================ */}
-      <Select value={type} defaultValue="WHAT_HAPPENED" onValueChange={(v) => setType(v as AdminDictionaryType)}>
-        <SelectTrigger className="w-[300px] mb-4">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {ADMIN_DICTIONARY_TYPES.map((t) => (
-            <SelectItem key={t.value} value={t.value}>
-              {t.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* ВКЛАДКИ */}
+      <div className="flex gap-2 mb-6">
+        {[
+          { id: "WHAT_HAPPENED", label: "Что произошло" },
+          { id: "WHAT", label: "Тип активности" },
+          { id: "ITEM_NAME", label: "Название элемента" },
+          { id: "UNIT", label: "Единицы измерения" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id as Tab)}
+            className={`px-4 py-2 rounded ${
+              tab === t.id
+                ? "bg-blue-600"
+                : "bg-slate-800 hover:bg-slate-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {/* ============================
-          CREATE
-      ============================ */}
-      <div className="flex gap-3 mb-6 items-end">
+      {/* CREATE */}
+      <div className="flex gap-3 mb-6 flex-wrap items-end">
         <div>
           <label className="block mb-1 text-sm">Название</label>
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="Введите текст"
-            className="bg-slate-800 px-3 py-2 rounded w-[300px]"
+            className="bg-slate-800 px-3 py-2 rounded w-[260px]"
           />
         </div>
 
+        {tab === "WHAT" && (
+          <div>
+            <label className="block mb-1 text-sm">Родитель</label>
+            <Select
+              value={parentId?.toString()}
+              onValueChange={(v) => setParentId(Number(v))}
+            >
+              <SelectTrigger className="w-[220px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {parents.map((p) => (
+                  <SelectItem key={p.id} value={p.id.toString()}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {tab === "WHAT_HAPPENED" && (
+          <>
+            <div>
+              <label className="block mb-1 text-sm">Тип графика</label>
+              <Select value={chartType ?? ""} onValueChange={setChartType}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="REPS_SUM">REPS_SUM</SelectItem>
+                  <SelectItem value="TIME_RANGE">TIME_RANGE</SelectItem>
+                  <SelectItem value="COUNT_PER_DAY">COUNT_PER_DAY</SelectItem>
+                  <SelectItem value="MOOD_AVERAGE">MOOD_AVERAGE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm">Конфигурация полей</label>
+              <Select
+                value={entryConfigId?.toString()}
+                onValueChange={(v) => setEntryConfigId(Number(v))}
+              >
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue placeholder="Выберите конфиг" />
+                </SelectTrigger>
+                <SelectContent>
+                  {entryConfigs.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+
         <div>
-          <label className="block mb-1 text-sm">Роль (необязательно)</label>
+          <label className="block mb-1 text-sm">Доступ</label>
           <Select
             value={allowedRole ?? "ALL"}
             onValueChange={(v) => setAllowedRole(v === "ALL" ? null : v)}
           >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Все пользователи" />
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Все</SelectItem>
@@ -160,26 +274,22 @@ export default function AdminDictionaryPage() {
         </button>
       </div>
 
-      {/* ============================
-          TABLE
-      ============================ */}
+      {/* TABLE */}
       <table className="w-full border border-slate-700 rounded">
         <thead className="bg-slate-800">
           <tr>
-            <th className="p-2">ID</th>
-            <th className="p-2">Label</th>
-            <th className="p-2">Type</th>
-            <th className="p-2">Role</th>
-            <th className="p-2">Active</th>
+            <th>ID</th>
+            <th>Label</th>
+            <th>Role</th>
+            <th>Active</th>
           </tr>
         </thead>
         <tbody>
           {items.map((i) => (
             <tr key={i.id} className="border-t border-slate-700">
-              <td className="p-2">{i.id}</td>
-              <td className="p-2">{i.label}</td>
-              <td className="p-2">{i.type}</td>
-              <td className="p-2">
+              <td>{i.id}</td>
+              <td>{i.label}</td>
+              <td>
                 <Select
                   value={i.allowedRole ?? "ALL"}
                   onValueChange={(v) =>
@@ -187,7 +297,7 @@ export default function AdminDictionaryPage() {
                   }
                 >
                   <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Все" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">Все</SelectItem>
@@ -196,11 +306,8 @@ export default function AdminDictionaryPage() {
                   </SelectContent>
                 </Select>
               </td>
-              <td className="p-2">
-                <Switch
-                  checked={i.active}
-                  onCheckedChange={() => handleToggle(i)}
-                />
+              <td>
+                <Switch checked={i.active} onCheckedChange={() => handleToggle(i)} />
               </td>
             </tr>
           ))}

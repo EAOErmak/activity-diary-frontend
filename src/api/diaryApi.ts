@@ -3,6 +3,7 @@ import type {
   DiaryEntryCreateDto,
   DiaryEntryUpdateDto,
   DiaryEntryDto,
+  EntryFieldConfigDto,
   Page,
 } from "@/shared/types/diary";
 import type { ApiResponse } from "@/shared/types/api";
@@ -69,6 +70,15 @@ export const deleteEntry = async (id: number): Promise<void> => {
 };
 
 // ==============================
+// GET ENTRY FIELD CONFIG
+// ==============================
+export const getEntryFieldConfig = (whatHappenedId: number) => {
+  return api.get<EntryFieldConfigDto>(
+    `/diary/entry-config/${whatHappenedId}`
+  );
+};
+
+// ==============================
 // SINGLE EXPORT OBJECT
 // ==============================
 export const diaryApi = {
@@ -77,4 +87,5 @@ export const diaryApi = {
   createEntry,
   updateEntry,
   deleteEntry,
+  getEntryFieldConfig,
 };

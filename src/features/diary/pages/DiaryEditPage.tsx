@@ -17,7 +17,7 @@ import type { DictionaryItem } from "@/shared/types/dictionary";
 
 type ActivityFormItem = {
   id: number;                // локальный ID
-  backendId?: number | null; // id из БД, если есть
+  backendId?: number | null; // ID из БД
   nameId: number | null;
   unitId: number | null;
   value: number;
@@ -79,8 +79,8 @@ export default function DiaryEditPage() {
 
       setActivities(
         data.whatDidYouDo?.map((a) => ({
-          id: a.id,             // для простоты можно тоже использовать a.id
-          backendId: a.id,      // но явно сохранить как backend id
+          id: a.id,
+          backendId: a.id,
           nameId: a.nameId,
           unitId: a.unitId,
           value: a.count,
@@ -115,7 +115,13 @@ export default function DiaryEditPage() {
   const handleAddActivity = () => {
     setActivities((prev) => [
       ...prev,
-      { id: Date.now(), backendId: null, nameId: null, unitId: null, value: 1 },
+      {
+        id: Date.now(),
+        backendId: null,
+        nameId: null,
+        unitId: null,
+        value: 1,
+      },
     ]);
   };
 
@@ -135,14 +141,27 @@ export default function DiaryEditPage() {
       howYouWereFeeling,
       anyDescription,
       status,
+
       whatDidYouDo: activities
-        .filter((a) => a.backendId != null)
-        .map((a) => ({
-          id: a.backendId!,
-          nameId: a.nameId!,
-          unitId: a.unitId!,
-          count: a.value,
-        })),
+        .filter((a) => a.nameId && a.unitId)
+        .map((a) => {
+          // ✅ СУЩЕСТВУЮЩАЯ АКТИВНОСТЬ (update)
+          if (a.backendId) {
+            return {
+              id: a.backendId,      // строго number
+              nameId: a.nameId!,
+              unitId: a.unitId!,
+              count: a.value,
+            };
+          }
+
+          // ✅ НОВАЯ АКТИВНОСТЬ (create)
+          return {
+            nameId: a.nameId!,
+            unitId: a.unitId!,
+            count: a.value,
+          };
+        }),
     };
 
     try {
@@ -155,7 +174,8 @@ export default function DiaryEditPage() {
     }
   };
 
-  if (loading) return <p className="text-white p-10 text-center">Загрузка...</p>;
+  if (loading)
+    return <p className="text-white p-10 text-center">Загрузка...</p>;
 
   // ===== UI =====
   return (
@@ -173,6 +193,7 @@ export default function DiaryEditPage() {
           }
           className="w-full p-2 rounded bg-slate-800"
         >
+          <option value="">— Что происходило —</option>
           {whatHappenedList.map((w) => (
             <option key={w.id} value={w.id}>
               {w.name}
@@ -188,6 +209,7 @@ export default function DiaryEditPage() {
           }
           className="w-full p-2 rounded bg-slate-800"
         >
+          <option value="">— Тип активности —</option>
           {whatList.map((w) => (
             <option key={w.id} value={w.id}>
               {w.name}
@@ -196,23 +218,25 @@ export default function DiaryEditPage() {
         </select>
 
         <Textarea
+          placeholder="Комментарий"
           value={anyDescription}
           onChange={(e) => setAnyDescription(e.target.value)}
         />
 
         {/* ACTIVITIES */}
         {activities.map((a) => (
-          <div key={a.id} className="grid grid-cols-3 gap-2">
+          <div key={a.id} className="grid grid-cols-3 gap-2 items-center">
             <select
               value={a.nameId ?? ""}
               onChange={(e) =>
                 handleActivityChange(
                   a.id,
                   "nameId",
-                  Number(e.target.value)
+                  e.target.value ? Number(e.target.value) : null
                 )
               }
             >
+              <option value="">Элемент</option>
               {itemNames.map((n) => (
                 <option key={n.id} value={n.id}>
                   {n.name}
@@ -226,10 +250,11 @@ export default function DiaryEditPage() {
                 handleActivityChange(
                   a.id,
                   "unitId",
-                  Number(e.target.value)
+                  e.target.value ? Number(e.target.value) : null
                 )
               }
             >
+              <option value="">Ед.</option>
               {units.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
@@ -249,7 +274,10 @@ export default function DiaryEditPage() {
               }
               min={1}
             />
-            <Button onClick={() => handleRemoveActivity(a.id)}>✕</Button>
+
+            <Button type="button" onClick={() => handleRemoveActivity(a.id)}>
+              ✕
+            </Button>
           </div>
         ))}
 
@@ -272,6 +300,7 @@ export default function DiaryEditPage() {
           value={whenStarted}
           onChange={(e) => setWhenStarted(e.target.value)}
         />
+
         <Input
           type="datetime-local"
           value={whenEnded}

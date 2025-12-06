@@ -5,7 +5,18 @@ import type { DictionaryType } from "./dictionary";
 export type DictionaryCreateDto = {
   type: DictionaryType;
   label: string;
+
+  // ✅ доступ по ролям
   allowedRole?: string | null;
+
+  // ✅ обязательно для WHAT
+  parentId?: number | null;
+
+  // ✅ обязательно для WHAT_HAPPENED
+  chartType?: "REPS_SUM" | "TIME_RANGE" | "COUNT_PER_DAY" | "MOOD_AVERAGE";
+
+  // ✅ НОВОЕ: привязка конфига
+  entryFieldConfigId?: number;
 };
 
 export type DictionaryUpdateDto = {

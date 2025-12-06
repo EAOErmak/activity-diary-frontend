@@ -191,7 +191,8 @@ export default function DiaryListPage() {
                 {filtered.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="bg-[#0E1420] hover:bg-[#151C2C] transition"
+                    onClick={() => window.location.href = `/diary/${entry.id}`}
+                    className="bg-[#0E1420] hover:bg-[#151C2C] transition cursor-pointer"
                   >
                     <td className="px-4 py-3 text-gray-400">
                       {entry.id}
@@ -225,7 +226,14 @@ export default function DiaryListPage() {
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right space-x-2">
+                      <Link
+                        to={`/diary/${entry.id}`}
+                        className="inline-block bg-slate-600/80 hover:bg-slate-600 text-white text-xs px-4 py-1 rounded-full"
+                      >
+                        Подробнее
+                      </Link>
+
                       <Link
                         to={`/diary/${entry.id}/edit`}
                         className="inline-block bg-blue-600/80 hover:bg-blue-600 text-white text-xs px-4 py-1 rounded-full"

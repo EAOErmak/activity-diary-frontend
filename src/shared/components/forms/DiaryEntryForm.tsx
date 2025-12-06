@@ -5,7 +5,9 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { Card } from "@/shared/components/ui/card";
 import { dictionaryApi } from "@/api/dictionaryApi";
 import type { DictionaryItem } from "@/shared/types/dictionary";
-import type { DiaryEntryCreateDto, EntryStatus } from "@/shared/types/diary";
+import type { DiaryEntryCreateDto, EntryFieldConfigDto } from "@/shared/types/diary";
+import { diaryApi } from "@/api/diaryApi";
+
 
 type ActivityFormItem = {
   id: number;
@@ -39,13 +41,25 @@ export default function DiaryEntryForm({
 
   const [anyDescription, setAnyDescription] = useState("");
   const [howYouWereFeeling, setFeeling] = useState<number>(3);
-  const [status, setStatus] = useState<EntryStatus>("ACTIVE");
   const [whenStarted, setWhenStarted] = useState("");
   const [whenEnded, setWhenEnded] = useState("");
+
+  const [config, setConfig] = useState<EntryFieldConfigDto | null>(null);
 
   const [activities, setActivities] = useState<ActivityFormItem[]>([
     { id: 1, nameId: null, unitId: null, value: 1 },
   ]);
+
+  useEffect(() => {
+    if (!whatHappenedId) {
+      setConfig(null);
+      return;
+    }
+
+    diaryApi.getEntryFieldConfig(whatHappenedId).then((res) => {
+      setConfig(res.data);
+    });
+  }, [whatHappenedId]);
 
   // ===== Load dictionaries =====
   useEffect(() => {
@@ -126,7 +140,6 @@ export default function DiaryEntryForm({
       whenEnded,
       howYouWereFeeling,
       anyDescription,
-      status,
       whatDidYouDo: filteredActivities.map((a) => ({
         nameId: a.nameId!,   // ✅ строго backend
         unitId: a.unitId!,   // ✅ строго backend
@@ -166,164 +179,156 @@ export default function DiaryEntryForm({
         </div>
 
         {/* WHAT */}
-        <div>
-          <label className="block mb-1 text-gray-300">Что делал</label>
-          <select
-            value={whatId ?? ""}
-            onChange={(e) =>
-              setWhatId(e.target.value ? Number(e.target.value) : null)
-            }
-            className="w-full p-2 rounded bg-slate-800 border border-gray-700"
-            required
-            disabled={!whatHappenedId}
-          >
-            <option value="">Сначала выберите 'Что происходило'</option>
-            {whatList.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {config?.showWhat && (
+          <div>
+            <label className="block mb-1 text-gray-300">Что делал</label>
+            <select
+              value={whatId ?? ""}
+              onChange={(e) =>
+                setWhatId(e.target.value ? Number(e.target.value) : null)
+              }
+              className="w-full p-2 rounded bg-slate-800 border border-gray-700"
+              required={config?.requiredWhat}
+              disabled={!whatHappenedId}
+            >
+              <option value="">Сначала выберите 'Что происходило'</option>
+              {whatList.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* DESCRIPTION */}
-        <div>
-          <label className="block mb-1 text-gray-300">
-            Описание / Комментарий
-          </label>
-          <Textarea
-            value={anyDescription}
-            onChange={(e) => setAnyDescription(e.target.value)}
-            placeholder="Очень доволен результатом!"
-          />
-        </div>
+        {config?.showDescription && (
+          <div>
+            <label className="block mb-1 text-gray-300">
+              Описание / Комментарий
+            </label>
+            <Textarea
+              value={anyDescription}
+              onChange={(e) => setAnyDescription(e.target.value)}
+              placeholder="Очень доволен результатом!"
+            />
+          </div>
+        )}
 
         {/* ACTIVITIES */}
-        <div>
-          <label className="block mb-2 text-gray-300">Активности</label>
+        {config?.showActivities && (
+          <div>
+            <label className="block mb-2 text-gray-300">Активности</label>
 
-          <div className="space-y-4">
-            {activities.map((act) => (
-              <div
-                key={act.id}
-                className="border border-gray-700 p-3 rounded-xl bg-slate-800 relative"
-              >
-                <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-4">
+              {activities.map((act) => (
+                <div
+                  key={act.id}
+                  className="border border-gray-700 p-3 rounded-xl bg-slate-800 relative"
+                >
+                  <div className="grid grid-cols-3 gap-3">
 
-                  <select
-                    value={act.nameId ?? ""}
-                    onChange={(e) =>
-                      handleActivityChange(
-                        act.id,
-                        "nameId",
-                        e.target.value ? Number(e.target.value) : null
-                      )
-                    }
-                    className="p-2 rounded bg-slate-900 border border-gray-700"
-                  >
-                    <option value="">Активность</option>
-                    {itemNames.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.name}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      value={act.nameId ?? ""}
+                      onChange={(e) =>
+                        handleActivityChange(
+                          act.id,
+                          "nameId",
+                          e.target.value ? Number(e.target.value) : null
+                        )
+                      }
+                      className="p-2 rounded bg-slate-900 border border-gray-700"
+                    >
+                      <option value="">Активность</option>
+                      {itemNames.map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.name}
+                        </option>
+                      ))}
+                    </select>
 
-                  <select
-                    value={act.unitId ?? ""}
-                    onChange={(e) =>
-                      handleActivityChange(
-                        act.id,
-                        "unitId",
-                        e.target.value ? Number(e.target.value) : null
-                      )
-                    }
-                    className="p-2 rounded bg-slate-900 border border-gray-700"
-                  >
-                    <option value="">Ед. изм.</option>
-                    {units.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      value={act.unitId ?? ""}
+                      onChange={(e) =>
+                        handleActivityChange(
+                          act.id,
+                          "unitId",
+                          e.target.value ? Number(e.target.value) : null
+                        )
+                      }
+                      className="p-2 rounded bg-slate-900 border border-gray-700"
+                    >
+                      <option value="">Ед. изм.</option>
+                      {units.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
 
-                  <Input
-                    type="number"
-                    min={1}
-                    value={act.value}
-                    onChange={(e) =>
-                      handleActivityChange(
-                        act.id,
-                        "value",
-                        e.currentTarget.valueAsNumber
-                      )
-                    }
-                    placeholder="Кол-во"
-                  />
+                    <Input
+                      type="number"
+                      min={1}
+                      value={act.value}
+                      onChange={(e) =>
+                        handleActivityChange(
+                          act.id,
+                          "value",
+                          e.currentTarget.valueAsNumber
+                        )
+                      }
+                      placeholder="Кол-во"
+                    />
+                  </div>
+
+                  {activities.length > 1 && (
+                    <Button
+                      type="button"
+                      onClick={() => handleRemoveActivity(act.id)}
+                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700"
+                    >
+                      ✕
+                    </Button>
+                  )}
                 </div>
+              ))}
+            </div>
 
-                {activities.length > 1 && (
-                  <Button
-                    type="button"
-                    onClick={() => handleRemoveActivity(act.id)}
-                    className="absolute top-2 right-2 bg-red-600 hover:bg-red-700"
-                  >
-                    ✕
-                  </Button>
-                )}
-              </div>
-            ))}
+            <Button
+              type="button"
+              onClick={handleAddActivity}
+              className="mt-3 bg-green-600 hover:bg-green-700 w-full"
+            >
+              + Добавить активность
+            </Button>
           </div>
-
-          <Button
-            type="button"
-            onClick={handleAddActivity}
-            className="mt-3 bg-green-600 hover:bg-green-700 w-full"
-          >
-            + Добавить активность
-          </Button>
-        </div>
+        )}
 
         {/* FEELING */}
-        <div>
-          <label className="block mb-2 text-gray-300">
-            Самочувствие (1–5)
-          </label>
+        {config?.showFeeling && (
+          <div>
+            <label className="block mb-2 text-gray-300">
+              Самочувствие (1–5)
+            </label>
 
-          <div className="flex gap-3">
-            {[1, 2, 3, 4, 5].map((lvl) => (
-              <button
-                key={lvl}
-                type="button"
-                onClick={() => setFeeling(lvl)}
-                className={`w-10 h-10 rounded-full border-2 transition ${
-                  lvl <= howYouWereFeeling
-                    ? "bg-blue-500 border-blue-400"
-                    : "bg-slate-800 border-gray-600"
-                }`}
-              >
-                {lvl}
-              </button>
-            ))}
+            <div className="flex gap-3">
+              {[1, 2, 3, 4, 5].map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setFeeling(lvl)}
+                  className={`w-10 h-10 rounded-full border-2 transition ${
+                    lvl <= howYouWereFeeling
+                      ? "bg-blue-500 border-blue-400"
+                      : "bg-slate-800 border-gray-600"
+                  }`}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* STATUS */}
-        <div>
-          <label className="block mb-1 text-gray-300">Статус</label>
-          <select
-            value={status}
-            onChange={(e) =>
-              setStatus(e.target.value as EntryStatus)
-            }
-            className="w-full p-2 rounded bg-slate-800 border border-gray-700"
-          >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="PLANNED">PLANNED</option>
-            <option value="FINISHED">FINISHED</option>
-          </select>
-        </div>
+        )}
 
         {/* TIME */}
         <div className="grid grid-cols-2 gap-4">

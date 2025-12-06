@@ -1,7 +1,6 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import PageLayout from "@/shared/components/layout/PageLayout";
+import UserLayout from "@/shared/components/layout/UserLayout";
 import ProtectedRoute from "@/shared/components/layout/ProtectedRoute";
 import AdminProtectedRoute from "@/shared/components/layout/AdminProtectedRoute";
 
@@ -19,110 +18,59 @@ import DiaryEditPage from "@/features/diary/pages/DiaryEditPage";
 import AdminDictionaryPage from "@/features/admin/dictionary/pages/AdminDictionaryPage";
 import AdminUsersPage from "@/features/admin/users/pages/AdminUsersPage";
 import AdminDashboardPage from "@/features/admin/dashboard/pages/AdminDashboardPage";
+import AdminEntryConfigPage from "@/features/admin/entry-config/pages/AdminEntryConfigPage";
 
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
-
 import SettingsPage from "@/pages/SettingsPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+
+import AdminLayout from "@/features/admin/layout/AdminLayout";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      {/* ✅ Layout ВСЕГДА СНАРУЖИ */}
-      <PageLayout>
-        <Routes>
-          {/* ✅ ПУБЛИЧНЫЕ */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+      <Routes>
 
-          {/* ✅ VERIFY */}
-          <Route path="/verify-register" element={<VerifyRegisterPage />} />
-          <Route path="/verify-login" element={<VerifyLoginPage />} />
+        {/* PUBLIC */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-register" element={<VerifyRegisterPage />} />
+        <Route path="/verify-login" element={<VerifyLoginPage />} />
 
-          {/* ✅ ЗАЩИЩЁННЫЕ */}
-          <Route
-            path="/diary"
-            element={
-              <ProtectedRoute>
-                <DiaryListPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/diary/new"
-            element={
-              <ProtectedRoute>
-                <DiaryFormPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/diary/:id"
-            element={
-              <ProtectedRoute>
-                <DiaryDetailsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/diary/:id/edit"
-            element={
-              <ProtectedRoute>
-                <DiaryEditPage />
-              </ProtectedRoute>
-            }
-          />
+        {/* USER */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <UserLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/diary" element={<DiaryListPage />} />
+          <Route path="/diary/new" element={<DiaryFormPage />} />
+          <Route path="/diary/:id" element={<DiaryDetailsPage />} />
+          <Route path="/diary/:id/edit" element={<DiaryEditPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
+        {/* ADMIN */}
+        <Route
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/dictionary" element={<AdminDictionaryPage />} />
+          <Route path="/admin/entry-config" element={<AdminEntryConfigPage />} />
+        </Route>
 
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin"
-            element={
-              <AdminProtectedRoute>
-                <AdminDashboardPage/>             
-              </AdminProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/users"
-            element={
-              <AdminProtectedRoute>                
-                  <AdminUsersPage/>                
-              </AdminProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/dictionary"
-            element={
-              <AdminProtectedRoute>               
-                  <AdminDictionaryPage />
-              </AdminProtectedRoute>
-            }
-          />
-
-          {/* ✅ FALLBACK */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </PageLayout>
+        {/* FALLBACK */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </BrowserRouter>
   );
 }
