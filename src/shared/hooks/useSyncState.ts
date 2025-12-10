@@ -20,6 +20,7 @@ export function useSyncState() {
 
   useEffect(() => {
     getSyncState().then((res) => {
+      if (!res) return;          // ✅ защита от null
       setServerSync(res.state);
     });
   }, []);
