@@ -1,18 +1,13 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-
-type Form = {
-  username: string;
-  password: string;
-  fullName: string;
-};
+import type { RegisterRequest } from "@/shared/types/auth";
 
 export default function RegisterForm({
   onSubmit,
 }: {
-  onSubmit: (data: Form) => Promise<void> | void;
+  onSubmit: (data: RegisterRequest) => Promise<void> | void;
 }) {
-  const { register, handleSubmit, formState } = useForm<Form>({
+  const { register, handleSubmit, formState } = useForm<RegisterRequest>({
     defaultValues: {
       username: "",
       password: "",
