@@ -1,14 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import DiaryEntryForm from "@/shared/components/forms/DiaryEntryForm";
 import { useCreateDiaryEntry } from "@/features/diary/hooks/useDiary";
-import type { DiaryEntryCreateDto } from "@/shared/types/diary";
+import type { DiaryEntryCreate } from "@/shared/types/diary";
 
 export default function DiaryFormPage() {
   const nav = useNavigate();
 
   const { mutateAsync, isPending } = useCreateDiaryEntry();
 
-  const handleCreate = async (payload: DiaryEntryCreateDto) => {
+  const handleCreate = async (payload: DiaryEntryCreate) => {
     try {
       await mutateAsync(payload);
       alert("✅ Запись успешно добавлена!");

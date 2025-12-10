@@ -11,8 +11,11 @@ export default function ActivityChart({ data }: { data: MultiChartResponse }) {
     );
   }
 
-  const first = data.charts[0];
-  if (!first.points || first.points.length === 0) {
+  const validCharts = data.charts.filter(
+    (c) => c && c.title && c.points && c.points.length > 0
+  );
+
+  if (!validCharts.length) {
     return (
       <div className="bg-slate-900/70 p-4 rounded-2xl text-gray-400">
         Нет данных для отображения
@@ -20,24 +23,26 @@ export default function ActivityChart({ data }: { data: MultiChartResponse }) {
     );
   }
 
-  // ✅ универсальная X-ось (по максимальному набору)
+  const first = validCharts[0];
+
+  // ✅ универсальная X-ось
   const xAxisData = useMemo(() => {
     const set = new Set<string>();
 
-    data.charts.forEach((chart) => {
-      chart.points.forEach((p) => set.add(p.x));
+    validCharts.forEach((chart) => {
+      chart.points.forEach((p) => p?.x && set.add(p.x));
     });
 
-    return Array.from(set).sort(); // ✅ единая и отсортированная ось
-  }, [data.charts]);
+    return Array.from(set).sort();
+  }, [validCharts]);
 
-  // ✅ генерация цветов под любое количество линий
+  // ✅ безопасная генерация цветов
   const colors = useMemo(() => {
-    return data.charts.map((_, i) => {
+    return validCharts.map((_, i) => {
       const hue = (i * 47) % 360;
       return `hsl(${hue}, 70%, 60%)`;
     });
-  }, [data.charts.length]);
+  }, [validCharts.length]);
 
   const option = useMemo(
     () => ({
@@ -48,7 +53,7 @@ export default function ActivityChart({ data }: { data: MultiChartResponse }) {
       },
 
       legend: {
-        data: data.charts.map((c) => c.title),
+        data: validCharts.map((c) => c.title), // ✅ ГАРАНТИРОВАНО НЕ null
         textStyle: { color: "#e5e7eb" },
       },
 
@@ -65,15 +70,18 @@ export default function ActivityChart({ data }: { data: MultiChartResponse }) {
         splitLine: { lineStyle: { color: "#1f2937" } },
       },
 
-      series: data.charts.map((chart) => {
-        const map = new Map(chart.points.map((p) => [p.x, p.y]));
+      series: validCharts.map((chart) => {
+        const map = new Map(
+          chart.points
+            .filter((p) => p?.x !== undefined)
+            .map((p) => [p.x, p.y])
+        );
 
         return {
-          name: chart.title,
+          name: chart.title, // ✅ СТРОКА
           type: "line",
           smooth: true,
-
-          connectNulls: true, // ✅ ВОТ ЭТО ВОЗВРАЩАЕТ ЗАЛИВКУ
+          connectNulls: true,
 
           data: xAxisData.map((x) => map.get(x) ?? null),
 
@@ -86,13 +94,13 @@ export default function ActivityChart({ data }: { data: MultiChartResponse }) {
 
       grid: { top: 40, right: 20, left: 50, bottom: 30 },
     }),
-    [data, xAxisData, colors]
+    [validCharts, xAxisData, colors]
   );
 
   return (
     <div className="bg-slate-900/70 backdrop-blur-lg p-4 rounded-2xl shadow-lg border border-slate-800">
       <h3 className="text-gray-300 mb-2 text-sm">
-        {data.charts.length === 1
+        {validCharts.length === 1
           ? `${first.title}${first.unit ? ` (${first.unit})` : ""}`
           : "Сравнение выбранных показателей"}
       </h3>

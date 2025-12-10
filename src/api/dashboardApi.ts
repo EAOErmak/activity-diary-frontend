@@ -8,28 +8,28 @@ import type { ChartResponse } from "@/shared/types/analytics";
 // BY TIME — ПО КАТЕГОРИИ
 // ============================
 export const getTimeChartByCategory = async (
-  whatHappenedId: number,
+  categoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> => {
   const r = await api.get<ApiResponse<ChartResponse>>(
     "/analytics/time/category",
-    { params: { whatHappenedId, from, to } }
+    { params: { categoryId, from, to } }
   );
   return r.data.data;
 };
 
 // ============================
-// BY TIME — ПО WHAT
+// BY TIME — ПО SUB_CATEGORY
 // ============================
-export const getTimeChartByWhat = async (
-  whatId: number,
+export const getTimeChartBySubCategory = async (
+  subCategoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> => {
   const r = await api.get<ApiResponse<ChartResponse>>(
-    "/analytics/time/what",
-    { params: { whatId, from, to } }
+    "/analytics/time/sub-category",
+    { params: { subCategoryId, from, to } }
   );
   return r.data.data;
 };
@@ -38,28 +38,28 @@ export const getTimeChartByWhat = async (
 // BY SEQUENCE — ПО КАТЕГОРИИ
 // ============================
 export const getSequenceChartByCategory = async (
-  whatHappenedId: number,
+  categoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> => {
   const r = await api.get<ApiResponse<ChartResponse>>(
     "/analytics/sequence/category",
-    { params: { whatHappenedId, from, to } }
+    { params: { categoryId, from, to } }
   );
   return r.data.data;
 };
 
 // ============================
-// BY SEQUENCE — ПО WHAT
+// BY SEQUENCE — ПО SUB_CATEGORY
 // ============================
-export const getSequenceChartByWhat = async (
-  whatId: number,
+export const getSequenceChartBySubCategory = async (
+  subCategoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> => {
   const r = await api.get<ApiResponse<ChartResponse>>(
-    "/analytics/sequence/what",
-    { params: { whatId, from, to } }
+    "/analytics/sequence/sub-category",
+    { params: { subCategoryId, from, to } }
   );
   return r.data.data;
 };

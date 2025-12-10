@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { confirmVerificationRequest } from "@/api/authApi";
 import { useAuthStore } from "@/shared/store/authStore";
 
-const TELEGRAM_BOT_URL = "https://t.me/DiaryVerificatorBot"; // ✅ сюда вставь своего бота
+const TELEGRAM_BOT_URL = import.meta.env.VITE_TELEGRAM_BOT_URL;
 
 export default function RegisterVerifyPage() {
   const navigate = useNavigate();

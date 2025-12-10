@@ -1,20 +1,37 @@
-// src/shared/types/dictionary.ts
+// ==============================
+// ENUMS
+// ==============================
 
-export type DictionaryType = "WHAT" | "WHAT_HAPPENED" | "ITEM_NAME" | "UNIT";
+export type DictionaryType =
+  | "CATEGORY"
+  | "SUB_CATEGORY"
+  | "METRIC_NAME"
+  | "METRIC_UNIT";
+  
+// ==============================
+// BACKEND DTO
+// ==============================
 
-// То, что реально приходит с бэка (DictionaryResponseDto)
 export type DictionaryResponse = {
   id: number;
   type: DictionaryType;
   label: string;
   active: boolean;
   allowedRole: string | null;
+  parentId?: number | null;
+
+  entryFieldConfigId?: number | null;
+
   createdAt: string;
   updatedAt: string;
 };
 
-// Упрощённый тип для селектов
+// ==============================
+// FRONT UI MODEL
+// ==============================
+
 export type DictionaryItem = {
   id: number;
   name: string;
+  entryFieldConfigId?: number | null;
 };

@@ -15,26 +15,27 @@ import {
 } from "@/shared/components/ui/select";
 
 import type {
-  DictionaryCreateDto,
-  DictionaryUpdateDto,
-  DictionaryResponseDto,
+  DictionaryCreate,
+  DictionaryUpdate,
+  DictionaryResponse,
 } from "@/shared/types/adminDictionary";
 
 import { getAllAdminEntryConfigs } from "@/api/admin/entryFieldConfigAdminApi";
-import type { EntryFieldConfigDto } from "@/shared/types/diary";
+import type { EntryFieldConfig } from "@/shared/types/diary";
 
-type Tab = "WHAT_HAPPENED" | "WHAT" | "ITEM_NAME" | "UNIT";
+type Tab = "CATEGORY" | "SUB_CATEGORY" | "METRIC_NAME" | "METRIC_UNIT";
 
 export default function AdminDictionaryPage() {
-  const [tab, setTab] = useState<Tab>("WHAT_HAPPENED");
-  const [items, setItems] = useState<DictionaryResponseDto[]>([]);
-  const [parents, setParents] = useState<DictionaryResponseDto[]>([]);
-  const [entryConfigs, setEntryConfigs] = useState<EntryFieldConfigDto[]>([]);
+  const [tab, setTab] = useState<Tab>("CATEGORY");
+  const [items, setItems] = useState<DictionaryResponse[]>([]);
+  const [parents, setParents] = useState<DictionaryResponse[]>([]);
+  const [entryConfigs, setEntryConfigs] = useState<EntryFieldConfig[]>([]);
 
   const [label, setLabel] = useState("");
   const [allowedRole, setAllowedRole] = useState<string | null>(null);
   const [parentId, setParentId] = useState<number | null>(null);
-  const [chartType, setChartType] = useState<string | null>(null);
+  const [chartType, setChartType] = useState<"REPS_SUM" | "TIME_RANGE" | "COUNT_PER_DAY" | "MOOD_AVERAGE" | null>(null);
+
   const [entryConfigId, setEntryConfigId] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -48,24 +49,29 @@ export default function AdminDictionaryPage() {
   }, [tab]);
 
   async function load() {
-    const data = await getDictionaryByTypeAdmin(tab);
-    setItems(data);
+    try {
+      const data = await getDictionaryByTypeAdmin(tab);
+      setItems(data);
 
-    if (tab === "WHAT") {
-      const parents = await getDictionaryByTypeAdmin("WHAT_HAPPENED");
-      setParents(parents);
-    } else {
-      setParents([]);
-      setParentId(null);
-    }
+      if (tab === "SUB_CATEGORY") {
+        const parents = await getDictionaryByTypeAdmin("CATEGORY");
+        setParents(parents);
+      } else {
+        setParents([]);
+        setParentId(null);
+      }
 
-    if (tab === "WHAT_HAPPENED") {
-      const configs = await getAllAdminEntryConfigs();
-      setEntryConfigs(configs.data.data);
-    } else {
-      setEntryConfigs([]);
-      setEntryConfigId(null);
-      setChartType(null);
+      if (tab === "CATEGORY") {
+        const configs = await getAllAdminEntryConfigs();
+        setEntryConfigs(configs);
+      } else {
+        setEntryConfigs([]);
+        setEntryConfigId(null);
+        setChartType(null);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Ошибка загрузки словаря");
     }
   }
 
@@ -76,22 +82,22 @@ export default function AdminDictionaryPage() {
   async function handleCreate() {
     if (!label.trim()) return alert("Введите название");
 
-    if (tab === "WHAT" && !parentId)
+    if (tab === "SUB_CATEGORY" && !parentId)
       return alert("Выберите родительскую категорию");
 
-    if (tab === "WHAT_HAPPENED" && !chartType)
+    if (tab === "CATEGORY" && !chartType)
       return alert("Выберите тип графика");
 
-    if (tab === "WHAT_HAPPENED" && !entryConfigId)
+    if (tab === "CATEGORY" && !entryConfigId)
       return alert("Выберите конфигурацию полей");
 
-    const dto: DictionaryCreateDto = {
+    const dto: DictionaryCreate = {
       type: tab,
       label: label.trim(),
       allowedRole,
-      parentId: tab === "WHAT" ? parentId! : undefined,
-      chartType: tab === "WHAT_HAPPENED" ? (chartType as any) : undefined,
-      entryFieldConfigId: tab === "WHAT_HAPPENED" ? entryConfigId! : undefined,
+      parentId: tab === "SUB_CATEGORY" ? parentId! : undefined,
+      chartType: tab === "CATEGORY" ? chartType! : undefined,
+      entryFieldConfigId: tab === "CATEGORY" ? entryConfigId! : undefined,
     };
 
     try {
@@ -112,7 +118,7 @@ export default function AdminDictionaryPage() {
   // TOGGLE ACTIVE (SAFE)
   // ============================
 
-  async function handleToggle(item: DictionaryResponseDto) {
+  async function handleToggle(item: DictionaryResponse) {
     const ok = confirm(
       `Вы уверены, что хотите ${
         item.active ? "деактивировать" : "активировать"
@@ -120,7 +126,7 @@ export default function AdminDictionaryPage() {
     );
     if (!ok) return;
 
-    const dto: DictionaryUpdateDto = {
+    const dto: DictionaryUpdate = {
       active: !item.active,
     };
 
@@ -133,7 +139,7 @@ export default function AdminDictionaryPage() {
   // ============================
 
   async function handleRoleChange(
-    item: DictionaryResponseDto,
+    item: DictionaryResponse,
     role: string | null
   ) {
     const ok = confirm(
@@ -141,7 +147,7 @@ export default function AdminDictionaryPage() {
     );
     if (!ok) return;
 
-    const dto: DictionaryUpdateDto = {
+    const dto: DictionaryUpdate = {
       allowedRole: role,
     };
 
@@ -159,10 +165,10 @@ export default function AdminDictionaryPage() {
       {/* ВКЛАДКИ */}
       <div className="flex gap-2 mb-6">
         {[
-          { id: "WHAT_HAPPENED", label: "Что произошло" },
-          { id: "WHAT", label: "Тип активности" },
-          { id: "ITEM_NAME", label: "Название элемента" },
-          { id: "UNIT", label: "Единицы измерения" },
+          { id: "CATEGORY", label: "Что произошло" },
+          { id: "SUB_CATEGORY", label: "Тип активности" },
+          { id: "METRIC_NAME", label: "Название элемента" },
+          { id: "METRIC_UNIT", label: "Единицы измерения" },
         ].map((t) => (
           <button
             key={t.id}
@@ -189,7 +195,7 @@ export default function AdminDictionaryPage() {
           />
         </div>
 
-        {tab === "WHAT" && (
+        {tab === "SUB_CATEGORY" && (
           <div>
             <label className="block mb-1 text-sm">Родитель</label>
             <Select
@@ -210,11 +216,15 @@ export default function AdminDictionaryPage() {
           </div>
         )}
 
-        {tab === "WHAT_HAPPENED" && (
+        {tab === "CATEGORY" && (
           <>
             <div>
               <label className="block mb-1 text-sm">Тип графика</label>
-              <Select value={chartType ?? ""} onValueChange={setChartType}>
+              <Select value={chartType ?? ""} onValueChange={(v) =>
+                setChartType(
+                  v as "REPS_SUM" | "TIME_RANGE" | "COUNT_PER_DAY" | "MOOD_AVERAGE"
+                )
+              }>
                 <SelectTrigger className="w-[220px]">
                   <SelectValue />
                 </SelectTrigger>

@@ -1,21 +1,21 @@
 import React from "react";
-import type { DiaryEntryDto } from "@/shared/types/diary";
+import type { DiaryEntry } from "@/shared/types/diary";
 import { format } from "date-fns";
 import { Card } from "@/shared/components/ui/card";
 
 interface Props {
-  entry: DiaryEntryDto;
+  entry: DiaryEntry;
 }
 
 export const DiaryEntryView: React.FC<Props> = ({ entry }) => {
   return (
     <Card className="bg-slate-900 text-white p-6 rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold mb-3">{entry.whatName}</h2>
+      <h2 className="text-2xl font-bold mb-3">{entry.subCategoryName}</h2>
       <p className="text-gray-300 mb-2">
-        <strong>Что происходило:</strong> {entry.whatHappenedName}
+        <strong>Что происходило:</strong> {entry.categoryName}
       </p>
-      {entry.anyDescription && (
-        <p className="text-gray-400 italic mb-3">{entry.anyDescription}</p>
+      {entry.description && (
+        <p className="text-gray-400 italic mb-3">{entry.description}</p>
       )}
 
       <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
@@ -36,15 +36,15 @@ export const DiaryEntryView: React.FC<Props> = ({ entry }) => {
           {entry.duration ? `${entry.duration} мин` : "—"}
         </p>
         <p>
-          <strong>Самочувствие:</strong> {entry.howYouWereFeeling ?? "—"} / 5
+          <strong>Самочувствие:</strong> {entry.mood ?? "—"} / 5
         </p>
         <p>
           <strong>Статус:</strong>{" "}
           <span
             className={
-              entry.status === "FINISHED"
+              entry.status === "DELETED"
                 ? "text-green-400"
-                : entry.status === "PLANNED"
+                : entry.status === "DRAFT"
                 ? "text-yellow-400"
                 : "text-blue-400"
             }
@@ -54,14 +54,14 @@ export const DiaryEntryView: React.FC<Props> = ({ entry }) => {
         </p>
       </div>
 
-      {entry.whatDidYouDo?.length ? (
+      {entry.metrics?.length ? (
         <div className="mt-4">
           <h3 className="font-semibold text-lg mb-2">Активности:</h3>
           <ul className="list-disc list-inside text-gray-300 space-y-1">
-            {entry.whatDidYouDo.map((item) => (
+            {entry.metrics.map((item) => (
               <li key={item.id}>
-                <strong>{item.name}</strong>
-                {item.count && ` (${item.count} ${item.unit})`}
+                <strong>{item.metricTypeName}</strong>
+                {item.value && ` (${item.value} ${item.metricTypeId})`}
               </li>
             ))}
           </ul>

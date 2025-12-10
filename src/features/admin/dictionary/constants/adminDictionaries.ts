@@ -6,8 +6,8 @@ export const ADMIN_DICTIONARY_TYPES: {
   value: AdminDictionaryType;
   label: string;
 }[] = [
-  { value: "WHAT_HAPPENED", label: "Что происходило" },
-  { value: "WHAT", label: "Что делал" },
-  { value: "ITEM_NAME", label: "Название активности" },
-  { value: "UNIT", label: "Единицы измерения" },
+  { value: "CATEGORY", label: "Категория" },
+  { value: "SUB_CATEGORY", label: "Подкатегория" },
+  { value: "METRIC_NAME", label: "Название активности" },
+  { value: "METRIC_UNIT", label: "Единицы измерения" },
 ];

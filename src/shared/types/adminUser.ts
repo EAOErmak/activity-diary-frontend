@@ -5,7 +5,9 @@ export type AdminUserDto = {
   role: "ADMIN" | "USER";
   enabled: boolean;
   accountLocked: boolean;
-  createdAt: string; // Instant → ISO string
+  lockUntil: string | null;
+  failed2faAttempts: number;
+  createdAt: string; // ISO
   chatId: number | null;
 };
 

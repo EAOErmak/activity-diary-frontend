@@ -1,11 +1,11 @@
 // src/api/admin/dictionaryAdminApi.ts
 import api from "../http/axiosInstance";
-import type {
-  DictionaryCreateDto,
-  DictionaryUpdateDto,
-  DictionaryResponseDto,
-} from "@/shared/types/adminDictionary";
 import type { ApiResponse } from "@/shared/types/api";
+import type {
+  DictionaryCreate,
+  DictionaryUpdate,
+  DictionaryResponse,
+} from "@/shared/types/adminDictionary";
 import type { DictionaryType } from "@/shared/types/dictionary";
 
 /* ===========================
@@ -14,11 +14,11 @@ import type { DictionaryType } from "@/shared/types/dictionary";
 
 export const getDictionaryByTypeAdmin = async (
   type: DictionaryType
-): Promise<DictionaryResponseDto[]> => {
-  const r = await api.get<ApiResponse<DictionaryResponseDto[]>>(
+): Promise<DictionaryResponse[]> => {
+  const { data } = await api.get<ApiResponse<DictionaryResponse[]>>(
     `/admin/dict/${type}`
   );
-  return r.data.data;
+  return data.data;
 };
 
 /* ===========================
@@ -26,13 +26,13 @@ export const getDictionaryByTypeAdmin = async (
 =========================== */
 
 export const createDictionaryItem = async (
-  dto: DictionaryCreateDto
-): Promise<DictionaryResponseDto> => {
-  const r = await api.post<ApiResponse<DictionaryResponseDto>>(
+  dto: DictionaryCreate
+): Promise<DictionaryResponse> => {
+  const { data } = await api.post<ApiResponse<DictionaryResponse>>(
     "/admin/dict",
     dto
   );
-  return r.data.data;
+  return data.data;
 };
 
 /* ===========================
@@ -41,13 +41,13 @@ export const createDictionaryItem = async (
 
 export const updateDictionaryItem = async (
   id: number,
-  dto: DictionaryUpdateDto
-): Promise<DictionaryResponseDto> => {
-  const r = await api.put<ApiResponse<DictionaryResponseDto>>(
+  dto: DictionaryUpdate
+): Promise<DictionaryResponse> => {
+  const { data } = await api.put<ApiResponse<DictionaryResponse>>(
     `/admin/dict/${id}`,
     dto
   );
-  return r.data.data;
+  return data.data;
 };
 
 /* ===========================
@@ -56,10 +56,10 @@ export const updateDictionaryItem = async (
 
 export const searchDictionaryAdmin = async (
   q: string
-): Promise<DictionaryResponseDto[]> => {
-  const r = await api.get<ApiResponse<DictionaryResponseDto[]>>(
+): Promise<DictionaryResponse[]> => {
+  const { data } = await api.get<ApiResponse<DictionaryResponse[]>>(
     "/admin/dict/search",
     { params: { q } }
   );
-  return r.data.data;
+  return data.data;
 };

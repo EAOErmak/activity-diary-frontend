@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getWhatHappened, getWhatByParent } from "@/api/dictionaryApi";
+import { getCategory, getSubCategoryByParent } from "@/api/dictionaryApi";
 import { Button } from "@/shared/components/ui/button";
 import { Calendar } from "@/shared/components/ui/calendar";
 import {
@@ -15,8 +15,8 @@ type Props = {
   selectedCategoryIds: number[];
   setSelectedCategoryIds: React.Dispatch<React.SetStateAction<number[]>>;
 
-  selectedWhatIds: number[];
-  setSelectedWhatIds: React.Dispatch<React.SetStateAction<number[]>>;
+  selectedSubCategoryIds: number[];
+  setSelectedSubCategoryIds: React.Dispatch<React.SetStateAction<number[]>>;
 
   from: string;
   to: string;
@@ -30,8 +30,8 @@ type Props = {
 export default function AnalyticsFilters({
   selectedCategoryIds,
   setSelectedCategoryIds,
-  selectedWhatIds,
-  setSelectedWhatIds,
+  selectedSubCategoryIds: selectedSubCategoryIds,
+  setSelectedSubCategoryIds: setSelectedSubCategoryIds,
   from,
   to,
   setFrom,
@@ -40,7 +40,7 @@ export default function AnalyticsFilters({
   setMode,
 }: Props) {
   const [categories, setCategories] = useState<DictItem[]>([]);
-  const [whats, setWhats] = useState<DictItem[]>([]);
+  const [subCategories, setSubCategories] = useState<DictItem[]>([]);
 
   const [fromDate, setFromDate] = useState(
     from ? new Date(from) : new Date()
@@ -51,31 +51,31 @@ export default function AnalyticsFilters({
 
   // ✅ загрузка категорий
   useEffect(() => {
-    getWhatHappened().then(setCategories);
+    getCategory().then(setCategories);
   }, []);
 
-  // ✅ загрузка WHAT для всех выбранных категорий
+  // ✅ загрузка SUB_CATEGORY для всех выбранных категорий
   useEffect(() => {
-    async function loadWhats() {
+    async function loadSubCategories() {
       const map = new Map<number, DictItem>();
 
       for (const id of selectedCategoryIds) {
-        const data = await getWhatByParent(id);
+        const data = await getSubCategoryByParent(id);
         data.forEach((item) => {
           map.set(item.id, item); // ✅ перезапись убирает дубли
         });
       }
 
-      setWhats(Array.from(map.values()));
-      setSelectedWhatIds([]);
+      setSubCategories(Array.from(map.values()));
+      setSelectedSubCategoryIds([]);
     }
 
     if (selectedCategoryIds.length > 0) {
-        loadWhats();
+        loadSubCategories();
     } else {
       // ✅ ВАЖНО
-      setWhats([]);
-      setSelectedWhatIds([]);
+      setSubCategories([]);
+      setSelectedSubCategoryIds([]);
     }
   }, [selectedCategoryIds]);
 
@@ -87,8 +87,8 @@ export default function AnalyticsFilters({
     );
   }
 
-  function toggleWhat(id: number) {
-    setSelectedWhatIds((prev) =>
+  function toggleSubCategory(id: number) {
+    setSelectedSubCategoryIds((prev) =>
       prev.includes(id)
         ? prev.filter((x) => x !== id)
         : [...prev, id]
@@ -129,20 +129,20 @@ export default function AnalyticsFilters({
         </PopoverContent>
       </Popover>
 
-      {/* ✅ MULTI WHAT */}
+      {/* ✅ MULTI SUB_CATEGORY */}
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-[260px] justify-between">
-            Подтипов: {selectedWhatIds.length || "все"}
+            Подтипов: {selectedSubCategoryIds.length || "все"}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-64" align="start">
-          {whats.map((w) => (
+          {subCategories.map((w) => (
             <label key={w.id} className="flex gap-2 items-center">
               <input
                 type="checkbox"
-                checked={selectedWhatIds.includes(w.id)}
-                onChange={() => toggleWhat(w.id)}
+                checked={selectedSubCategoryIds.includes(w.id)}
+                onChange={() => toggleSubCategory(w.id)}
               />
               {w.name}
             </label>

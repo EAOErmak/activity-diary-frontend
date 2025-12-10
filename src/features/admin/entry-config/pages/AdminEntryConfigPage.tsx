@@ -5,30 +5,30 @@ import {
   updateAdminEntryConfig,
 } from "@/api/admin/entryFieldConfigAdminApi";
 
-import type { EntryFieldConfigDto } from "@/shared/types/diary";
+import type { EntryFieldConfig } from "@/shared/types/diary";
 
 type FlagKey =
-  | "showWhat"
-  | "showActivities"
-  | "showFeeling"
+  | "showSubCategory"
+  | "showMetrics"
+  | "showMood"
   | "showDescription"
-  | "requiredWhat"
-  | "requiredActivities";
+  | "requiredSubCategory"
+  | "requiredMetrics";
 
-const DEFAULT_NEW_CONFIG: EntryFieldConfigDto = {
+const DEFAULT_NEW_CONFIG: EntryFieldConfig = {
   name: "",
-  showWhat: true,
-  showActivities: true,
-  showFeeling: true,
+  showSubCategory: true,
+  showMetrics: true,
+  showMood: true,
   showDescription: true,
-  requiredWhat: false,
-  requiredActivities: false,
+  requiredSubCategory: false,
+  requiredMetrics: false,
 };
 
 export default function AdminEntryConfigPage() {
-  const [configs, setConfigs] = useState<EntryFieldConfigDto[]>([]);
+  const [configs, setConfigs] = useState<EntryFieldConfig[]>([]);
   const [newConfig, setNewConfig] =
-    useState<EntryFieldConfigDto>(DEFAULT_NEW_CONFIG);
+    useState<EntryFieldConfig>(DEFAULT_NEW_CONFIG);
   const [loading, setLoading] = useState(false);
 
   // ============================
@@ -40,10 +40,14 @@ export default function AdminEntryConfigPage() {
   }, []);
 
   async function loadConfigs() {
-    const res = await getAllAdminEntryConfigs();
-    setConfigs(res.data.data); // ✅ ВАЖНО: .data.data
+    try {
+      const res = await getAllAdminEntryConfigs();
+      setConfigs(res);
+    } catch (e) {
+      alert("Ошибка загрузки конфигов");
+    }
   }
-  
+
   // ============================
   // CREATE
   // ============================
@@ -77,10 +81,10 @@ export default function AdminEntryConfigPage() {
     const current = configs.find((c) => c.id === id);
     if (!current) return;
 
-    const updated: EntryFieldConfigDto = {
+    const updated: EntryFieldConfig = {
       ...current,
       [key]: !current[key],
-    } as EntryFieldConfigDto;
+    } as EntryFieldConfig;
 
     // сразу обновляем в UI
     setConfigs((prev) =>
@@ -88,7 +92,11 @@ export default function AdminEntryConfigPage() {
     );
 
     // и отправляем на бэк
-    await updateAdminEntryConfig(id, updated);
+    try {
+      await updateAdminEntryConfig(id, updated);
+    } catch {
+      await loadConfigs(); // откат
+    }
   }
 
   // ============================
@@ -122,41 +130,41 @@ export default function AdminEntryConfigPage() {
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={newConfig.showWhat}
+                checked={newConfig.showSubCategory}
                 onChange={(e) =>
                   setNewConfig((prev) => ({
                     ...prev,
-                    showWhat: e.target.checked,
+                    showSubCategory: e.target.checked,
                   }))
                 }
               />
-              showWhat
+              showSubCategory
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={newConfig.showActivities}
+                checked={newConfig.showMetrics}
                 onChange={(e) =>
                   setNewConfig((prev) => ({
                     ...prev,
-                    showActivities: e.target.checked,
+                    showMetrics: e.target.checked,
                   }))
                 }
               />
-              showActivities
+              showMetrics
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={newConfig.showFeeling}
+                checked={newConfig.showMood}
                 onChange={(e) =>
                   setNewConfig((prev) => ({
                     ...prev,
-                    showFeeling: e.target.checked,
+                    showMood: e.target.checked,
                   }))
                 }
               />
-              showFeeling
+              showMood
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -177,28 +185,28 @@ export default function AdminEntryConfigPage() {
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={newConfig.requiredWhat}
+                checked={newConfig.requiredSubCategory}
                 onChange={(e) =>
                   setNewConfig((prev) => ({
                     ...prev,
-                    requiredWhat: e.target.checked,
+                    requiredSubCategory: e.target.checked,
                   }))
                 }
               />
-              requiredWhat
+              requiredSubCategory
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={newConfig.requiredActivities}
+                checked={newConfig.requiredMetrics}
                 onChange={(e) =>
                   setNewConfig((prev) => ({
                     ...prev,
-                    requiredActivities: e.target.checked,
+                    requiredMetrics: e.target.checked,
                   }))
                 }
               />
-              requiredActivities
+              requiredMetrics
             </label>
           </div>
 
@@ -219,12 +227,12 @@ export default function AdminEntryConfigPage() {
             <tr>
               <th className="p-2 text-left">ID</th>
               <th className="p-2 text-left">Имя</th>
-              <th className="p-2">showWhat</th>
-              <th className="p-2">showActivities</th>
-              <th className="p-2">showFeeling</th>
+              <th className="p-2">showSubCategory</th>
+              <th className="p-2">showMetrics</th>
+              <th className="p-2">showMood</th>
               <th className="p-2">showDescription</th>
-              <th className="p-2">requiredWhat</th>
-              <th className="p-2">requiredActivities</th>
+              <th className="p-2">requiredSubCategory</th>
+              <th className="p-2">requiredMetrics</th>
             </tr>
           </thead>
           <tbody>
@@ -238,27 +246,27 @@ export default function AdminEntryConfigPage() {
                 <td className="p-2">
                   <input
                     type="checkbox"
-                    checked={c.showWhat}
+                    checked={c.showSubCategory}
                     onChange={() =>
-                      handleToggle(c.id!, "showWhat")
+                      handleToggle(c.id!, "showSubCategory")
                     }
                   />
                 </td>
                 <td className="p-2">
                   <input
                     type="checkbox"
-                    checked={c.showActivities}
+                    checked={c.showMetrics}
                     onChange={() =>
-                      handleToggle(c.id!, "showActivities")
+                      handleToggle(c.id!, "showMetrics")
                     }
                   />
                 </td>
                 <td className="p-2">
                   <input
                     type="checkbox"
-                    checked={c.showFeeling}
+                    checked={c.showMood}
                     onChange={() =>
-                      handleToggle(c.id!, "showFeeling")
+                      handleToggle(c.id!, "showMood")
                     }
                   />
                 </td>
@@ -274,18 +282,18 @@ export default function AdminEntryConfigPage() {
                 <td className="p-2">
                   <input
                     type="checkbox"
-                    checked={c.requiredWhat}
+                    checked={c.requiredSubCategory}
                     onChange={() =>
-                      handleToggle(c.id!, "requiredWhat")
+                      handleToggle(c.id!, "requiredSubCategory")
                     }
                   />
                 </td>
                 <td className="p-2">
                   <input
                     type="checkbox"
-                    checked={c.requiredActivities}
+                    checked={c.requiredMetrics}
                     onChange={() =>
-                      handleToggle(c.id!, "requiredActivities")
+                      handleToggle(c.id!, "requiredMetrics")
                     }
                   />
                 </td>

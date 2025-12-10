@@ -84,7 +84,7 @@ export default function AdminDashboardPage() {
         >
           <h2 className="text-xl font-semibold">Словари</h2>
           <p className="text-sm text-green-200">
-            Управление WHAT, WHAT_HAPPENED, ITEM_NAME, UNIT
+            Управление SUB_CATEGORY, CATEGORY, METRIC_NAME, METRIC_UNIT
           </p>
         </Link>
 

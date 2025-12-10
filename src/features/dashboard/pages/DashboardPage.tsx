@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getTimeChartByCategory,
   getSequenceChartByCategory,
-  getTimeChartByWhat,
-  getSequenceChartByWhat,
+  getTimeChartBySubCategory,
+  getSequenceChartBySubCategory,
 } from "@/api/analyticsApi";
 import ActivityChart from "@/features/dashboard/components/ActivityChart";
 import AnalyticsFilters from "@/features/dashboard/components/AnalyticsFilters";
@@ -15,41 +15,45 @@ export default function DashboardPage() {
   // ✅ MULTI CATEGORY
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
 
-  // ✅ MULTI WHAT
-  const [selectedWhatIds, setSelectedWhatIds] = useState<number[]>([]);
+  // ✅ MULTI SUB_CATEGORY
+  const [selectedSubCategoryIds, setSelectedSubCategorIds] = useState<number[]>([]);
 
   const [mode, setMode] = useState<"time" | "sequence">("time");
   const now = new Date();
-  const monthAgo = new Date();
-  monthAgo.setDate(now.getDate() - 30);
+  // ✅ минус 15 дней
+  const fromDate = new Date(now);
+  fromDate.setDate(fromDate.getDate() - 15);
+  // ✅ плюс 15 дней
+  const toDate = new Date(now);
+  toDate.setDate(toDate.getDate() + 15);
 
-  const [from, setFrom] = useState(monthAgo.toISOString());
-  const [to, setTo] = useState(now.toISOString());
+  const [from, setFrom] = useState(fromDate.toISOString());
+  const [to, setTo] = useState(toDate.toISOString());
 
 
   const { data, isLoading, isError } = useQuery<MultiChartResponse>({
     queryKey: [
       "analytics-multi",
-      { mode, selectedCategoryIds, selectedWhatIds, from, to }
+      { mode, selectedCategoryIds, selectedSubCategoryIds: selectedSubCategoryIds, from, to }
     ],
 
     queryFn: async () => {
       const charts: ChartResponse[] = [];
 
-      // ✅ 1. ЕСЛИ ВЫБРАНЫ WHAT — СТРОИМ ПО НИМ
-      if (selectedWhatIds.length > 0) {
-        for (const id of selectedWhatIds) {
+      // ✅ 1. ЕСЛИ ВЫБРАНЫ SUB_CATEGORY — СТРОИМ ПО НИМ
+      if (selectedSubCategoryIds.length > 0) {
+        for (const id of selectedSubCategoryIds) {
           const chart =
             mode === "time"
-              ? await getTimeChartByWhat(id, from, to)
-              : await getSequenceChartByWhat(id, from, to);
+              ? await getTimeChartBySubCategory(id, from, to)
+              : await getSequenceChartBySubCategory(id, from, to);
           charts.push(chart);
         }
 
         return { charts };
       }
 
-      // ✅ 2. ЕСЛИ WHAT НЕ ВЫБРАНЫ — СТРОИМ ПО КАТЕГОРИЯМ
+      // ✅ 2. ЕСЛИ SUB_CATEGORY НЕ ВЫБРАНЫ — СТРОИМ ПО КАТЕГОРИЯМ
       for (const catId of selectedCategoryIds) {
         const chart =
           mode === "time"
@@ -62,7 +66,7 @@ export default function DashboardPage() {
       return { charts };
     },
 
-    enabled: selectedCategoryIds.length > 0 || selectedWhatIds.length > 0,
+    enabled: selectedCategoryIds.length > 0 || selectedSubCategoryIds.length > 0,
   });
 
   return (
@@ -79,8 +83,8 @@ export default function DashboardPage() {
       <AnalyticsFilters
         selectedCategoryIds={selectedCategoryIds}
         setSelectedCategoryIds={setSelectedCategoryIds}
-        selectedWhatIds={selectedWhatIds}
-        setSelectedWhatIds={setSelectedWhatIds}
+        selectedSubCategoryIds={selectedSubCategoryIds}
+        setSelectedSubCategoryIds={setSelectedSubCategorIds}
         from={from}
         to={to}
         setFrom={setFrom}
@@ -90,7 +94,7 @@ export default function DashboardPage() {
       />
 
       {selectedCategoryIds.length === 0 &&
-      selectedWhatIds.length === 0 && (
+      selectedSubCategoryIds.length === 0 && (
         <div className="text-gray-400 mt-10 text-center">
           Выберите категорию или конкретную активность для построения графика
         </div>

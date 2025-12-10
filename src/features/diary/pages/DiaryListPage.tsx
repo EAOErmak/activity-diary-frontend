@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useAuthStore } from "@/shared/store/authStore";
 import { diaryApi } from "@/api/diaryApi";
 import { DatePicker } from "@/shared/components/ui/date-picker";
@@ -9,11 +9,23 @@ import {
   SelectContent,
   SelectItem,
 } from "@/shared/components/ui/select";
-import { Link } from "react-router-dom";
-import type { DiaryEntryDto } from "@/shared/types/diary";
+import { Link, useNavigate } from "react-router-dom";
+import type { DiaryEntry } from "@/shared/types/diary";
+import { getSyncState } from "@/api/syncApi";
+import { useDiaryCache } from "@/shared/store/diaryCache";
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Активно",
+  PLANNED: "Запланировано",
+  FINISHED: "Завершено",
+};
 
 export default function DiaryListPage() {
-  const [entries, setEntries] = useState<DiaryEntryDto[]>([]);
+  const nav = useNavigate();
+
+  const { entries: cachedEntries, version, setEntries: setCache } = useDiaryCache();
+
+  const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,21 +35,36 @@ export default function DiaryListPage() {
 
   const accessToken = useAuthStore((s) => s.accessToken);
 
-  // ============================
-  // LOAD
-  // ============================
+  const didLoad = useRef(false);
 
   useEffect(() => {
+    if (didLoad.current) return;
+    didLoad.current = true;
+
     if (!accessToken) {
       setEntries([]);
       setLoading(false);
       return;
     }
 
-    const fetchEntries = async () => {
+    const load = async () => {
       try {
+        const sync = await getSyncState();
+        if (!sync) {
+          setError("Failed to get sync state");
+          return;
+        }
+        const diaryServerVersion = sync.state.DIARY;
+
+        if (diaryServerVersion === version && cachedEntries.length > 0) {
+          setEntries(cachedEntries);
+          setLoading(false);
+          return;
+        }
+
         const page = await diaryApi.getMyEntries();
         setEntries(page.content);
+        setCache(page.content, diaryServerVersion);
       } catch (err: any) {
         setError(err?.response?.data?.message || err.message);
       } finally {
@@ -45,22 +72,26 @@ export default function DiaryListPage() {
       }
     };
 
-    fetchEntries();
+    load();
   }, [accessToken]);
-
-  // ============================
-  // FILTER
-  // ============================
 
   const filtered = useMemo(() => {
     if (!entries.length) return [];
 
+    const safeSearch = (search ?? "").toLowerCase();
+
     return entries.filter((e) => {
       const byStatus = status ? e.status === status : true;
 
-      const title = e.whatName.toLowerCase();
-      const bySearch = search
-        ? title.includes(search.toLowerCase())
+      const title = (
+        e.subCategoryName ??
+        e.categoryName ??
+        e.status ??
+        ""
+      ).toLowerCase();
+
+      const bySearch = safeSearch
+        ? title.includes(safeSearch)
         : true;
 
       const byDate = (() => {
@@ -82,13 +113,14 @@ export default function DiaryListPage() {
 
   return (
     <div className="min-h-screen bg-[#0E1420] text-white p-6 sm:p-10">
-      {/* ============================
-          HEADER
-      ============================ */}
+      {/* HEADER */}
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold text-blue-400">
-          Мои записи
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold text-blue-400">Мои записи</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Найдено: {filtered.length}
+          </p>
+        </div>
 
         <Link
           to="/diary/new"
@@ -98,12 +130,9 @@ export default function DiaryListPage() {
         </Link>
       </div>
 
-      {/* ============================
-          FILTERS
-      ============================ */}
+      {/* FILTERS */}
       <div className="w-full max-w-6xl mx-auto mb-10 bg-[#151C2C]/70 backdrop-blur-md p-5 rounded-2xl shadow border border-slate-700/50">
         <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
-
           {/* Статус */}
           <div className="flex flex-col flex-1 min-w-[200px]">
             <label className="text-gray-300 text-sm mb-1">Статус</label>
@@ -116,9 +145,9 @@ export default function DiaryListPage() {
               </SelectTrigger>
               <SelectContent className="bg-[#1C2435] border border-slate-700/60 text-gray-200 rounded-2xl shadow-lg">
                 <SelectItem value="ALL">Все</SelectItem>
-                <SelectItem value="ACTIVE">Активный</SelectItem>
-                <SelectItem value="PLANNED">Запланированный</SelectItem>
-                <SelectItem value="FINISHED">Завершённый</SelectItem>
+                <SelectItem value="ACTIVE">Активные</SelectItem>
+                <SelectItem value="PLANNED">Запланированные</SelectItem>
+                <SelectItem value="FINISHED">Завершённые</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -159,9 +188,7 @@ export default function DiaryListPage() {
         </div>
       </div>
 
-      {/* ============================
-          TABLE
-      ============================ */}
+      {/* TABLE */}
       <div className="max-w-6xl mx-auto">
         {filtered.length === 0 ? (
           <div className="text-gray-400 text-center mt-20">
@@ -183,7 +210,7 @@ export default function DiaryListPage() {
                   <th className="px-4 py-3">Что происходило</th>
                   <th className="px-4 py-3">Дата</th>
                   <th className="px-4 py-3">Статус</th>
-                  <th className="px-4 py-3 text-right">Действие</th>
+                  <th className="px-4 py-3 text-right">Действия</th>
                 </tr>
               </thead>
 
@@ -191,19 +218,18 @@ export default function DiaryListPage() {
                 {filtered.map((entry) => (
                   <tr
                     key={entry.id}
-                    onClick={() => window.location.href = `/diary/${entry.id}`}
-                    className="bg-[#0E1420] hover:bg-[#151C2C] transition cursor-pointer"
+                    className="bg-[#0E1420] hover:bg-[#151C2C] transition"
                   >
                     <td className="px-4 py-3 text-gray-400">
                       {entry.id}
                     </td>
 
                     <td className="px-4 py-3 text-blue-400 font-medium">
-                      {entry.whatName}
+                      {entry.subCategoryName}
                     </td>
 
                     <td className="px-4 py-3 text-gray-300">
-                      {entry.whatHappenedName}
+                      {entry.categoryName}
                     </td>
 
                     <td className="px-4 py-3 text-gray-400">
@@ -215,31 +241,40 @@ export default function DiaryListPage() {
                     <td className="px-4 py-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          entry.status === "FINISHED"
+                          entry.status === "FINAL"
                             ? "bg-green-600/20 text-green-400"
-                            : entry.status === "PLANNED"
+                            : entry.status === "DRAFT"
                             ? "bg-yellow-600/20 text-yellow-400"
                             : "bg-blue-600/20 text-blue-400"
                         }`}
                       >
-                        {entry.status}
+                        {STATUS_LABELS[entry.status] ?? entry.status}
                       </span>
                     </td>
 
                     <td className="px-4 py-3 text-right space-x-2">
-                      <Link
-                        to={`/diary/${entry.id}`}
+                      {entry.status === "DRAFT" && (
+                        <button
+                          onClick={() => nav(`/diary/${entry.id}`)}
+                          className="inline-block bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs px-4 py-1 rounded-full"
+                        >
+                          ▶ Продолжить
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => nav(`/diary/${entry.id}`)}
                         className="inline-block bg-slate-600/80 hover:bg-slate-600 text-white text-xs px-4 py-1 rounded-full"
                       >
                         Подробнее
-                      </Link>
+                      </button>
 
-                      <Link
-                        to={`/diary/${entry.id}/edit`}
+                      <button
+                        onClick={() => nav(`/diary/${entry.id}/edit`)}
                         className="inline-block bg-blue-600/80 hover:bg-blue-600 text-white text-xs px-4 py-1 rounded-full"
                       >
                         Редактировать
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 ))}

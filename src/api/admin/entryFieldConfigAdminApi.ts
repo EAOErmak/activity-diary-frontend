@@ -1,33 +1,34 @@
 import api from "../http/axiosInstance";
-import type { EntryFieldConfigDto } from "@/shared/types/diary";
+import type { ApiResponse } from "@/shared/types/api";
+import type { EntryFieldConfig } from "@/shared/types/diary";
 
 // ✅ ПОЛУЧИТЬ ВСЕ КОНФИГИ
-export const getAllAdminEntryConfigs = () => {
-  return api.get<{
-    data: EntryFieldConfigDto[];
-  }>("/admin/entry-config");
+export const getAllAdminEntryConfigs = async (): Promise<EntryFieldConfig[]> => {
+  const { data } = await api.get<ApiResponse<EntryFieldConfig[]>>(
+    "/admin/entry-config"
+  );
+  return data.data;
 };
 
-// ✅ ПОЛУЧИТЬ ОДИН КОНФИГ ПО ID
-//export const getAdminEntryConfigById = (id: number) => {
-//  return api.get<{
-//    data: EntryFieldConfigDto;
-//  }>(`/admin/entry-config/${id}`);
-//};
-
 // ✅ СОЗДАТЬ НОВЫЙ КОНФИГ
-export const createAdminEntryConfig = (payload: EntryFieldConfigDto) => {
-  return api.post<{
-    data: EntryFieldConfigDto;
-  }>("/admin/entry-config", payload);
+export const createAdminEntryConfig = async (
+  payload: EntryFieldConfig
+): Promise<EntryFieldConfig> => {
+  const { data } = await api.post<ApiResponse<EntryFieldConfig>>(
+    "/admin/entry-config",
+    payload
+  );
+  return data.data;
 };
 
 // ✅ ОБНОВИТЬ КОНФИГ
-export const updateAdminEntryConfig = (
+export const updateAdminEntryConfig = async (
   id: number,
-  payload: EntryFieldConfigDto
-) => {
-  return api.put<{
-    data: EntryFieldConfigDto;
-  }>(`/admin/entry-config/${id}`, payload);
+  payload: EntryFieldConfig
+): Promise<EntryFieldConfig> => {
+  const { data } = await api.put<ApiResponse<EntryFieldConfig>>(
+    `/admin/entry-config/${id}`,
+    payload
+  );
+  return data.data;
 };

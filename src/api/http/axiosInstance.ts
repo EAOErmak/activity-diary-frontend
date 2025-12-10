@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
     config.url?.includes("/auth/login") ||
     config.url?.includes("/auth/register") ||
     config.url?.includes("/auth/verification") ||
-    config.url?.includes("/auth/refresh");
+    config.url?.includes("/auth/refresh")
 
   if (accessToken && !isAuthRequest) {
     config.headers = config.headers || {};
@@ -82,7 +82,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post(
+        const res = await api.post(
           "/auth/refresh",            // <<< только /auth/refresh
           { refreshToken },
           {

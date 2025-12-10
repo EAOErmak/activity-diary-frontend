@@ -5,19 +5,18 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { Card } from "@/shared/components/ui/card";
 import { dictionaryApi } from "@/api/dictionaryApi";
 import type { DictionaryItem } from "@/shared/types/dictionary";
-import type { DiaryEntryCreateDto, EntryFieldConfigDto } from "@/shared/types/diary";
+import type { DiaryEntryCreate, EntryFieldConfig } from "@/shared/types/diary";
 import { diaryApi } from "@/api/diaryApi";
-
 
 type ActivityFormItem = {
   id: number;
   nameId: number | null;
   unitId: number | null;
-  value: number; // только для UI
+  value: number;
 };
 
 type Props = {
-  onSubmit: (payload: DiaryEntryCreateDto) => Promise<void> | void;
+  onSubmit: (payload: DiaryEntryCreate) => Promise<void> | void;
   loading?: boolean;
   title?: string;
   submitLabel?: string;
@@ -30,77 +29,85 @@ export default function DiaryEntryForm({
   submitLabel = "Сохранить",
 }: Props) {
   // ===== Dictionaries =====
-  const [whatHappenedList, setWhatHappenedList] = useState<DictionaryItem[]>([]);
-  const [whatList, setWhatList] = useState<DictionaryItem[]>([]);
-  const [itemNames, setItemNames] = useState<DictionaryItem[]>([]);
+  const [categoryList, setCategoryList] = useState<DictionaryItem[]>([]);
+  const [subCategoryList, setSubCategoryList] = useState<DictionaryItem[]>([]);
+  const [metricNames, setMetricNames] = useState<DictionaryItem[]>([]);
   const [units, setUnits] = useState<DictionaryItem[]>([]);
 
   // ===== Selection =====
-  const [whatHappenedId, setWhatHappenedId] = useState<number | null>(null);
-  const [whatId, setWhatId] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
 
-  const [anyDescription, setAnyDescription] = useState("");
-  const [howYouWereFeeling, setFeeling] = useState<number>(3);
+  const [description, setDescription] = useState("");
+  const [mood, setMood] = useState<number>(3);
   const [whenStarted, setWhenStarted] = useState("");
   const [whenEnded, setWhenEnded] = useState("");
 
-  const [config, setConfig] = useState<EntryFieldConfigDto | null>(null);
+  const [config, setConfig] = useState<EntryFieldConfig | null>(null);
 
-  const [activities, setActivities] = useState<ActivityFormItem[]>([
+  const [metrics, setMetrics] = useState<ActivityFormItem[]>([
     { id: 1, nameId: null, unitId: null, value: 1 },
   ]);
 
+  // ✅ ЗАГРУЗКА КОНФИГА ЧЕРЕЗ entryFieldConfigId
   useEffect(() => {
-    if (!whatHappenedId) {
+    if (categoryId === null) {
       setConfig(null);
       return;
     }
 
-    diaryApi.getEntryFieldConfig(whatHappenedId).then((res) => {
-      setConfig(res.data);
-    });
-  }, [whatHappenedId]);
+    const loadConfig = async () => {
+      try {
+        const res = await diaryApi.getEntryFieldConfig(categoryId);
+        setConfig(res);
+      } catch {
+        alert("Ошибка загрузки конфига формы");
+      }
+    };
+
+    loadConfig();
+  }, [categoryId]);
 
   // ===== Load dictionaries =====
   useEffect(() => {
     (async () => {
       const [wh, items, unitsList] = await Promise.all([
-        dictionaryApi.getWhatHappened(),
-        dictionaryApi.getItemNames(),
+        dictionaryApi.getCategory(),
+        dictionaryApi.getMetrics(),
         dictionaryApi.getUnits(),
       ]);
 
-      setWhatHappenedList(wh);
-      setItemNames(items);
+      setCategoryList(wh);
+      setMetricNames(items);
       setUnits(unitsList);
     })();
   }, []);
 
-  // ===== Load WHAT by parent =====
+  // ===== Load SUB_CATEGORY by parent =====
   useEffect(() => {
-    if (!whatHappenedId) {
-      setWhatList([]);
-      setWhatId(null);
+    if (!categoryId) {
+      setSubCategoryList([]);
+      setSubCategoryId(null);
       return;
     }
 
     (async () => {
-      const list = await dictionaryApi.getWhatByParent(whatHappenedId);
-      setWhatList(list);
-      setWhatId(null);
+      const list = await dictionaryApi.getSubCategoryByParent(categoryId);
+      setSubCategoryList(list);
+      setSubCategoryId(null);
     })();
-  }, [whatHappenedId]);
+  }, [categoryId]);
 
   // ===== Activities =====
   const handleAddActivity = () => {
-    setActivities((prev) => [
+    setMetrics((prev) => [
       ...prev,
       { id: Date.now(), nameId: null, unitId: null, value: 1 },
     ]);
   };
 
   const handleRemoveActivity = (id: number) => {
-    setActivities((prev) => prev.filter((a) => a.id !== id));
+    setMetrics((prev) => prev.filter((a) => a.id !== id));
   };
 
   const handleActivityChange = (
@@ -108,7 +115,7 @@ export default function DiaryEntryForm({
     field: keyof ActivityFormItem,
     value: number | null
   ) => {
-    setActivities((prev) =>
+    setMetrics((prev) =>
       prev.map((act) =>
         act.id === id ? { ...act, [field]: value } : act
       )
@@ -119,8 +126,13 @@ export default function DiaryEntryForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!whatHappenedId || !whatId) {
-      alert("Выберите 'Что происходило' и 'Что делал'");
+    if (!categoryId) {
+      alert("Выберите категорию");
+      return;
+    }
+
+    if (config?.requiredSubCategory && !subCategoryId) {
+      alert("Выберите подкатегорию");
       return;
     }
 
@@ -129,21 +141,21 @@ export default function DiaryEntryForm({
       return;
     }
 
-    const filteredActivities = activities.filter(
+    const filteredActivities = metrics.filter(
       (a) => a.nameId !== null && a.unitId !== null && a.value > 0
     );
 
-    const payload: DiaryEntryCreateDto = {
-      whatHappenedId,
-      whatId,
+    const payload: DiaryEntryCreate = {
+      categoryId,
+      subCategoryId,
       whenStarted,
       whenEnded,
-      howYouWereFeeling,
-      anyDescription,
-      whatDidYouDo: filteredActivities.map((a) => ({
-        nameId: a.nameId!,   // ✅ строго backend
-        unitId: a.unitId!,   // ✅ строго backend
-        count: a.value,     // ✅ value -> count
+      mood,
+      description,
+      metrics: filteredActivities.map((a) => ({
+        metricId: a.nameId!,
+        unitId: a.unitId!,
+        value: a.value,
       })),
     };
 
@@ -155,22 +167,19 @@ export default function DiaryEntryForm({
       <h2 className="text-2xl font-semibold mb-4 text-center">{title}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-
-        {/* WHAT HAPPENED */}
+        {/* CATEGORY */}
         <div>
           <label className="block mb-1 text-gray-300">Что происходило</label>
           <select
-            value={whatHappenedId ?? ""}
+            value={categoryId === null ? "" : String(categoryId)}
             onChange={(e) =>
-              setWhatHappenedId(
-                e.target.value ? Number(e.target.value) : null
-              )
+              setCategoryId(e.target.value ? Number(e.target.value) : null)
             }
             className="w-full p-2 rounded bg-slate-800 border border-gray-700"
             required
           >
             <option value="">Выберите...</option>
-            {whatHappenedList.map((wh) => (
+            {categoryList.map((wh) => (
               <option key={wh.id} value={wh.id}>
                 {wh.name}
               </option>
@@ -178,21 +187,23 @@ export default function DiaryEntryForm({
           </select>
         </div>
 
-        {/* WHAT */}
-        {config?.showWhat && (
+        {/* SUB_CATEGORY */}
+        {config?.showSubCategory && (
           <div>
             <label className="block mb-1 text-gray-300">Что делал</label>
             <select
-              value={whatId ?? ""}
+              value={subCategoryId ?? ""}
               onChange={(e) =>
-                setWhatId(e.target.value ? Number(e.target.value) : null)
+                setSubCategoryId(
+                  e.target.value ? Number(e.target.value) : null
+                )
               }
               className="w-full p-2 rounded bg-slate-800 border border-gray-700"
-              required={config?.requiredWhat}
-              disabled={!whatHappenedId}
+              required={config?.requiredSubCategory}
+              disabled={!categoryId}
             >
               <option value="">Сначала выберите 'Что происходило'</option>
-              {whatList.map((w) => (
+              {subCategoryList.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.name}
                 </option>
@@ -208,26 +219,25 @@ export default function DiaryEntryForm({
               Описание / Комментарий
             </label>
             <Textarea
-              value={anyDescription}
-              onChange={(e) => setAnyDescription(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Очень доволен результатом!"
             />
           </div>
         )}
 
         {/* ACTIVITIES */}
-        {config?.showActivities && (
+        {config?.showMetrics && (
           <div>
             <label className="block mb-2 text-gray-300">Активности</label>
 
             <div className="space-y-4">
-              {activities.map((act) => (
+              {metrics.map((act) => (
                 <div
                   key={act.id}
                   className="border border-gray-700 p-3 rounded-xl bg-slate-800 relative"
                 >
                   <div className="grid grid-cols-3 gap-3">
-
                     <select
                       value={act.nameId ?? ""}
                       onChange={(e) =>
@@ -240,7 +250,7 @@ export default function DiaryEntryForm({
                       className="p-2 rounded bg-slate-900 border border-gray-700"
                     >
                       <option value="">Активность</option>
-                      {itemNames.map((n) => (
+                      {metricNames.map((n) => (
                         <option key={n.id} value={n.id}>
                           {n.name}
                         </option>
@@ -281,7 +291,7 @@ export default function DiaryEntryForm({
                     />
                   </div>
 
-                  {activities.length > 1 && (
+                  {metrics.length > 1 && (
                     <Button
                       type="button"
                       onClick={() => handleRemoveActivity(act.id)}
@@ -305,7 +315,7 @@ export default function DiaryEntryForm({
         )}
 
         {/* FEELING */}
-        {config?.showFeeling && (
+        {config?.showMood && (
           <div>
             <label className="block mb-2 text-gray-300">
               Самочувствие (1–5)
@@ -316,9 +326,9 @@ export default function DiaryEntryForm({
                 <button
                   key={lvl}
                   type="button"
-                  onClick={() => setFeeling(lvl)}
+                  onClick={() => setMood(lvl)}
                   className={`w-10 h-10 rounded-full border-2 transition ${
-                    lvl <= howYouWereFeeling
+                    lvl <= mood
                       ? "bg-blue-500 border-blue-400"
                       : "bg-slate-800 border-gray-600"
                   }`}

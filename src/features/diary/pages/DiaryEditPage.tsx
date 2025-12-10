@@ -9,8 +9,8 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { Card } from "@/shared/components/ui/card";
 
 import type {
-  DiaryEntryDto,
-  DiaryEntryUpdateDto,
+  DiaryEntry,
+  DiaryEntryUpdate,
   EntryStatus,
 } from "@/shared/types/diary";
 import type { DictionaryItem } from "@/shared/types/dictionary";
@@ -30,18 +30,18 @@ export default function DiaryEditPage() {
   const [loading, setLoading] = useState(true);
 
   // ===== Dictionaries =====
-  const [whatHappenedList, setWhatHappenedList] = useState<DictionaryItem[]>([]);
-  const [whatList, setWhatList] = useState<DictionaryItem[]>([]);
-  const [itemNames, setItemNames] = useState<DictionaryItem[]>([]);
+  const [categoryList, setCategoryList] = useState<DictionaryItem[]>([]);
+  const [subCategoryList, setSubCategoryList] = useState<DictionaryItem[]>([]);
+  const [metricNames, setMetricNames] = useState<DictionaryItem[]>([]);
   const [units, setUnits] = useState<DictionaryItem[]>([]);
 
   // ===== Fields =====
-  const [whatHappenedId, setWhatHappenedId] = useState<number | null>(null);
-  const [whatId, setWhatId] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
 
-  const [anyDescription, setAnyDescription] = useState("");
-  const [howYouWereFeeling, setFeeling] = useState<number>(3);
-  const [status, setStatus] = useState<EntryStatus>("ACTIVE");
+  const [description, setDescription] = useState("");
+  const [mood, setMood] = useState<number>(3);
+  const [status, setStatus] = useState<EntryStatus>("FINAL");
   const [whenStarted, setWhenStarted] = useState("");
   const [whenEnded, setWhenEnded] = useState("");
 
@@ -51,13 +51,13 @@ export default function DiaryEditPage() {
   useEffect(() => {
     (async () => {
       const [wh, items, unitsList] = await Promise.all([
-        dictionaryApi.getWhatHappened(),
-        dictionaryApi.getItemNames(),
+        dictionaryApi.getCategory(),
+        dictionaryApi.getMetrics(),
         dictionaryApi.getUnits(),
       ]);
 
-      setWhatHappenedList(wh);
-      setItemNames(items);
+      setCategoryList(wh);
+      setMetricNames(items);
       setUnits(unitsList);
     })();
   }, []);
@@ -67,23 +67,23 @@ export default function DiaryEditPage() {
     if (!id) return;
 
     (async () => {
-      const data: DiaryEntryDto = await diaryApi.getEntry(Number(id));
+      const data: DiaryEntry = await diaryApi.getEntry(Number(id));
 
-      setWhatHappenedId(data.whatHappenedId);
-      setWhatId(data.whatId);
-      setAnyDescription(data.anyDescription ?? "");
-      setFeeling(data.howYouWereFeeling ?? 3);
+      setCategoryId(data.categoryId);
+      setSubCategoryId(data.subCategoryId);
+      setDescription(data.description ?? "");
+      setMood(data.mood ?? 3);
       setStatus(data.status as EntryStatus);
       setWhenStarted(data.whenStarted ?? "");
       setWhenEnded(data.whenEnded ?? "");
 
       setActivities(
-        data.whatDidYouDo?.map((a) => ({
+        data.metrics?.map((a) => ({
           id: a.id,
           backendId: a.id,
-          nameId: a.nameId,
+          nameId: a.metricTypeId,
           unitId: a.unitId,
-          value: a.count,
+          value: a.value,
         })) ?? []
       );
 
@@ -93,13 +93,13 @@ export default function DiaryEditPage() {
 
   // ===== Load WHAT by parent =====
   useEffect(() => {
-    if (!whatHappenedId) return;
+    if (!categoryId) return;
 
     (async () => {
-      const list = await dictionaryApi.getWhatByParent(whatHappenedId);
-      setWhatList(list);
+      const list = await dictionaryApi.getSubCategoryByParent(categoryId);
+      setSubCategoryList(list);
     })();
-  }, [whatHappenedId]);
+  }, [categoryId]);
 
   // ===== Activities =====
   const handleActivityChange = (
@@ -133,16 +133,15 @@ export default function DiaryEditPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const payload: DiaryEntryUpdateDto = {
-      whatHappenedId: whatHappenedId ?? undefined,
-      whatId: whatId ?? undefined,
+    const payload: DiaryEntryUpdate = {
+      categoryId: categoryId ?? undefined,
+      subCategoryId: subCategoryId ?? undefined,
       whenStarted,
       whenEnded,
-      howYouWereFeeling,
-      anyDescription,
-      status,
+      mood: mood,
+      description: description,
 
-      whatDidYouDo: activities
+      metrics: activities
         .filter((a) => a.nameId && a.unitId)
         .map((a) => {
           // ✅ СУЩЕСТВУЮЩАЯ АКТИВНОСТЬ (update)
@@ -187,14 +186,14 @@ export default function DiaryEditPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* WHAT HAPPENED */}
         <select
-          value={whatHappenedId ?? ""}
+          value={categoryId ?? ""}
           onChange={(e) =>
-            setWhatHappenedId(e.target.value ? Number(e.target.value) : null)
+            setCategoryId(e.target.value ? Number(e.target.value) : null)
           }
           className="w-full p-2 rounded bg-slate-800"
         >
           <option value="">— Что происходило —</option>
-          {whatHappenedList.map((w) => (
+          {categoryList.map((w) => (
             <option key={w.id} value={w.id}>
               {w.name}
             </option>
@@ -203,14 +202,14 @@ export default function DiaryEditPage() {
 
         {/* WHAT */}
         <select
-          value={whatId ?? ""}
+          value={subCategoryId ?? ""}
           onChange={(e) =>
-            setWhatId(e.target.value ? Number(e.target.value) : null)
+            setSubCategoryId(e.target.value ? Number(e.target.value) : null)
           }
           className="w-full p-2 rounded bg-slate-800"
         >
           <option value="">— Тип активности —</option>
-          {whatList.map((w) => (
+          {subCategoryList.map((w) => (
             <option key={w.id} value={w.id}>
               {w.name}
             </option>
@@ -219,8 +218,8 @@ export default function DiaryEditPage() {
 
         <Textarea
           placeholder="Комментарий"
-          value={anyDescription}
-          onChange={(e) => setAnyDescription(e.target.value)}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
         />
 
         {/* ACTIVITIES */}
@@ -237,7 +236,7 @@ export default function DiaryEditPage() {
               }
             >
               <option value="">Элемент</option>
-              {itemNames.map((n) => (
+              {metricNames.map((n) => (
                 <option key={n.id} value={n.id}>
                   {n.name}
                 </option>

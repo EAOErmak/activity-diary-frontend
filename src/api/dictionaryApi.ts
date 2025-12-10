@@ -10,6 +10,7 @@ import type { ApiResponse } from "@/shared/types/api";
 const mapDictionary = (d: DictionaryResponse): DictionaryItem => ({
   id: d.id,
   name: d.label,
+  entryFieldConfigId: d.entryFieldConfigId ?? null,
 });
 
 // ============================
@@ -41,35 +42,35 @@ const getByTypeAndParent = async (
 // ПУБЛИЧНЫЕ ФУНКЦИИ
 // ============================
 
-// ✅ WHAT_HAPPENED — без parent
-export const getWhatHappened = async (): Promise<DictionaryItem[]> => {
-  return getByType("WHAT_HAPPENED");
+// ✅ CATEGORY — без parent
+export const getCategory = async (): Promise<DictionaryItem[]> => {
+  return getByType("CATEGORY");
 };
 
-// ✅ WHAT — СТРОГО по parentId (ОБЯЗАТЕЛЕН)
-export const getWhatByParent = async (
+// ✅ SUB_CATEGORY — СТРОГО по parentId (ОБЯЗАТЕЛЕН)
+export const getSubCategoryByParent = async (
   parentId: number
 ): Promise<DictionaryItem[]> => {
-  if (!parentId) {
-    throw new Error("parentId is required for WHAT");
+  if (parentId === null || parentId === undefined) {
+    throw new Error("parentId is required");
   }
 
-  return getByTypeAndParent("WHAT", parentId);
+  return getByTypeAndParent("SUB_CATEGORY", parentId);
 };
 
 // ✅ ITEM_NAME
-export const getItemNames = async (): Promise<DictionaryItem[]> => {
-  return getByType("ITEM_NAME");
+export const getMetrics = async (): Promise<DictionaryItem[]> => {
+  return getByType("METRIC_NAME");
 };
 
 // ✅ UNIT
 export const getUnits = async (): Promise<DictionaryItem[]> => {
-  return getByType("UNIT");
+  return getByType("METRIC_UNIT");
 };
 
 export const dictionaryApi = {
-  getWhatHappened,
-  getWhatByParent,
-  getItemNames,
+  getCategory,
+  getSubCategoryByParent,
+  getMetrics,
   getUnits,
 };

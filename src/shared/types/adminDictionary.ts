@@ -1,38 +1,41 @@
-// src/shared/types/adminDictionary.ts
-
 import type { DictionaryType } from "./dictionary";
 
-export type DictionaryCreateDto = {
+export type DictionaryCreate = {
   type: DictionaryType;
   label: string;
 
   // ✅ доступ по ролям
   allowedRole?: string | null;
 
-  // ✅ обязательно для WHAT
+  // ✅ обязательно для SUB_CATEGORY
   parentId?: number | null;
 
-  // ✅ обязательно для WHAT_HAPPENED
+  // ✅ обязательно для CATEGORY
   chartType?: "REPS_SUM" | "TIME_RANGE" | "COUNT_PER_DAY" | "MOOD_AVERAGE";
 
   // ✅ НОВОЕ: привязка конфига
   entryFieldConfigId?: number;
 };
 
-export type DictionaryUpdateDto = {
+export type DictionaryUpdate = {
   label?: string;
   active?: boolean;
   allowedRole?: string | null;
 };
 
-export type DictionaryResponseDto = {
+export type DictionaryResponse = {
   id: number;
   type: DictionaryType;
   label: string;
   active: boolean;
   allowedRole: string | null;
+
+  chartType?: "REPS_SUM" | "TIME_RANGE" | "COUNT_PER_DAY" | "MOOD_AVERAGE"; // ✅ ДОБАВИТЬ
+  entryFieldConfigId?: number | null; // ✅ ДОБАВИТЬ
+
   createdAt: string;
   updatedAt: string;
 };
 
-export type DictionaryListItemDto = DictionaryResponseDto;
+
+export type DictionaryListItem = DictionaryResponse;

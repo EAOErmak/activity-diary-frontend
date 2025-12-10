@@ -7,12 +7,12 @@ import type { MultiChartResponse } from "@/shared/types/analytics";
 ======================================================== */
 
 export async function getTimeChartByCategory(
-  whatHappenedId: number,
+  categoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> {
   const r = await api.get<ChartResponse>(
-    `/analytics/time/category/${whatHappenedId}`,
+    `/analytics/time/category/${categoryId}`,
     {
       params: { from, to },
     }
@@ -22,16 +22,16 @@ export async function getTimeChartByCategory(
 }
 
 /* ========================================================
-   TIME BY WHAT
+   TIME BY SUB-CATEGORY
 ======================================================== */
 
-export const getTimeChartByWhat = async (
-  whatId: number,
+export const getTimeChartBySubCategory = async (
+  subCategoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> => {
   const r = await api.get<ChartResponse>(
-    `/analytics/time/what/${whatId}`,
+    `/analytics/time/sub-category/${subCategoryId}`,
     {
       params: { from, to },
     }
@@ -45,12 +45,12 @@ export const getTimeChartByWhat = async (
 ======================================================== */
 
 export const getSequenceChartByCategory = async (
-  whatHappenedId: number,
+  categoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> => {
   const r = await api.get<ChartResponse>(
-    `/analytics/sequence/category/${whatHappenedId}`,
+    `/analytics/sequence/category/${categoryId}`,
     {
       params: { from, to },
     }
@@ -60,16 +60,16 @@ export const getSequenceChartByCategory = async (
 };
 
 /* ========================================================
-   SEQUENCE BY WHAT
+  SEQUENCE BY SUB_CATEGORY
 ======================================================== */
 
-export const getSequenceChartByWhat = async (
-  whatId: number,
+export const getSequenceChartBySubCategory = async (
+  subCategoryId: number,
   from: string,
   to: string
 ): Promise<ChartResponse> => {
   const r = await api.get<ChartResponse>(
-    `/analytics/sequence/what/${whatId}`,
+    `/analytics/sequence/sub-category/${subCategoryId}`,
     {
       params: { from, to },
     }
@@ -80,14 +80,14 @@ export const getSequenceChartByWhat = async (
 
 export async function getMultiChart(
   mode: "time" | "sequence",
-  targets: { type: "category" | "what"; id: number }[],
+  targets: { type: "category" | "sub-category"; id: number }[],
   from: string,
   to: string
 ): Promise<MultiChartResponse> {
   const requests = targets.map((t) => {
     const url =
-      t.type === "what"
-        ? `/analytics/${mode}/what/${t.id}`
+      t.type === "sub-category"
+        ? `/analytics/${mode}/sub-category/${t.id}`
         : `/analytics/${mode}/category/${t.id}`;
 
     return api.get(url, { params: { from, to } });

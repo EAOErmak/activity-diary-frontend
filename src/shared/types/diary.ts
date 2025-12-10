@@ -2,108 +2,115 @@
 // ENUMS
 // ==============================
 
-export type EntryStatus = "ACTIVE" | "PLANNED" | "FINISHED";
+export type EntryStatus = "DRAFT" | "FINAL" | "DELETED";
+
 
 // ==============================
 // ACTIVITY ITEMS
 // ==============================
 
-export type ActivityItemCreateDto = {
-  nameId: number;
+export type EntryMetricCreate = {
+  metricId: number;
   unitId: number;
-  count: number;
+  value: number;
 };
 
-export type ActivityItemUpdateDto = {
+export type EntryMetricUpdate = {
   id: number;
-  nameId: number;
+  metricId: number;
   unitId: number;
-  count: number;
+  value: number;
 };
 
-export type ActivityItemResponseDto = {
+export type EntryMetricResponse = {
   id: number;
-  nameId: number;
+  metricTypeId: number;
+  metricTypeName: string;
+  unitId: number;
+  unitName: string;
+  value: number;
+};
+
+
+// ==============================
+// ENTRY FIELD CONFIG
+// ==============================
+
+export type EntryFieldConfig = {
+  id?: number;
   name: string;
-  unitId: number;
-  unit: string;
-  count: number;
-};
 
-// ==============================
-// DIARY ENTRY FIELD CONFIG
-// ==============================
-
-export type EntryFieldConfigDto = {
-  id?: number;          // ✅ теперь есть
-  name: string;         // ✅ ты добавил это в БД
-
-  whatHappenedId?: number;
-
-  showWhat: boolean;
-  showActivities: boolean;
-  showFeeling: boolean;
+  showSubCategory: boolean;
+  showMetrics: boolean;
+  showMood: boolean;
   showDescription: boolean;
 
-  requiredWhat: boolean;
-  requiredActivities: boolean;
+  requiredSubCategory: boolean;
+  requiredMetrics: boolean;
 };
 
 // ==============================
-// DIARY ENTRY
+// DIARY ENTRY (CREATE / UPDATE)
 // ==============================
 
-export type DiaryEntryCreateDto = {
-  whatHappenedId: number;
-  whatId: number;
-  whenStarted?: string; // LocalDateTime → ISO string
-  whenEnded?: string;
-  howYouWereFeeling?: number; // Short
-  anyDescription?: string;
-  status?: EntryStatus;
-  whatDidYouDo?: ActivityItemCreateDto[];
-};
+export type DiaryEntryCreate = {
+  categoryId: number;
+  subCategoryId: number | null;
 
-export type DiaryEntryUpdateDto = {
-  whatHappenedId?: number;
-  whatId?: number;
   whenStarted?: string;
   whenEnded?: string;
-  howYouWereFeeling?: number;
-  anyDescription?: string;
-  status?: EntryStatus;
 
-  // ✅ ВАЖНО: теперь поддерживает И create, И update
-  whatDidYouDo?: (ActivityItemUpdateDto | ActivityItemCreateDto)[];
+  mood?: number;
+  description?: string;
+
+  metrics?: EntryMetricCreate[];
 };
 
-export type DiaryEntryDto = {
+export type DiaryEntryUpdate = {
+  categoryId?: number;
+  subCategoryId?: number;
+
+  whenStarted?: string;
+  whenEnded?: string;
+
+  mood?: number;
+  description?: string;
+
+  metrics?: (EntryMetricUpdate | EntryMetricCreate)[];
+};
+
+// ==============================
+// DIARY ENTRY (READ)
+// ==============================
+
+export type DiaryEntry = {
   id: number;
 
-  whatHappenedId: number;
-  whatHappenedName: string;
+  categoryId: number;
+  categoryName: string;
 
-  whatId: number;
-  whatName: string;
+  subCategoryId: number;
+  subCategoryName: string;
 
   whenStarted: string | null;
   whenEnded: string | null;
   duration: number | null;
 
-  howYouWereFeeling: number | null;
-  anyDescription: string | null;
+  mood: number | null;
+  description: string | null;
   status: EntryStatus;
 
   userId: number;
 
-  whatDidYouDo: ActivityItemResponseDto[];
+  metrics: EntryMetricResponse[];
 
-  createdAt: string; // Instant
-  updatedAt: string; // Instant
+  createdAt: string;
+  updatedAt: string;
 };
 
+
 // ==============================
-// PAGINATION (SPRING PAGE)
+// PAGINATION
 // ==============================
 
 export type Page<T> = {
