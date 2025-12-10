@@ -2,13 +2,13 @@ import RegisterForm from "@/features/auth/components/RegisterForm";
 import { registerRequest } from "@/api/authApi";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/shared/store/authStore";
-import type { RegisterFormData } from "@/shared/types/auth";
+import type { RegisterRequest } from "@/shared/types/auth";
 
 export default function RegisterPage() {
   const nav = useNavigate();
   const setAuthData = useAuthStore((s) => s.setAuthData);
 
-  async function handle(data: RegisterFormData) {
+  async function handle(data: RegisterRequest) {
     try {
       const payload = await registerRequest({
         username: data.username,

@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { diaryApi } from "@/api/diaryApi";
 import type {
-  DiaryEntryCreateDto,
-  DiaryEntryUpdateDto,
-  DiaryEntryDto,
+  DiaryEntryCreate,
+  DiaryEntryUpdate,
+  DiaryEntry,
   Page,
 } from "@/shared/types/diary";
 
@@ -11,7 +11,7 @@ import type {
 // GET MY ENTRIES (PAGE)
 // ==============================
 export const useDiaryEntries = (page = 0, size = 20) => {
-  return useQuery<Page<DiaryEntryDto>, Error>({
+  return useQuery<Page<DiaryEntry>, Error>({
     queryKey: ["diaries", page, size],
     queryFn: () => diaryApi.getMyEntries(page, size)
   });
@@ -21,7 +21,7 @@ export const useDiaryEntries = (page = 0, size = 20) => {
 // GET ONE ENTRY
 // ==============================
 export const useDiaryEntry = (id?: number) => {
-  return useQuery<DiaryEntryDto, Error>({
+  return useQuery<DiaryEntry, Error>({
     queryKey: ["diary", id],
     queryFn: () => diaryApi.getEntry(id as number),
     enabled: typeof id === "number",
@@ -34,7 +34,7 @@ export const useDiaryEntry = (id?: number) => {
 export const useCreateDiaryEntry = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<DiaryEntryDto, Error, DiaryEntryCreateDto>({
+  return useMutation<DiaryEntry, Error, DiaryEntryCreate>({
     mutationFn: (entry) => diaryApi.createEntry(entry),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["diaries"] });
@@ -47,13 +47,13 @@ export const useCreateDiaryEntry = () => {
 // ==============================
 type UpdateDiaryArgs = {
   id: number;
-  entry: DiaryEntryUpdateDto;
+  entry: DiaryEntryUpdate;
 };
 
 export const useUpdateDiaryEntry = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<DiaryEntryDto, Error, UpdateDiaryArgs>({
+  return useMutation<DiaryEntry, Error, UpdateDiaryArgs>({
     mutationFn: ({ id, entry }) => diaryApi.updateEntry(id, entry),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["diaries"] });

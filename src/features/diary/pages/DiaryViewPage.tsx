@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { diaryApi } from "@/api/diaryApi";
 import { DiaryEntryView } from "../components/DiaryEntryView";
-import type { DiaryEntryDto } from "@/shared/types/diary";
+import type { DiaryEntry } from "@/shared/types/diary";
 
 export default function DiaryViewPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,7 +14,7 @@ export default function DiaryViewPage() {
     data,
     isLoading,
     isError,
-  } = useQuery<DiaryEntryDto>({
+  } = useQuery<DiaryEntry>({
     queryKey: ["entry", entryId],
     queryFn: () => diaryApi.getEntry(entryId),
     enabled: !!entryId,

@@ -147,18 +147,18 @@ export default function DiaryEditPage() {
           // ✅ СУЩЕСТВУЮЩАЯ АКТИВНОСТЬ (update)
           if (a.backendId) {
             return {
-              id: a.backendId,      // строго number
-              nameId: a.nameId!,
+              id: a.backendId,          // ✅ обязателен для update
+              metricId: a.nameId!,     // ✅ НЕ nameId
               unitId: a.unitId!,
-              count: a.value,
+              value: a.value,          // ✅ НЕ count
             };
           }
 
           // ✅ НОВАЯ АКТИВНОСТЬ (create)
           return {
-            nameId: a.nameId!,
+            metricId: a.nameId!,       // ✅ НЕ nameId
             unitId: a.unitId!,
-            count: a.value,
+            value: a.value,            // ✅ НЕ count
           };
         }),
     };
