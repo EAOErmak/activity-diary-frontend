@@ -2,8 +2,7 @@
 // ENUMS
 // ==============================
 
-export type EntryStatus = "DRAFT" | "FINAL" | "DELETED";
-
+export type EntryStatus = "WIN" | "LOSE" | "DELETED";
 
 // ==============================
 // ACTIVITY ITEMS
@@ -75,6 +74,8 @@ export type DiaryEntryUpdate = {
 
   mood?: number;
   description?: string;
+
+  status?: EntryStatus;
 
   metrics?: (EntryMetricUpdate | EntryMetricCreate)[];
 };

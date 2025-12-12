@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import DiaryEntryForm from "@/shared/components/forms/DiaryEntryForm";
+import DiaryEntryForm from "@/features/diary/components/DiaryEntryForm";
 import { useCreateDiaryEntry } from "@/features/diary/hooks/useDiary";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
 

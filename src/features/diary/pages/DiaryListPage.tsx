@@ -14,11 +14,55 @@ import type { DiaryEntry } from "@/shared/types/diary";
 import { getSyncState } from "@/api/syncApi";
 import { useDiaryCache } from "@/shared/store/diaryCache";
 
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: "Активно",
+type DisplayStatus = "WIN" | "LOSE" | "ACTIVE" | "PLANNED";
+
+// то, что реально хранится в БД
+type BackendStatus = "WIN" | "LOSE" | "DELETED";
+
+const STATUS_LABELS: Record<DisplayStatus, string> = {
+  WIN: "Успех",
+  LOSE: "Провал",
+  ACTIVE: "В процессе",
   PLANNED: "Запланировано",
-  FINISHED: "Завершено",
 };
+
+// вычисляем “отображаемый” статус по времени и backend-статусу
+function getDisplayStatus(entry: DiaryEntry): DisplayStatus {
+  const backendStatus = entry.status as BackendStatus;
+
+  const startStr = entry.whenStarted;
+  const endStr = entry.whenEnded;
+
+  // если нет времени —fallback в то, что пришло из бэка (DELETED → LOSE)
+  if (!startStr || !endStr) {
+    if (backendStatus === "WIN" || backendStatus === "LOSE") {
+      return backendStatus;
+    }
+    return "LOSE";
+  }
+
+  const now = new Date();
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+
+  // сейчас идёт
+  if (now >= start && now <= end) {
+    return "ACTIVE";
+  }
+
+  // в будущем
+  if (now < start) {
+    return "PLANNED";
+  }
+
+  // в прошлом — берём окончательный статус
+  if (backendStatus === "WIN" || backendStatus === "LOSE") {
+    return backendStatus;
+  }
+
+  // на всякий случай
+  return "LOSE";
+}
 
 export default function DiaryListPage() {
   const nav = useNavigate();
@@ -29,7 +73,7 @@ export default function DiaryListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<DisplayStatus | "" >("");
   const [search, setSearch] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
 
@@ -81,12 +125,14 @@ export default function DiaryListPage() {
     const safeSearch = (search ?? "").toLowerCase();
 
     return entries.filter((e) => {
-      const byStatus = status ? e.status === status : true;
+      const displayStatus = getDisplayStatus(e);
+
+      const byStatus = status ? displayStatus === status : true;
 
       const title = (
         e.subCategoryName ??
         e.categoryName ??
-        e.status ??
+        displayStatus ??
         ""
       ).toLowerCase();
 
@@ -138,16 +184,19 @@ export default function DiaryListPage() {
             <label className="text-gray-300 text-sm mb-1">Статус</label>
             <Select
               value={status || "ALL"}
-              onValueChange={(v) => setStatus(v === "ALL" ? "" : v)}
+              onValueChange={(v) =>
+                setStatus(v === "ALL" ? "" : (v as DisplayStatus))
+              }
             >
               <SelectTrigger className="bg-[#1C2435] border-none text-gray-100 rounded-2xl w-full h-11 px-4 text-sm">
                 <SelectValue placeholder="Все статусы" />
               </SelectTrigger>
               <SelectContent className="bg-[#1C2435] border border-slate-700/60 text-gray-200 rounded-2xl shadow-lg">
                 <SelectItem value="ALL">Все</SelectItem>
-                <SelectItem value="ACTIVE">Активные</SelectItem>
-                <SelectItem value="PLANNED">Запланированные</SelectItem>
-                <SelectItem value="FINISHED">Завершённые</SelectItem>
+                <SelectItem value="ACTIVE">В процессе</SelectItem>
+                <SelectItem value="PLANNED">Запланировано</SelectItem>
+                <SelectItem value="WIN">Успех</SelectItem>
+                <SelectItem value="LOSE">Провал</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -215,69 +264,72 @@ export default function DiaryListPage() {
               </thead>
 
               <tbody className="divide-y divide-slate-700">
-                {filtered.map((entry) => (
-                  <tr
-                    key={entry.id}
-                    className="bg-[#0E1420] hover:bg-[#151C2C] transition"
-                  >
-                    <td className="px-4 py-3 text-gray-400">
-                      {entry.id}
-                    </td>
+                {filtered.map((entry) => {
+                  const displayStatus = getDisplayStatus(entry);
 
-                    <td className="px-4 py-3 text-blue-400 font-medium">
-                      {entry.subCategoryName}
-                    </td>
+                  const statusClass =
+                    displayStatus === "WIN"
+                      ? "bg-green-600/20 text-green-400"
+                      : displayStatus === "LOSE"
+                      ? "bg-red-600/20 text-red-400"
+                      : displayStatus === "ACTIVE"
+                      ? "bg-blue-600/20 text-blue-400"
+                      : "bg-yellow-600/20 text-yellow-400";
 
-                    <td className="px-4 py-3 text-gray-300">
-                      {entry.categoryName}
-                    </td>
+                  return (
+                    <tr
+                      key={entry.id}
+                      className="bg-[#0E1420] hover:bg-[#151C2C] transition"
+                    >
+                      <td className="px-4 py-3 text-gray-400">
+                        {entry.id}
+                      </td>
 
-                    <td className="px-4 py-3 text-gray-400">
-                      {entry.whenStarted
-                        ? new Date(entry.whenStarted).toLocaleDateString()
-                        : "—"}
-                    </td>
+                      <td className="px-4 py-3 text-blue-400 font-medium">
+                        {entry.subCategoryName}
+                      </td>
 
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          entry.status === "FINAL"
-                            ? "bg-green-600/20 text-green-400"
-                            : entry.status === "DRAFT"
-                            ? "bg-yellow-600/20 text-yellow-400"
-                            : "bg-blue-600/20 text-blue-400"
-                        }`}
-                      >
-                        {STATUS_LABELS[entry.status] ?? entry.status}
-                      </span>
-                    </td>
+                      <td className="px-4 py-3 text-gray-300">
+                        {entry.categoryName}
+                      </td>
 
-                    <td className="px-4 py-3 text-right space-x-2">
-                      {entry.status === "DRAFT" && (
+                      <td className="px-4 py-3 text-gray-400">
+                        {entry.whenStarted
+                          ? new Date(entry.whenStarted).toLocaleDateString()
+                          : "—"}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass}`}
+                        >
+                          {STATUS_LABELS[displayStatus]}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-right space-x-2">
+                        {/* открыть всегда можно */}
                         <button
                           onClick={() => nav(`/diary/${entry.id}`)}
-                          className="inline-block bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs px-4 py-1 rounded-full"
+                          className="inline-block bg-slate-600/80 hover:bg-slate-600 text-white text-xs px-4 py-1 rounded-full"
                         >
-                          ▶ Продолжить
+                          Подробнее
                         </button>
-                      )}
 
-                      <button
-                        onClick={() => nav(`/diary/${entry.id}`)}
-                        className="inline-block bg-slate-600/80 hover:bg-slate-600 text-white text-xs px-4 py-1 rounded-full"
-                      >
-                        Подробнее
-                      </button>
-
-                      <button
-                        onClick={() => nav(`/diary/${entry.id}/edit`)}
-                        className="inline-block bg-blue-600/80 hover:bg-blue-600 text-white text-xs px-4 py-1 rounded-full"
-                      >
-                        Редактировать
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                        {/* редактировать имеет смысл только для PLANNED / ACTIVE */}
+                        {(displayStatus === "PLANNED" ||
+                          displayStatus === "ACTIVE") && (
+                          <button
+                            onClick={() => nav(`/diary/${entry.id}/edit`)}
+                            className="inline-block bg-blue-600/80 hover:bg-blue-600 text-white text-xs px-4 py-1 rounded-full"
+                          >
+                            Редактировать
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

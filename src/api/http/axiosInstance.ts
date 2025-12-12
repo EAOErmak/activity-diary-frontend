@@ -3,8 +3,7 @@ import { useAuthStore } from "@/shared/store/authStore";
 
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_BASE_URL ||
-    "https://activity-diary-backend.onrender.com/api",
+    import.meta.env.VITE_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
 });
 
