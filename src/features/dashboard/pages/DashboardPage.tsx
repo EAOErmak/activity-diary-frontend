@@ -21,11 +21,12 @@ export default function DashboardPage() {
   const [mode, setMode] = useState<"time" | "sequence">("time");
   const now = new Date();
   // ✅ минус 15 дней
+  // от (месяц назад, включая сегодняшний день)
   const fromDate = new Date(now);
-  fromDate.setDate(fromDate.getDate() - 15);
-  // ✅ плюс 15 дней
+  fromDate.setMonth(fromDate.getMonth() - 1);
+
+  // до (сегодня)
   const toDate = new Date(now);
-  toDate.setDate(toDate.getDate() + 15);
 
   const [from, setFrom] = useState(fromDate.toISOString());
   const [to, setTo] = useState(toDate.toISOString());

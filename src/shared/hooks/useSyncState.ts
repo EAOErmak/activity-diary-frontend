@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSyncState } from "@/api/syncApi";
-import type {SyncEntityType} from "@/shared/types/sync";
+import type { SyncEntityType } from "@/shared/types/sync";
+import { useSyncStore } from "@/shared/store/syncStore";
 
 type LocalSyncState = Record<SyncEntityType, number>;
 
@@ -11,19 +12,32 @@ const DEFAULT_SYNC: LocalSyncState = {
   PROFILE: 0,
 };
 
+// =======================
+// INIT (ОДИН РАЗ)
+// =======================
+export function useSyncInit() {
+  const { initialized, setSync } = useSyncStore();
+  const onceRef = useRef(false);
+
+  useEffect(() => {
+    if (initialized || onceRef.current) return;
+    onceRef.current = true;
+
+    getSyncState().then((res) => {
+      if (!res) return;
+      setSync(res.state);
+    });
+  }, [initialized, setSync]);
+}
+
+// =======================
+// STATE
+// =======================
 export function useSyncState() {
-  const [serverSync, setServerSync] = useState<LocalSyncState | null>(null);
   const [localSync, setLocalSync] = useState<LocalSyncState>(() => {
     const raw = localStorage.getItem("sync-state");
     return raw ? JSON.parse(raw) : DEFAULT_SYNC;
   });
-
-  useEffect(() => {
-    getSyncState().then((res) => {
-      if (!res) return;          // ✅ защита от null
-      setServerSync(res.state);
-    });
-  }, []);
 
   function updateLocal(type: SyncEntityType, version: number) {
     const next = { ...localSync, [type]: version };
@@ -31,15 +45,8 @@ export function useSyncState() {
     localStorage.setItem("sync-state", JSON.stringify(next));
   }
 
-  function isOutdated(type: SyncEntityType) {
-    if (!serverSync) return false;
-    return serverSync[type] !== localSync[type];
-  }
-
   return {
-    serverSync,
     localSync,
-    isOutdated,
     updateLocal,
   };
 }

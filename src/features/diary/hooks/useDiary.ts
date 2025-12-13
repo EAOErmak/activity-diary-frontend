@@ -7,6 +7,8 @@ import type {
   Page,
 } from "@/shared/types/diary";
 
+import { useSyncStore } from "@/shared/store/syncStore";
+
 // ==============================
 // GET MY ENTRIES (PAGE)
 // ==============================
@@ -33,11 +35,14 @@ export const useDiaryEntry = (id?: number) => {
 // ==============================
 export const useCreateDiaryEntry = () => {
   const queryClient = useQueryClient();
+  const bump = useSyncStore((s) => s.bump);
 
   return useMutation<DiaryEntry, Error, DiaryEntryCreate>({
     mutationFn: (entry) => diaryApi.createEntry(entry),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["diaries"] });
+      queryClient.invalidateQueries({ queryKey: ["diaries"] });
+      bump("DIARY");
     },
   });
 };
@@ -53,11 +58,15 @@ type UpdateDiaryArgs = {
 export const useUpdateDiaryEntry = () => {
   const queryClient = useQueryClient();
 
+  const bump = useSyncStore((s) => s.bump);
+
   return useMutation<DiaryEntry, Error, UpdateDiaryArgs>({
     mutationFn: ({ id, entry }) => diaryApi.updateEntry(id, entry),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["diaries"] });
       queryClient.invalidateQueries({ queryKey: ["diary"] });
+      queryClient.invalidateQueries({ queryKey: ["diaries"] });
+      bump("DIARY")
     },
   });
 };

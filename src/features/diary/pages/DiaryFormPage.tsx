@@ -1,30 +1,22 @@
-import { useNavigate } from "react-router-dom";
 import DiaryEntryForm from "@/features/diary/components/DiaryEntryForm";
-import { useCreateDiaryEntry } from "@/features/diary/hooks/useDiary";
+import { diaryApi } from "@/api/diaryApi";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
+import { useNavigate } from "react-router-dom";
 
 export default function DiaryFormPage() {
   const nav = useNavigate();
 
-  const { mutateAsync, isPending } = useCreateDiaryEntry();
-
-  const handleCreate = async (payload: DiaryEntryCreate) => {
-    try {
-      await mutateAsync(payload);
-      alert("✅ Запись успешно добавлена!");
-      nav("/diary");
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.response?.data?.message || "Ошибка при создании записи");
-    }
+  const handleSubmit = async (payload: DiaryEntryCreate) => {
+    await diaryApi.createEntry(payload);
+    nav("/diary");
   };
 
   return (
     <DiaryEntryForm
-      onSubmit={handleCreate}
-      loading={isPending}
+      mode="create"
       title="Новая запись"
-      submitLabel="Добавить запись"
+      submitLabel="Создать"
+      onSubmit={handleSubmit}
     />
   );
 }
