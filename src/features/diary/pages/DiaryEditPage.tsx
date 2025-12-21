@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 
 import DiaryEntryForm, {
   DiaryEntryFormValues,
-} from "@/features/diary/components/DiaryEntryForm";
+} from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
 
 import { diaryApi } from "@/api/diaryApi";
 import type { DiaryEntry, DiaryEntryUpdate } from "@/shared/types/diary";

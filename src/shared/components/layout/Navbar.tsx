@@ -1,7 +1,5 @@
-import React, { useContext } from "react";
-import { ThemeContext } from "@/theme-provider";
 import { Link, useNavigate } from "react-router-dom";
-import { Moon, User, LogOut, Shield } from "lucide-react";
+import { Moon, Sun, User, LogOut, Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -12,40 +10,58 @@ import {
 } from "@/shared/components/ui/dropdown-menu";
 import { Button } from "@/shared/components/ui/button";
 import { useAuthStore } from "@/shared/store/authStore";
+import { useTheme } from "@/theme-provider";
 
 export default function Navbar() {
   const { username, isAuthenticated, logout, role } = useAuthStore();
+  const { theme, toggleTheme } = useTheme();
   const nav = useNavigate();
-  const { theme, setTheme } = useContext(ThemeContext);
 
   return (
-    <header className="bg-[#0E1420] border-b border-slate-800/70 shadow-md">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-        <Link to="/" className="text-xl font-bold text-white">
-          Activity<span className="text-blue-500">Diary</span>
+    <header className="border-b border-border bg-surface">
+      <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-3">
+        {/* LOGO */}
+        <Link
+          to="/"
+          className="text-xl font-bold text-surfaceForeground"
+        >
+          Activity
+          <span className="text-primary">Diary</span>
         </Link>
 
         <div className="flex items-center gap-4">
+          {/* THEME TOGGLE */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="bg-[#151C2C] text-yellow-400 hover:bg-[#1C2435]"
+            onClick={toggleTheme}
+            className="hover:bg-surfaceMuted"
           >
-            <Moon className="h-5 w-5" />
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
           </Button>
 
+          {/* USER MENU */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="bg-[#151C2C] hover:bg-[#1C2435] p-2 rounded-full text-gray-300">
+              <button
+                className="
+                  rounded-full p-2
+                  text-mutedForeground
+                  hover:bg-surfaceMuted
+                "
+              >
                 <User className="h-5 w-5" />
               </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent className="w-52 bg-[#1C2435] text-gray-200 border border-slate-700/60 rounded-2xl shadow-lg mt-2">
+            <DropdownMenuContent className="w-52 bg-surface text-surfaceForeground border border-border">
               {isAuthenticated ? (
                 <>
-                  <DropdownMenuLabel className="text-blue-400 font-semibold">
+                  <DropdownMenuLabel className="font-semibold">
                     {username}
                   </DropdownMenuLabel>
 
@@ -63,7 +79,7 @@ export default function Navbar() {
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => nav("/admin")}>
-                        <Shield className="h-4 w-4 mr-2" />
+                        <Shield className="mr-2 h-4 w-4" />
                         Админ-панель
                       </DropdownMenuItem>
                     </>
@@ -76,9 +92,9 @@ export default function Navbar() {
                       logout();
                       nav("/", { replace: true });
                     }}
-                    className="text-red-400"
+                    className="text-event-loseText"
                   >
-                    <LogOut className="h-4 w-4 mr-2" />
+                    <LogOut className="mr-2 h-4 w-4" />
                     Выйти
                   </DropdownMenuItem>
                 </>

@@ -26,7 +26,7 @@ export default function AdminLayout() {
 
         <div className="mt-auto">
           <Button
-            variant="destructive"
+            variant="danger"
             className="w-full"
             onClick={() => {
               nav("/diary", { replace: true });

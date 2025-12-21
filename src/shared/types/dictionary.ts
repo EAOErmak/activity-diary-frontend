@@ -30,8 +30,15 @@ export type DictionaryResponse = {
 // FRONT UI MODEL
 // ==============================
 
-export type DictionaryItem = {
+export type DictionaryEntity = {
   id: number;
-  name: string;
+  type: DictionaryType;
+  label: string;
+  parentId?: number | null;
   entryFieldConfigId?: number | null;
 };
+
+export type DictionaryPayload = Record<
+  DictionaryType,
+  DictionaryEntity[]
+>;

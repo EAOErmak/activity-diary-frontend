@@ -1,11 +1,11 @@
-import React from "react";
+import { useEffect, useMemo } from "react";
 import { QueryProvider } from "./providers/QueryProvider";
 import { ThemeProvider } from "./theme-provider";
 import AppRouter from "./router/AppRouter";
-import { useSyncInit } from "@/shared/hooks/useSyncState";
+import { useAppBootstrap } from "./shared/hooks/useAppBootstrap";
 
 export default function App() {
-  useSyncInit();
+  useAppBootstrap();
   return (
     <ThemeProvider>
       <QueryProvider>

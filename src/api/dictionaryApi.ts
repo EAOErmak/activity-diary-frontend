@@ -1,40 +1,75 @@
 // src/api/dictionaryApi.ts
 import api from "./http/axiosInstance";
 import type {
-  DictionaryItem,
   DictionaryResponse,
   DictionaryType,
+  DictionaryEntity,
 } from "@/shared/types/dictionary";
 import type { ApiResponse } from "@/shared/types/api";
 
-const mapDictionary = (d: DictionaryResponse): DictionaryItem => ({
+const mapDictionary = (d: DictionaryResponse): DictionaryEntity => ({
   id: d.id,
-  name: d.label,
+  type: d.type,
+  label: d.label,
+  parentId: d.parentId ?? null,
   entryFieldConfigId: d.entryFieldConfigId ?? null,
 });
 
 // ============================
-// БАЗОВЫЕ ЗАПРОСЫ
+// ALL (FOR SYNC)
 // ============================
 
-const getByType = async (type: DictionaryType): Promise<DictionaryItem[]> => {
-  const r = await api.get<ApiResponse<DictionaryResponse[]>>(
-    `/dict/${type}`
+export const getAll = async (): Promise<{
+  data: Record<DictionaryType, DictionaryEntity[]>;
+  version: number;
+}> => {
+  const { data } = await api.get<ApiResponse<DictionaryResponse[]>>(
+    "/dict/all"
   );
+
+  const grouped: Record<DictionaryType, DictionaryEntity[]> = {
+    CATEGORY: [],
+    SUB_CATEGORY: [],
+    METRIC_NAME: [],
+    METRIC_UNIT: [],
+  };
+
+  for (const d of data.data) {
+    grouped[d.type].push({
+      id: d.id,
+      type: d.type,
+      label: d.label,
+      parentId: d.parentId ?? null,
+      entryFieldConfigId: d.entryFieldConfigId ?? null,
+    });
+  }
+
+  // ⬅️ версия словарей берётся ИЗ SYNC, не из dict/all
+  return {
+    data: grouped,
+    version: 0,
+  };
+};
+
+// ============================
+// LEGACY (optional, can be removed later)
+// ============================
+
+const getByType = async (
+  type: DictionaryType
+): Promise<DictionaryEntity[]> => {
+  const r = await api.get<ApiResponse<DictionaryResponse[]>>(`/dict/${type}`);
   return r.data.data.map(mapDictionary);
 };
 
 const getByTypeAndParent = async (
   type: DictionaryType,
   parentId: number
-): Promise<DictionaryItem[]> => {
+): Promise<DictionaryEntity[]> => {
   const r = await api.get<ApiResponse<DictionaryResponse[]>>(
     `/dict/${type}`,
-    {
-      params: { parentId },
-    }
+    { params: { parentId } }
   );
-
   return r.data.data.map(mapDictionary);
 };
 
@@ -43,14 +78,14 @@ const getByTypeAndParent = async (
 // ============================
 
 // ✅ CATEGORY — без parent
-export const getCategory = async (): Promise<DictionaryItem[]> => {
+export const getCategory = async (): Promise<DictionaryEntity[]> => {
   return getByType("CATEGORY");
 };
 
 // ✅ SUB_CATEGORY — СТРОГО по parentId (ОБЯЗАТЕЛЕН)
 export const getSubCategoryByParent = async (
   parentId: number
-): Promise<DictionaryItem[]> => {
+): Promise<DictionaryEntity[]> => {
   if (parentId === null || parentId === undefined) {
     throw new Error("parentId is required");
   }
@@ -59,12 +94,12 @@ export const getSubCategoryByParent = async (
 };
 
 // ✅ ITEM_NAME
-export const getMetrics = async (): Promise<DictionaryItem[]> => {
+export const getMetrics = async (): Promise<DictionaryEntity[]> => {
   return getByType("METRIC_NAME");
 };
 
 // ✅ UNIT
-export const getUnits = async (): Promise<DictionaryItem[]> => {
+export const getUnits = async (): Promise<DictionaryEntity[]> => {
   return getByType("METRIC_UNIT");
 };
 
@@ -73,4 +108,5 @@ export const dictionaryApi = {
   getSubCategoryByParent,
   getMetrics,
   getUnits,
+  getAll,
 };

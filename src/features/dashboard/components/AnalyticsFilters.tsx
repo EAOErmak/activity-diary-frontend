@@ -51,7 +51,14 @@ export default function AnalyticsFilters({
 
   // ✅ загрузка категорий
   useEffect(() => {
-    getCategory().then(setCategories);
+    getCategory().then((data) => {
+      setCategories(
+        data.map((c) => ({
+          id: c.id,
+          name: c.label, // ⚠️ если тут ошибка — см. пункт 4
+        }))
+      );
+    });
   }, []);
 
   // ✅ загрузка SUB_CATEGORY для всех выбранных категорий
@@ -62,7 +69,7 @@ export default function AnalyticsFilters({
       for (const id of selectedCategoryIds) {
         const data = await getSubCategoryByParent(id);
         data.forEach((item) => {
-          map.set(item.id, item); // ✅ перезапись убирает дубли
+          map.set(item.id, { id: item.id, name: item.label }); // ✅ перезапись убирает дубли
         });
       }
 
@@ -111,7 +118,7 @@ export default function AnalyticsFilters({
       {/* ✅ MULTI CATEGORY */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-[260px] justify-between">
+          <Button variant="surface" className="w-[260px] justify-between">
             Категорий: {selectedCategoryIds.length || "все"}
           </Button>
         </PopoverTrigger>
@@ -132,7 +139,7 @@ export default function AnalyticsFilters({
       {/* ✅ MULTI SUB_CATEGORY */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-[260px] justify-between">
+          <Button variant="surface" className="w-[260px] justify-between">
             Подтипов: {selectedSubCategoryIds.length || "все"}
           </Button>
         </PopoverTrigger>
@@ -151,14 +158,14 @@ export default function AnalyticsFilters({
       </Popover>
 
       {/* MODE */}
-      <Button variant="outline" onClick={() => setMode(mode === "time" ? "sequence" : "time")}>
+      <Button variant="surface" onClick={() => setMode(mode === "time" ? "sequence" : "time")}>
         {mode === "time" ? "По времени" : "По порядку"}
       </Button>
 
       {/* FROM */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline">
+          <Button variant="surface">
             От: {format(fromDate, "dd.MM.yyyy")}
           </Button>
         </PopoverTrigger>
@@ -170,7 +177,7 @@ export default function AnalyticsFilters({
       {/* TO */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline">
+          <Button variant="surface">
             До: {format(toDate, "dd.MM.yyyy")}
           </Button>
         </PopoverTrigger>

@@ -17,6 +17,10 @@ export default function HomePage() {
     nav(isAuthenticated ? "/diary/new" : "/login");
   }
 
+  function goCalendar() {
+    nav(isAuthenticated ? "/calendar" : "/login");
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black flex items-center justify-center">
       <div className="w-full max-w-4xl text-center space-y-10 px-4">
@@ -37,12 +41,19 @@ export default function HomePage() {
         </div>
 
         {/* ОСНОВНЫЕ ДЕЙСТВИЯ */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
           <button
             className="px-8 py-4 bg-blue-600 hover:bg-blue-700 transition rounded-xl text-white font-semibold"
             onClick={goDiary}
           >
-            📘 Открыть дневник
+            📘 Дневник
+          </button>
+
+          <button
+            className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 transition rounded-xl text-white font-semibold"
+            onClick={goCalendar}
+          >
+            🗓 Календарь
           </button>
 
           <button
@@ -62,7 +73,7 @@ export default function HomePage() {
 
         {/* ТЕКСТ-ПОДСКАЗКА */}
         <p className="text-slate-500 text-sm">
-          Записывайте действия, отслеживайте прогресс и анализируйте изменения.
+          Записывайте действия, планируйте время и анализируйте прогресс.
         </p>
       </div>
     </div>

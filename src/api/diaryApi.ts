@@ -5,8 +5,19 @@ import type {
   DiaryEntry,
   EntryFieldConfig,
   Page,
+  DiaryEntryView,
 } from "@/shared/types/diary";
 import type { ApiResponse } from "@/shared/types/api";
+
+// ==============================
+// GET ALL MY ENTRIES (PAGE)
+// ==============================
+export const getDiaryAllForSync = async (): Promise<DiaryEntryView[]> => {
+  const { data } = await api.get<ApiResponse<DiaryEntryView[]>>(
+    "/diary/all"
+  );
+  return data.data;
+};
 
 // ==============================
 // GET MY ENTRIES (PAGE)
@@ -14,14 +25,28 @@ import type { ApiResponse } from "@/shared/types/api";
 export const getMyEntries = async (
   page = 0,
   size = 20
-): Promise<Page<DiaryEntry>> => {
-  const { data } = await api.get<ApiResponse<Page<DiaryEntry>>>(
+): Promise<Page<DiaryEntryView>> => {
+  const { data } = await api.get<ApiResponse<Page<DiaryEntryView>>>(
     "/diary/mine",
     {
       params: { page, size },
     }
   );
 
+  return data.data;
+};
+
+// ==============================
+// GET WEEK (CALENDAR)
+// ==============================
+export const getEntriesByRange = async (
+  from: string,
+  to: string
+): Promise<DiaryEntryView[]> => {
+  const { data } = await api.get<ApiResponse<DiaryEntryView[]>>(
+    "/diary/range",
+    { params: { from, to } }
+  );
   return data.data;
 };
 
@@ -82,6 +107,14 @@ export const getEntryFieldConfig = async (
   return data.data;
 };
 
+export const getAllEntryFieldConfigs = async (): Promise<EntryFieldConfig[]> => {
+  const { data } = await api.get<ApiResponse<EntryFieldConfig[]>>(
+    `/entry-config/all`
+  );
+
+  return data.data;
+};
+
 // ==============================
 // SINGLE EXPORT OBJECT
 // ==============================
@@ -92,4 +125,7 @@ export const diaryApi = {
   updateEntry,
   deleteEntry,
   getEntryFieldConfig,
+  getEntriesByRange,
+  getDiaryAllForSync,
+  getAllEntryFieldConfigs,
 };

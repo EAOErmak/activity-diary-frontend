@@ -1,86 +1,54 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { diaryApi } from "@/api/diaryApi";
+import { useDiaryRepository } from "@/shared/repository/diaryRepository";
 import type {
   DiaryEntryCreate,
   DiaryEntryUpdate,
   DiaryEntry,
-  Page,
 } from "@/shared/types/diary";
 
-import { useSyncStore } from "@/shared/store/syncStore";
+export function useDiaryActions() {
+  const repo = useDiaryRepository.getState();
 
-// ==============================
-// GET MY ENTRIES (PAGE)
-// ==============================
-export const useDiaryEntries = (page = 0, size = 20) => {
-  return useQuery<Page<DiaryEntry>, Error>({
-    queryKey: ["diaries", page, size],
-    queryFn: () => diaryApi.getMyEntries(page, size)
-  });
-};
+  async function createEntry(payload: DiaryEntryCreate) {
+    const created = await diaryApi.createEntry(payload);
 
-// ==============================
-// GET ONE ENTRY
-// ==============================
-export const useDiaryEntry = (id?: number) => {
-  return useQuery<DiaryEntry, Error>({
-    queryKey: ["diary", id],
-    queryFn: () => diaryApi.getEntry(id as number),
-    enabled: typeof id === "number",
-  });
-};
+    repo.setFull(created);
+    repo.appendView({
+      id: created.id,
+      categoryName: created.categoryName,
+      subCategoryName: created.subCategoryName,
+      whenStarted: created.whenStarted,
+      whenEnded: created.whenEnded,
+      status: created.status,
+    });
 
-// ==============================
-// CREATE
-// ==============================
-export const useCreateDiaryEntry = () => {
-  const queryClient = useQueryClient();
-  const bump = useSyncStore((s) => s.bump);
+    return created;
+  }
 
-  return useMutation<DiaryEntry, Error, DiaryEntryCreate>({
-    mutationFn: (entry) => diaryApi.createEntry(entry),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diaries"] });
-      queryClient.invalidateQueries({ queryKey: ["diaries"] });
-      bump("DIARY");
-    },
-  });
-};
+  async function updateEntry(id: number, payload: DiaryEntryUpdate) {
+    const updated = await diaryApi.updateEntry(id, payload);
 
-// ==============================
-// UPDATE
-// ==============================
-type UpdateDiaryArgs = {
-  id: number;
-  entry: DiaryEntryUpdate;
-};
+    repo.setFull(updated);
+    repo.updateView({
+      id: updated.id,
+      categoryName: updated.categoryName,
+      subCategoryName: updated.subCategoryName,
+      whenStarted: updated.whenStarted,
+      whenEnded: updated.whenEnded,
+      status: updated.status,
+    });
 
-export const useUpdateDiaryEntry = () => {
-  const queryClient = useQueryClient();
+    return updated;
+  }
 
-  const bump = useSyncStore((s) => s.bump);
+  async function deleteEntry(id: number) {
+    await diaryApi.deleteEntry(id);
+    repo.remove(id);
+  }
 
-  return useMutation<DiaryEntry, Error, UpdateDiaryArgs>({
-    mutationFn: ({ id, entry }) => diaryApi.updateEntry(id, entry),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diaries"] });
-      queryClient.invalidateQueries({ queryKey: ["diary"] });
-      queryClient.invalidateQueries({ queryKey: ["diaries"] });
-      bump("DIARY")
-    },
-  });
-};
-
-// ==============================
-// DELETE
-// ==============================
-export const useDeleteDiaryEntry = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<void, Error, number>({
-    mutationFn: (id) => diaryApi.deleteEntry(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diaries"] });
-    },
-  });
-};
+  return {
+    createEntry,
+    updateEntry,
+    deleteEntry,
+  };
+}

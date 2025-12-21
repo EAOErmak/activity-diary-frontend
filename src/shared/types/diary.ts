@@ -109,6 +109,14 @@ export type DiaryEntry = {
   updatedAt: string;
 };
 
+export type DiaryEntryView = {
+  id: number;
+  categoryName: string;
+  subCategoryName?: string | null;
+  whenStarted: string | null;
+  whenEnded: string | null;
+  status: EntryStatus;
+};
 
 // ==============================
 // PAGINATION

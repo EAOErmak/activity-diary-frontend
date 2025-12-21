@@ -2,26 +2,241 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Calendar overlay scrollbar ===== */
+
+.calendar-scroll {
+  overflow-y: scroll;
+  scrollbar-width: none;       /* Firefox */
+}
+
+.calendar-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.calendar-overlay-scroll {
+  position: absolute;
+  top: 96px; /* HEADER_HEIGHT */
+  right: 6px;
+  width: 6px;
+  height: calc(100% - 96px);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
 /* Тема shadcn */
 @layer base {
   :root {
-    --background: 222.2 47.4% 11.2%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 47.4% 11.2%;
-    --card-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* ===== BASE ===== */
+    --background: var(--page-bg);
+    --foreground: var(--surface-foreground);
+
+    /* ===== CARD ===== */
+    --card: var(--surface);
+    --card-foreground: var(--surface-foreground);
+
+    /* ===== POPOVER ===== */
+    --popover: var(--surface);
+    --popover-foreground: var(--surface-foreground);
+
+    /* ===== ACCENT ===== */
+    --accent: var(--surface-muted);
+    --accent-foreground: var(--surface-foreground);
+
+    /* ===== INPUT ===== */
+    --input: var(--border);
+
+    /* ===== FOCUS ===== */
+    --ring: var(--primary);
+
+    /* ===== DESTRUCTIVE ===== */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Page */
+    --page-bg: 220 33% 96%;          /* #EEF2F8 */
+
+    /* Surfaces (то, что сейчас bg-white / bg-slate-50) */
+    --surface: 0 0% 100%;            /* white */
+    --surface-muted: 210 40% 98%;    /* slate-50 */
+
+    /* Text */
+    --surface-foreground: 215 25% 27%;  /* slate-700 */
+    --muted-foreground: 215 16% 47%;    /* slate-400 */
+
+    /* Borders */
+    --border: 214 32% 91%;           /* slate-200 */
+
+    /* Primary */
+    --primary: 221 83% 53%;          /* blue-600 */
+
+    /* === EVENT BACKGROUND === */
+    --event-planned-bg: 221 83% 96% / var(--event-opacity);
+    --event-active-bg: 270 95% 95% / var(--event-opacity);
+    --event-win-bg: 142 76% 94% / var(--event-opacity);
+    --event-lose-bg: 0 93% 94% / var(--event-opacity);
+
+    /* === EVENT TEXT === */
+    --event-planned-text: 221 83% 53%;
+    --event-active-text: 270 95% 60%;
+    --event-win-text: 142 71% 45%;
+    --event-lose-text: 0 84% 60%;
+
+    /* === EVENT BORDER / LEFT BAR === */
+    --event-planned-border: 221 83% 70%;
+    --event-active-border: 270 95% 75%;
+    --event-win-border: 142 71% 65%;
+    --event-lose-border: 0 84% 70%;
+
+    --event-opacity: 0.6;
+
+    --primary-foreground: 0 0% 100%;
+    --danger: 0 84% 60%;
+    --danger-foreground: 0 0% 100%;
+
+    --background: var(--page-bg);
+
+    --popover: var(--surface);
+    --popover-foreground: var(--surface-foreground);
+
+    --accent: 221 83% 95%;
+    --accent-foreground: 221 83% 30%;
+
+    --input: var(--border);
+    --ring: var(--primary);
+
+    --background: var(--surface);
+    --overlay: 222 47% 4% / 0.8;
+
+    --accent: var(--surface-muted);
+    --accent-foreground: var(--surface-foreground);
+
+    --ring: var(--primary);
+    --background: 220 33% 96%;
+    --foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    --accent: 221 83% 96%;
+    --accent-foreground: 221 83% 53%;
+
+    --ring: 221 83% 53%;
+    --background: 220 33% 96%;
+    --foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    --accent: 221 83% 96%;
+    --accent-foreground: 221 83% 53%;
+
+    --muted: 210 40% 98%;
+    --input: 214 32% 91%;
+
+    --ring: 221 83% 53%;
+    --skeleton: 210 40% 92%;
+    --background: var(--surface);
+    --input: var(--surface-muted);
+    --ring: var(--primary);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-  }
 
-  body {
-    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
+    --background: var(--page-bg);
+    --foreground: var(--surface-foreground);
+
+    --card: var(--surface);
+    --card-foreground: var(--surface-foreground);
+
+    --popover: var(--surface);
+    --popover-foreground: var(--surface-foreground);
+
+    --accent: var(--surface-muted);
+    --accent-foreground: var(--surface-foreground);
+
+    --input: var(--border);
+    --ring: var(--primary);
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --page-bg: 222 47% 6%;
+
+    --surface: 222 47% 10%;
+    --surface-muted: 222 47% 13%;
+
+    --surface-foreground: 210 40% 98%;
+
+    --border: 222 47% 18%;
+
+    --primary: 221 83% 60%;
+    --primary-foreground: 222 47% 11%;
+
+    --event-planned-bg: 221 83% 20% / var(--event-opacity);
+    --event-active-bg: 270 95% 25% / var(--event-opacity);
+    --event-win-bg: 142 71% 22% / var(--event-opacity);
+    --event-lose-bg: 0 84% 25% / var(--event-opacity);
+
+    --event-planned-text: 221 83% 75%;
+    --event-active-text: 270 95% 80%;
+    --event-win-text: 142 71% 75%;
+    --event-lose-text: 0 84% 80%;
+
+    --event-planned-border: 221 83% 45%;
+    --event-active-border: 270 95% 50%;
+    --event-win-border: 142 71% 45%;
+    --event-lose-border: 0 84% 50%;
+
+    --event-opacity: 0.4;
+
+    --background: var(--page-bg);
+
+    --popover: var(--surface);
+    --popover-foreground: var(--surface-foreground);
+
+    --accent: 221 83% 20%;
+    --accent-foreground: 221 83% 85%;
+
+    --input: var(--border);
+    --ring: var(--primary);
+
+    --background: var(--surface);
+    --overlay: 0 0% 0% / 0.6;
+
+    --accent: 222 47% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    --ring: var(--primary);
+
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --accent: 221 83% 20%;
+    --accent-foreground: 221 83% 75%;
+
+    --ring: 221 83% 60%;
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --accent: 221 83% 20%;
+    --accent-foreground: 221 83% 75%;
+
+    --muted: 222 47% 13%;
+    --input: 222 47% 18%;
+
+    --ring: 221 83% 60%;
+    --skeleton: 222 47% 18%;
+    --background: var(--surface);
+    --input: var(--surface-muted);
+    --ring: var(--primary);
   }
 }
+
