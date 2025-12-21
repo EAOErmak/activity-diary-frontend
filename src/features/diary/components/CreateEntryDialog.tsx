@@ -6,6 +6,7 @@ import {
 } from "@/shared/components/ui/dialog";
 
 import DiaryEntryForm from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
+import { diaryApi } from "@/api/diaryApi";
 
 type Props = {
   open: boolean;
@@ -22,7 +23,8 @@ export function CreateEntryDialog({ open, onOpenChange }: Props) {
 
         <DiaryEntryForm
           mode="create"
-          onSubmit={() => {
+          onSubmit={async (payload) => {
+            await diaryApi.createEntry(payload);
             onOpenChange(false);
           }}
         />
