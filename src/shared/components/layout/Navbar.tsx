@@ -11,15 +11,40 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { useAuthStore } from "@/shared/store/authStore";
 import { useTheme } from "@/theme-provider";
+import { Menu } from "lucide-react";
+import { useState } from "react";
+
+import {
+  Sheet,
+  SheetContent,
+} from "@/shared/components/ui/sheet";
+
+import UserNavigation from "@/shared/components/navigation/UserNavigation";
 
 export default function Navbar() {
   const { username, isAuthenticated, logout, role } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
   const nav = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="border-b border-border bg-surface">
-      <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-3">
+      <div className="w-full flex items-center justify-between px-6 py-3">
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMenuOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+          <SheetContent side="left" className="w-[90vw] sm:w-80 p-4 [&>button]:hidden">
+            <UserNavigation onNavigate={() => setMenuOpen(false)} />
+          </SheetContent>            
+        </Sheet>
+
         {/* LOGO */}
         <Link
           to="/"
@@ -66,24 +91,10 @@ export default function Navbar() {
                   </DropdownMenuLabel>
 
                   <DropdownMenuSeparator />
-
-                  <DropdownMenuItem onClick={() => nav("/diary")}>
-                    Мои записи
-                  </DropdownMenuItem>
-
+               
                   <DropdownMenuItem onClick={() => nav("/settings")}>
                     Настройки
-                  </DropdownMenuItem>
-
-                  {role === "ADMIN" && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => nav("/admin")}>
-                        <Shield className="mr-2 h-4 w-4" />
-                        Админ-панель
-                      </DropdownMenuItem>
-                    </>
-                  )}
+                  </DropdownMenuItem>        
 
                   <DropdownMenuSeparator />
 

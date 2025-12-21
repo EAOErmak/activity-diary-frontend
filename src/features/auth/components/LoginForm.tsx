@@ -1,5 +1,6 @@
 import React from "react";
 import { useForm } from "react-hook-form";
+import { NavLink } from "react-router-dom";
 
 type Form = { username: string; password: string };
 
@@ -37,6 +38,17 @@ export default function LoginForm({
       >
         Войти
       </button>
+
+      {/* LINK TO REGISTER */}
+      <p className="text-center text-sm text-slate-400">
+        Нет аккаунта?{" "}
+        <NavLink
+          to="/register"
+          className="text-blue-500 hover:text-blue-400 underline"
+        >
+          Зарегистрироваться
+        </NavLink>
+      </p>
     </form>
   );
 }

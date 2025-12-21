@@ -1,6 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import type { RegisterRequest } from "@/shared/types/auth";
+import { NavLink } from "react-router-dom";
 
 export default function RegisterForm({
   onSubmit,
@@ -46,6 +47,16 @@ export default function RegisterForm({
       >
         Зарегистрироваться
       </button>
+      {/* LINK TO REGISTER */}
+      <p className="text-center text-sm text-slate-400">
+        Уже есть Аккаунт?{" "}
+        <NavLink
+          to="/login"
+          className="text-blue-500 hover:text-blue-400 underline"
+        >
+          Войти
+        </NavLink>
+      </p>
     </form>
   );
 }
