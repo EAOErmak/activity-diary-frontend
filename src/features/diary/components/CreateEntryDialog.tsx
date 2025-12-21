@@ -6,6 +6,7 @@ import {
 } from "@/shared/components/ui/dialog";
 
 import DiaryEntryForm from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
+import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import { diaryApi } from "@/api/diaryApi";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function CreateEntryDialog({ open, onOpenChange }: Props) {
+  const { createEntry } = useDiaryActions();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -24,7 +26,7 @@ export function CreateEntryDialog({ open, onOpenChange }: Props) {
         <DiaryEntryForm
           mode="create"
           onSubmit={async (payload) => {
-            await diaryApi.createEntry(payload);
+           await createEntry(payload);
             onOpenChange(false);
           }}
         />
