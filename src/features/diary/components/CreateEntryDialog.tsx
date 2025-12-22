@@ -19,10 +19,6 @@ export function CreateEntryDialog({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Новая запись</DialogTitle>
-        </DialogHeader>
-
         <DiaryEntryForm
           mode="create"
           onSubmit={async (payload) => {

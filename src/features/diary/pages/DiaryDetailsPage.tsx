@@ -97,7 +97,7 @@ export default function DiaryDetailsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="max-w-3xl mx-auto bg-[#151C2C]/90 border border-slate-700/60 rounded-3xl p-8 shadow-xl"
+        className="max-w-3xl mx-auto bg-[#151C2C] rounded-3xl p-8 shadow-xl"
       >
         {/* TITLE */}
         <div className="mb-6">

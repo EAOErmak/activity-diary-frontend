@@ -28,8 +28,8 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="border-b border-border bg-surface">
-      <div className="w-full flex items-center justify-between px-6 py-3">
+    <header className="fixed top-0 left-0 z-50 w-full border-b border-border bg-surface">
+      <div className="w-full flex items-center justify-between px-5 py-2">
 
         <Button
           variant="ghost"
