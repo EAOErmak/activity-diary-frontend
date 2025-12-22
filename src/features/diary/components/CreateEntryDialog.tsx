@@ -7,7 +7,6 @@ import {
 
 import DiaryEntryForm from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
 import { useDiaryActions } from "@/features/diary/hooks/useDiary";
-import { diaryApi } from "@/api/diaryApi";
 
 type Props = {
   open: boolean;

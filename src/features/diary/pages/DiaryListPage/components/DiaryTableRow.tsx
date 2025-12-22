@@ -17,8 +17,6 @@ export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
   const uiStatus = getUiStatus(entry)
   const location = useLocation()
 
-  console.log("BACKGROUND", location)
-
   return (
     <TableRow>
       {/* LEFT STATUS BAR */}

@@ -8,7 +8,6 @@ import { ArrowLeft, Edit3, Calendar, Activity, Play } from "lucide-react";
 import type { DiaryEntry } from "@/shared/types/diary";
 import { getUiStatus, STATUS_STYLES } from "@/shared/lib/uiStatus";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
-import { Card } from "@/shared/components/ui/card";
 
 /* ================================
    UI LABELS
