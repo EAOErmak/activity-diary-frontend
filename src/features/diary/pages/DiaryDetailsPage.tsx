@@ -7,6 +7,8 @@ import { ArrowLeft, Edit3, Calendar, Activity, Play } from "lucide-react";
 
 import type { DiaryEntry } from "@/shared/types/diary";
 import { getUiStatus, STATUS_STYLES } from "@/shared/lib/uiStatus";
+import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
+import { Card } from "@/shared/components/ui/card";
 
 /* ================================
    UI LABELS
@@ -33,6 +35,7 @@ export default function DiaryDetailsPage() {
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   /* ================================
      LOAD ENTRY
@@ -88,38 +91,7 @@ export default function DiaryDetailsPage() {
   ================================ */
 
   return (
-    <div className="min-h-screen bg-[#0E1420] text-white p-6 sm:p-10">
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-8 max-w-3xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-300 hover:text-blue-400 transition"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Назад
-        </button>
-
-        <div className="flex gap-2">
-          {uiStatus === "PLANNED" && (
-            <Button
-              onClick={() => navigate(`/diary/${id}/edit`)}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500"
-            >
-              <Play className="w-4 h-4" />
-              Продолжить
-            </Button>
-          )}
-
-          <Button
-            onClick={() => navigate(`/diary/${id}/edit`)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500"
-          >
-            <Edit3 className="w-4 h-4" />
-            Редактировать
-          </Button>
-        </div>
-      </div>
-
+    <div className="">
       {/* CONTENT */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -201,7 +173,42 @@ export default function DiaryDetailsPage() {
             </p>
           )}
         </div>
+        <div className="flex items-center justify-between">
+          {/* LEFT */}
+          <Button onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Назад
+          </Button>
+
+          {/* RIGHT */}
+          <div className="flex items-center gap-2 py-10">
+            {uiStatus === "PLANNED" && (
+              <Button
+                onClick={() => setEditOpen(true)}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500"
+              >
+                <Play className="w-4 h-4" />
+                Продолжить
+              </Button>
+            )}
+
+            <Button
+              onClick={() => setEditOpen(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500"
+            >
+              <Edit3 className="w-4 h-4" />
+              Редактировать
+            </Button>
+          </div>
+        </div>
       </motion.div>
+      {entry && (
+        <EditEntryDialog
+          entryId={entry.id}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
+      )}
     </div>
   );
 }

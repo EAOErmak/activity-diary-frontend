@@ -1,5 +1,5 @@
 import type { DiaryEntryView } from "@/shared/types/diary"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import {
   TableRow,
@@ -15,6 +15,9 @@ import { STATUS_LABELS } from "../helpers"
 export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
   const nav = useNavigate()
   const uiStatus = getUiStatus(entry)
+  const location = useLocation()
+
+  console.log("BACKGROUND", location)
 
   return (
     <TableRow>
@@ -60,19 +63,30 @@ export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
       {/* ACTIONS */}
       <TableCell className="text-right space-x-2">
         <Button
-          size="sm"
-          onClick={() => nav(`/diary/${entry.id}`)}
-        >
-          Подробнее
-        </Button>
+            size="sm"
+            variant="primary"
+            onClick={() =>
+              nav(`/diary/${entry.id}`, {
+                state: { background: location },
+                
+              })
+            }
+          >
+            Подробнее
+          </Button>
 
         {(uiStatus === "ACTIVE" || uiStatus === "PLANNED") && (
           <Button
             size="sm"
             variant="primary"
-            onClick={() => nav(`/diary/${entry.id}/edit`)}
+            onClick={() =>
+              nav(`/diary/${entry.id}`, {
+                state: { background: location },
+                
+              })
+            }
           >
-            Редактировать
+            Подробнее
           </Button>
         )}
       </TableCell>

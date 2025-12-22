@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 
 import { Form } from "@/shared/components/ui/form";
@@ -18,7 +18,6 @@ import type {
   DiaryEntryCreate,
   DiaryEntryUpdate,
   EntryStatus,
-  EntryFieldConfig,
 } from "@/shared/types/diary";
 
 import {
@@ -29,6 +28,10 @@ import {
   DiaryStatusSection,
   DiaryTimeSection,
 } from "./sections";
+
+/* ==============================
+   TYPES
+============================== */
 
 export type DiaryEntryFormValues = {
   categoryId: number | null;
@@ -62,6 +65,10 @@ type Props =
       onSubmit: (payload: DiaryEntryUpdate) => void | Promise<void>;
     };
 
+/* ==============================
+   COMPONENT
+============================== */
+
 export default function DiaryEntryForm(props: Props) {
   const { mode, title = "Запись", submitLabel = "Сохранить", onSubmit } = props;
 
@@ -82,7 +89,6 @@ export default function DiaryEntryForm(props: Props) {
   });
 
   const { control, watch } = form;
-
   const categoryId = watch("categoryId");
 
   const categories = useDictionary("CATEGORY");
@@ -106,17 +112,58 @@ export default function DiaryEntryForm(props: Props) {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => {
+              /* ========= CREATE ========= */
               if (mode === "create") {
                 onSubmit({
                   categoryId: values.categoryId!,
                   subCategoryId: values.subCategoryId,
-                  whenStarted: values.whenStarted,
-                  whenEnded: values.whenEnded,
+                  whenStarted: values.whenStarted || undefined,
+                  whenEnded: values.whenEnded || undefined,
                   mood: values.mood,
                   description: values.description,
                   metrics: values.metrics
                     .filter((m) => m.nameId && m.unitId)
                     .map((m) => ({
+                      metricId: m.nameId!,
+                      unitId: m.unitId!,
+                      value: m.value,
+                    })),
+                });
+              }
+
+              /* ========= EDIT ========= */
+              if (mode === "edit") {
+                onSubmit({
+                  ...(values.categoryId
+                    ? { categoryId: values.categoryId }
+                    : {}),
+
+                  ...(values.subCategoryId
+                    ? { subCategoryId: values.subCategoryId }
+                    : {}),
+
+                  ...(values.whenStarted
+                    ? { whenStarted: values.whenStarted }
+                    : {}),
+
+                  ...(values.whenEnded
+                    ? { whenEnded: values.whenEnded }
+                    : {}),
+
+                  ...(values.mood !== undefined
+                    ? { mood: values.mood }
+                    : {}),
+
+                  ...(values.description
+                    ? { description: values.description }
+                    : {}),
+
+                  status: values.status,
+
+                  metrics: values.metrics
+                    .filter((m) => m.backendId)
+                    .map((m) => ({
+                      id: m.backendId!,
                       metricId: m.nameId!,
                       unitId: m.unitId!,
                       value: m.value,

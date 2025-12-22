@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 
 import UserLayout from "@/shared/components/layout/UserLayout";
 import ProtectedRoute from "@/shared/components/layout/ProtectedRoute";
@@ -19,7 +19,6 @@ import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 
-// ✅ НОВОЕ
 import CalendarPage from "@/features/calendar/pages/CalendarPage";
 
 import AdminDictionaryPage from "@/features/admin/dictionary/pages/AdminDictionaryPage";
@@ -28,11 +27,17 @@ import AdminDashboardPage from "@/features/admin/dashboard/pages/AdminDashboardP
 import AdminEntryConfigPage from "@/features/admin/entry-config/pages/AdminEntryConfigPage";
 import AdminLayout from "@/features/admin/layout/AdminLayout";
 
-export default function AppRouter() {
-  return (
-    <BrowserRouter>
-      <Routes>
+// 🆕 MODAL
+import { DiaryDetailsDialog } from "@/features/diary/pages/DiaryListPage/components/DiaryDetailsDialog";
 
+export default function AppRouter() {
+  const location = useLocation();
+  const state = location.state as { background?: Location };
+
+  return (
+    <>
+      {/* ================= ОСНОВНЫЕ РОУТЫ ================= */}
+      <Routes location={state?.background || location}>
         {/* PUBLIC */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -50,11 +55,14 @@ export default function AppRouter() {
         >
           <Route path="/diary" element={<DiaryListPage />} />
           <Route path="/diary/new" element={<DiaryFormPage />} />
-          <Route path="/diary/:id" element={<DiaryDetailsPage />} />
+
+          {/* ❗ ОСТАЁТСЯ как обычная страница (deep link) 
+          <Route path="/diary/:id" element={<DiaryDetailsPage />} />*/}
+
+          {/* временно оставляем */}
           <Route path="/diary/:id/edit" element={<DiaryEditPage />} />
 
-          <Route path="/calendar" element={<CalendarPage />} /> {/* ✅ */}
-
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
@@ -76,6 +84,16 @@ export default function AppRouter() {
         {/* FALLBACK */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </BrowserRouter>
+
+      {/* ================= MODAL ROUTES ================= */}
+      {state?.background && (
+        <Routes>
+          <Route
+            path="/diary/:id"
+            element={<DiaryDetailsDialog />}
+          />
+        </Routes>
+      )}
+    </>
   );
 }

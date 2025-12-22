@@ -1,4 +1,5 @@
 import TimeGrid from "@/features/calendar/components/TimeGrid";
+import { Card } from "@/shared/components/ui/card";
 
 type Props = {
   days: Date[];
@@ -7,16 +8,13 @@ type Props = {
 
 export function CalendarWeek({ days, events }: Props) {
   return (
-    <div
+    <Card
       className="
         flex-1
         h-[calc(100vh-200px)]
-        rounded-2xl
-        bg-surfaceMuted
-        overflow-hidden
       "
     >
       <TimeGrid days={days} events={events} />
-    </div>
+    </Card>
   );
 }

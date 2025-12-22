@@ -3,6 +3,7 @@ import {
   FormItem,
   FormLabel,
   FormControl,
+  FormField,
 } from "@/shared/components/ui/form";
 import { useFormContext } from "react-hook-form";
 import type { EntryStatus } from "@/shared/types/diary";
@@ -15,32 +16,36 @@ export function DiaryStatusSection() {
   const status = watch("status");
 
   return (
-    <FormItem>
-      <FormLabel>Результат</FormLabel>
+    <FormField
+      name="status"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Результат</FormLabel>
 
-      <FormControl>
-        <div className="flex gap-3">
-          <Button
-            type="button"
-            size="icon"
-            variant={status === "LOSE" ? "danger" : "surface"}
-            aria-pressed={status === "LOSE"}
-            onClick={() => setValue("status", "LOSE")}
-          >
-            ✕
-          </Button>
+          <FormControl>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                size="icon"
+                variant={status === "LOSE" ? "danger" : "surface"}
+                aria-pressed={status === "LOSE"}
+                onClick={() => setValue("status", "LOSE")}
+              >
+                ✕
+              </Button>
 
-          <Button
-            type="button"
-            size="icon"
-            variant={status === "WIN" ? "primary" : "surface"}
-            aria-pressed={status === "WIN"}
-            onClick={() => setValue("status", "WIN")}
-          >
-            ✔
-          </Button>
-        </div>
-      </FormControl>
-    </FormItem>
+              <Button
+                type="button"
+                size="icon"
+                variant={status === "WIN" ? "primary" : "surface"}
+                aria-pressed={status === "WIN"}
+                onClick={() => setValue("status", "WIN")}
+              >
+                ✔
+              </Button>
+            </div>
+          </FormControl>
+        </FormItem>
+    )}/>
   );
 }

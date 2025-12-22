@@ -178,46 +178,51 @@ export default function TimeGrid({ days, events }: Props) {
                   "relative bg-surface " +
                   (!isLast ? "border-r border-border" : "")
                 }
-                style={{ height: dayHeight }}
               >
-                {/* Hour lines */}
-                {hours.map((h, i) => (
-                  <div
-                    key={h}
-                    className={i === hours.length - 1 ? "" : "border-b border-border"}
-                    style={{ height: HOUR_HEIGHT }}
-                  />
-                ))}
-
-                {/* CURRENT TIME INDICATOR */}           
-                {day.toDateString() === now.toDateString() && (
-                  <div
-                    className="absolute left-0 right-0 z-20 pointer-events-none"
-                    style={{ top: currentTop }}
-                  >
-                    {/* dot */}
+                {/* BODY: сетка часов (единственное место с высотой) */}
+                <div
+                  className="relative overflow-hidden"
+                  style={{ height: dayHeight }}
+                >
+                  {/* Hour lines */}
+                  {hours.map((h, i) => (
                     <div
-                      className="
-                        absolute -left-1.5 top-1/2 -translate-y-1/2
-                        h-2 w-2 rounded-full bg-blue-500
-                      "
+                      key={h}
+                      className={i === hours.length - 1 ? "" : "border-b border-border"}
+                      style={{ height: HOUR_HEIGHT }}
                     />
+                  ))}
 
-                    {/* line */}
-                    <div className="h-[2px] bg-blue-500" />
-                  </div>
-                )}
+                  {/* CURRENT TIME INDICATOR */}
+                  {day.toDateString() === now.toDateString() && (
+                    <div
+                      className="absolute left-0 right-0 z-20 pointer-events-none"
+                      style={{ top: currentTop }}
+                    >
+                      {/* dot */}
+                      <div
+                        className="
+                          absolute -left-1.5 top-1/2 -translate-y-1/2
+                          h-2 w-2 rounded-full bg-blue-500
+                        "
+                      />
 
-                {/* EVENTS */}
-                {dayEvents.map(event => (
-                  <EventBlock
-                    key={event.id}
-                    event={event}
-                    day={day}
-                    startHour={START_HOUR}
-                    hourHeight={HOUR_HEIGHT}
-                  />
-                ))}
+                      {/* line */}
+                      <div className="h-[2px] bg-blue-500" />
+                    </div>
+                  )}
+
+                  {/* EVENTS */}
+                  {dayEvents.map(event => (
+                    <EventBlock
+                      key={event.id}
+                      event={event}
+                      day={day}
+                      startHour={START_HOUR}
+                      hourHeight={HOUR_HEIGHT}
+                    />
+                  ))}
+                </div>
               </div>
             );
           })}

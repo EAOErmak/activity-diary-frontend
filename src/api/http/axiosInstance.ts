@@ -1,15 +1,36 @@
-import axios from "axios";
+import axios, {
+  AxiosError,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from "axios";
 import { useAuthStore } from "@/shared/store/authStore";
 
-const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL,
-  headers: { "Content-Type": "application/json" },
+// ======================================================
+// BASE API (С interceptor'ами)
+// ======================================================
+
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// ============================
-// REQUEST — подставляем ACCESS
-// ============================
+// ======================================================
+// REFRESH API (БЕЗ interceptor'ов)
+// ======================================================
+
+const refreshApi = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// ======================================================
+// REQUEST INTERCEPTOR — ACCESS TOKEN
+// ======================================================
+
 api.interceptors.request.use((config) => {
   const { accessToken } = useAuthStore.getState();
 
@@ -17,106 +38,127 @@ api.interceptors.request.use((config) => {
     config.url?.includes("/auth/login") ||
     config.url?.includes("/auth/register") ||
     config.url?.includes("/auth/verification") ||
-    config.url?.includes("/auth/refresh")
+    config.url?.includes("/auth/refresh");
 
   if (accessToken && !isAuthRequest) {
-    config.headers = config.headers || {};
+    config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
   return config;
 });
 
-// ============================
-// RESPONSE — refresh при 401
-// ============================
-let isRefreshing = false;
-let failedQueue: any[] = [];
+// ======================================================
+// RESPONSE INTERCEPTOR — REFRESH LOGIC
+// ======================================================
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
+let isRefreshing = false;
+
+type FailedRequest = {
+  resolve: (token: string) => void;
+  reject: (error: any) => void;
+};
+
+let failedQueue: FailedRequest[] = [];
+
+function processQueue(error: any, token: string | null) {
+  failedQueue.forEach(({ resolve, reject }) => {
     if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
+      reject(error);
+    } else if (token) {
+      resolve(token);
     }
   });
 
   failedQueue = [];
-};
+}
 
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config as any;
+  (response: AxiosResponse) => response,
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      const {
-        refreshToken,
-        setTokens,
-        logout,
-        isLoggingOut,
-      } = useAuthStore.getState();
+  async (error: AxiosError) => {
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
-      // ✅ ЕСЛИ ПОЛЬЗОВАТЕЛЬ УЖЕ ВЫХОДИТ — НЕ ТРОГАЕМ
-      if (isLoggingOut) {
-        return Promise.reject(error);
-      }
-
-      if (!refreshToken) {
-        logout();
-        return Promise.reject(error);
-      }
-
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          originalRequest.headers.Authorization = "Bearer " + token;
-          return api(originalRequest);
-        });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const res = await api.post(
-          "/auth/refresh",            // <<< только /auth/refresh
-          { refreshToken },
-          {
-            baseURL:
-              import.meta.env.VITE_API_BASE_URL ||
-              "https://activity-diary-backend.onrender.com/api",
-          }
-        );
-        
-        const data = res.data?.data;
-
-        const newAccess = data.accessToken;
-        const newRefresh = data.refreshToken;
-
-        setTokens(newAccess, newRefresh);
-
-        api.defaults.headers.common.Authorization =
-          "Bearer " + newAccess;
-
-        processQueue(null, newAccess);
-
-        originalRequest.headers.Authorization =
-          "Bearer " + newAccess;
-
-        return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        logout();
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    // ❌ Не обрабатываем refresh запрос
+    if (originalRequest?.url?.includes("/auth/refresh")) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    const {
+      refreshToken,
+      setTokens,
+      logout,
+      isLoggingOut,
+    } = useAuthStore.getState();
+
+    if (isLoggingOut) {
+      return Promise.reject(error);
+    }
+
+    if (!refreshToken) {
+      logout();
+      return Promise.reject(error);
+    }
+
+    // ==================================================
+    // QUEUE — если refresh уже идёт
+    // ==================================================
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({
+          resolve: (token: string) => {
+            originalRequest.headers = originalRequest.headers ?? {};
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          },
+          reject,
+        });
+      });
+    }
+
+    // ==================================================
+    // START REFRESH
+    // ==================================================
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const res = await refreshApi.post("/auth/refresh", {
+        refreshToken,
+      });
+
+      const data = res.data?.data;
+
+      const newAccess = data.accessToken;
+      const newRefresh = data.refreshToken;
+
+      setTokens(newAccess, newRefresh);
+
+      api.defaults.headers.common.Authorization =
+        `Bearer ${newAccess}`;
+
+      processQueue(null, newAccess);
+
+      originalRequest.headers = originalRequest.headers ?? {};
+      originalRequest.headers.Authorization =
+        `Bearer ${newAccess}`;
+
+      return api(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      logout();
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 

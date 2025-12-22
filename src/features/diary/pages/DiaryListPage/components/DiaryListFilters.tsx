@@ -14,7 +14,7 @@ import {
 export function DiaryListFilters({...props}) {
   return (
     <Card className="max-w-6xl mx-auto mb-10">
-      <CardContent className="flex flex-col sm:flex-row gap-6 pt-6">
+      <CardContent className="flex flex-col px-4 py-4 sm:flex-row gap-6 pt-6">
         
         {/* STATUS */}
         <div className="flex-1">

@@ -1,5 +1,6 @@
 import { Button } from "@/shared/components/ui/button";
 import WeekNav from "@/features/calendar/components/WeekNav";
+import { Card } from "@/shared/components/ui/card";
 
 type Props = {
   weekLabel: string;
@@ -15,19 +16,15 @@ export function CalendarHeader({
   onCreate,
 }: Props) {
   return (
-    <div className="
+    <Card className="
       flex items-center justify-between
-      rounded-2xl
-      bg-surface
       px-6 py-4
-      text-surfaceForeground
-      shadow-card
     ">
       <WeekNav label={weekLabel} onPrev={onPrev} onNext={onNext} />
 
       <Button variant="primary" onClick={onCreate}>
         + Create
       </Button>
-    </div>
+    </Card>
   );
 }
