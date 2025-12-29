@@ -148,6 +148,9 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --input: 210 40% 96%;
+    --input-hover: 214 32% 88%;
   }
 
   .dark {
@@ -253,6 +256,9 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --input: 222 35% 13%;
+    --input-hover: 222 35% 16%;
   }
 }
 

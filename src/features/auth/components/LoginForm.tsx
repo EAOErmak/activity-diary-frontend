@@ -1,54 +1,89 @@
-import React from "react";
 import { useForm } from "react-hook-form";
 import { NavLink } from "react-router-dom";
 
-type Form = { username: string; password: string };
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/shared/components/ui/form";
 
-export default function LoginForm({
-  onSubmit,
-}: {
-  onSubmit: (data: Form) => Promise<void> | void;
-}) {
-  const { register, handleSubmit, formState } = useForm<Form>({
-    defaultValues: { username: "", password: "" },
+type LoginFormValues = {
+  username: string;
+  password: string;
+};
+
+type Props = {
+  onSubmit: (data: LoginFormValues) => Promise<void> | void;
+};
+
+export default function LoginForm({ onSubmit }: Props) {
+  const form = useForm<LoginFormValues>({
+    defaultValues: {
+      username: "",
+      password: "",
+    },
   });
 
-  const { isSubmitting } = formState;
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = form;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <input
-        {...register("username", { required: true })}
-        type="text"
-        placeholder="Username"
-        className="w-full p-2 rounded bg-slate-800 border border-slate-700"
-      />
+    <Form {...form}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Username */}
+        <FormField
+          control={control}
+          name="username"
+          rules={{ required: "Введите username или email" }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="username" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <input
-        {...register("password", { required: true })}
-        type="password"
-        placeholder="Пароль"
-        className="w-full p-2 rounded bg-slate-800 border border-slate-700"
-      />
+        {/* Password */}
+        <FormField
+          control={control}
+          name="password"
+          rules={{ required: "Введите пароль" }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Пароль</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
-      >
-        Войти
-      </button>
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Вход..." : "Войти"}
+        </Button>
 
-      {/* LINK TO REGISTER */}
-      <p className="text-center text-sm text-slate-400">
-        Нет аккаунта?{" "}
-        <NavLink
-          to="/register"
-          className="text-blue-500 hover:text-blue-400 underline"
-        >
-          Зарегистрироваться
-        </NavLink>
-      </p>
-    </form>
+        <p className="text-center text-sm text-muted-foreground">
+          Нет аккаунта?{" "}
+          <NavLink
+            to="/register"
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Зарегистрироваться
+          </NavLink>
+        </p>
+      </form>
+    </Form>
   );
 }

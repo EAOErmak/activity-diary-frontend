@@ -1,46 +1,43 @@
+import { useNavigate } from "react-router-dom";
+
 import RegisterForm from "@/features/auth/components/RegisterForm";
 import { registerRequest } from "@/api/authApi";
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "@/shared/store/authStore";
 import type { RegisterRequest } from "@/shared/types/auth";
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/shared/components/ui/card";
 
 export default function RegisterPage() {
   const nav = useNavigate();
-  const setAuthData = useAuthStore((s) => s.setAuthData);
 
   async function handle(data: RegisterRequest) {
     try {
-      const payload = await registerRequest({
-        username: data.username,
-        password: data.password,
-        fullName: data.fullName,
-      });
-
-      // ✅ ПОСЛЕ РЕГИСТРАЦИИ ВСЕГДА ИДЁМ НА VERIFY-REGISTER
-      setAuthData({
-        accessToken: null,
-        refreshToken: null,
-        userId: null,                 // ✅ ОБЯЗАТЕЛЬНО null
-        username: payload.username,   // ✅ ТОЛЬКО username
-        role: payload.role ?? "USER",
-        twoFactorRequired: true,
-      });
-
-      nav("/verify-register");
-
+      await registerRequest(data);
+      nav("/login"); // экран "Проверьте почту"
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Ошибка регистрации");
+      alert(err?.response?.data?.error?.message || "Ошибка регистрации");
     }
   }
 
   return (
-    <div className="min-h-screen grid place-items-center p-4">
-      <div className="max-w-md w-full bg-slate-900 p-6 rounded-2xl shadow">
-        <h2 className="text-2xl font-semibold mb-2">Регистрация</h2>
-        <p className="text-sm text-gray-400 mb-4">Создать новый аккаунт</p>
+    <div className="min-h-screen flex items-center justify-center bg-page p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Регистрация</CardTitle>
+          <CardDescription>
+            Создать новый аккаунт
+          </CardDescription>
+        </CardHeader>
 
-        <RegisterForm onSubmit={handle} />
-      </div>
+        <CardContent>
+          <RegisterForm onSubmit={handle} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

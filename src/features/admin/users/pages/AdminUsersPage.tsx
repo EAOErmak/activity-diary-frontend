@@ -7,6 +7,8 @@ import {
 } from "@/api/admin/adminUsersApi";
 import type { AdminUserDto } from "@/shared/types/adminUser";
 import { useAuthStore } from "@/shared/store/authStore";
+import { Button } from "@/shared/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 type RoleFilter = "ALL" | "ADMIN" | "USER";
 type StatusFilter = "ALL" | "ENABLED" | "DISABLED" | "LOCKED";
@@ -14,6 +16,7 @@ type StatusFilter = "ALL" | "ENABLED" | "DISABLED" | "LOCKED";
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
@@ -120,6 +123,12 @@ export default function AdminUsersPage() {
           Управление аккаунтами, ролями и доступом
         </p>
       </div>
+
+      <Button
+        onClick={() => navigate("/admin/users/create")}
+      >
+        + Создать пользователя
+      </Button>
 
       {/* ФИЛЬТРЫ */}
       <div className="mb-4 flex flex-wrap gap-3">

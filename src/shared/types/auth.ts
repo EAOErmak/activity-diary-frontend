@@ -1,9 +1,10 @@
 export type LoginRequest = {
-  username: string;
+  email: string;
   password: string;
 };
 
 export type RegisterRequest = {
+  email: string;
   username: string;
   password: string;
   fullName: string;
@@ -14,7 +15,7 @@ export type AuthResponse = {
   refreshToken: string | null;
   username: string;
   userId: number;
-  role: "ADMIN" | "USER";
+  role: "ADMIN" | "USER" | "PREMIUM";
   twoFactorRequired: boolean;
 };
 

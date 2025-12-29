@@ -42,13 +42,37 @@ export default function UserNavigation({ onNavigate }: Props) {
           Календарь
         </NavLink>
 
-        <NavLink to="/dashboard" onClick={onNavigate}>
-          Аналитика
-        </NavLink>
-
         <NavLink to="/settings" onClick={onNavigate}>
           Настройки
         </NavLink>
+        
+        <NavLink to="/profile" onClick={onNavigate}>
+          Профиль
+        </NavLink>
+
+        {role === "PREMIUM" || role === "ADMIN" && (
+          <>
+            <div className="my-2 h-px bg-border" />
+            <NavLink to="/dashboard" onClick={onNavigate}>
+              Аналитика
+            </NavLink>
+          </>
+        )}
+    
+        {/* ===== ADMIN ===== */}
+        {role === "ADMIN" && (
+          <>
+            <div className="my-2 h-px bg-border" />
+
+            <NavLink
+              to="/admin"
+              onClick={onNavigate}
+              className="font-medium text-primary"
+            >
+              Админ-панель
+            </NavLink>
+          </>
+        )}
       </nav>
     </div>
   );

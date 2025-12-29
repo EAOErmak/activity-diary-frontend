@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type UserRole = "ADMIN" | "USER";
+export type UserRole = "ADMIN" | "USER" | "PREMIUM";
 
 interface AuthState {
   // ✅ JWT

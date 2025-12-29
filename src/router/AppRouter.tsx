@@ -7,8 +7,6 @@ import AdminProtectedRoute from "@/shared/components/layout/AdminProtectedRoute"
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/features/auth/pages/LoginPage";
 import RegisterPage from "@/features/auth/pages/RegisterPage";
-import VerifyRegisterPage from "@/features/auth/pages/VerifyRegisterPage";
-import VerifyLoginPage from "@/features/auth/pages/VerifyLoginPage";
 
 import DiaryListPage from "@/features/diary/pages/DiaryListPage/DiaryListPage";
 import DiaryFormPage from "@/features/diary/pages/DiaryFormPage";
@@ -29,6 +27,11 @@ import AdminLayout from "@/features/admin/layout/AdminLayout";
 
 // 🆕 MODAL
 import { DiaryDetailsDialog } from "@/features/diary/pages/DiaryListPage/components/DiaryDetailsDialog";
+import ProfilePage from "@/features/profile/pages/ProfilePage";
+import ProfileEditPage from "@/features/profile/pages/ProfileEditPage";
+import { AdminUserCreateForm } from "@/features/admin/users/components/AdminUserCreateForm";
+import AdminUserCreatePage from "@/features/admin/users/pages/AdminUserCreatePage";
+import RoleProtectedRoute from "@/shared/components/layout/RoleProtectedRoute";
 
 export default function AppRouter() {
   const location = useLocation();
@@ -42,8 +45,8 @@ export default function AppRouter() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/verify-register" element={<VerifyRegisterPage />} />
-        <Route path="/verify-login" element={<VerifyLoginPage />} />
+        {/*<Route path="/verify-register" element={<VerifyRegisterPage />} />*/}
+        {/*<Route path="/verify-login" element={<VerifyLoginPage />} />*/}
 
         {/* USER */}
         <Route
@@ -63,8 +66,18 @@ export default function AppRouter() {
           <Route path="/diary/:id/edit" element={<DiaryEditPage />} />
 
           <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+         <Route
+          path="/dashboard"
+          element={
+            <RoleProtectedRoute allowedRoles={["ADMIN", "PREMIUM"]}>
+              <DashboardPage />
+            </RoleProtectedRoute>
+          }
+        />
+
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/edit" element={<ProfileEditPage />} />
         </Route>
 
         {/* ADMIN */}
@@ -77,6 +90,7 @@ export default function AppRouter() {
         >
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/users/create" element={<AdminUserCreatePage />} />
           <Route path="/admin/dictionary" element={<AdminDictionaryPage />} />
           <Route path="/admin/entry-config" element={<AdminEntryConfigPage />} />
         </Route>

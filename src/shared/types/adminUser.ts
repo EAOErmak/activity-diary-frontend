@@ -14,3 +14,11 @@ export type AdminUserDto = {
 export type UpdateUserRoleDto = {
   role: "ADMIN" | "USER";
 };
+
+export type CreateUserByAdminPayload = {
+  username: string;   // email / login
+  password: string;
+  fullName?: string;
+  email?: string;
+  role: "USER" | "PREMIUM" | "ADMIN";
+};

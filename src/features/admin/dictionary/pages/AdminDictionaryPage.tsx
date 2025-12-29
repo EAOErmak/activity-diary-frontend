@@ -271,6 +271,7 @@ export default function AdminDictionaryPage() {
               <SelectItem value="ALL">Все</SelectItem>
               <SelectItem value="USER">USER</SelectItem>
               <SelectItem value="ADMIN">ADMIN</SelectItem>
+              <SelectItem value="PREMIUM">PREMIUM</SelectItem>
             </SelectContent>
           </Select>
         </div>
