@@ -2,7 +2,7 @@ export type AdminUserDto = {
   id: number;
   username: string;
   fullName: string;
-  role: "ADMIN" | "USER";
+  role: "ADMIN" | "USER" | "PREMIUM";
   enabled: boolean;
   accountLocked: boolean;
   lockUntil: string | null;
@@ -12,7 +12,7 @@ export type AdminUserDto = {
 };
 
 export type UpdateUserRoleDto = {
-  role: "ADMIN" | "USER";
+  role: "ADMIN" |  "PREMIUM" | "USER";
 };
 
 export type CreateUserByAdminPayload = {

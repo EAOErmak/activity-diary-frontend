@@ -25,7 +25,7 @@ export const updateUserRole = async (
   userId: number,
   dto: UpdateUserRoleDto
 ): Promise<AdminUserDto> => {
-  const { data } = await api.put<ApiResponse<AdminUserDto>>(
+  const { data } = await api.post<ApiResponse<AdminUserDto>>(
     `/admin/users/${userId}/role`,
     dto
   );
@@ -37,8 +37,8 @@ export const toggleUserEnabled = async (
   userId: number,
   enabled: boolean
 ): Promise<AdminUserDto> => {
-  const { data } = await api.put<ApiResponse<AdminUserDto>>(
-    `/admin/users/${userId}/enabled`,
+  const { data } = await api.post<ApiResponse<AdminUserDto>>(
+    `/admin/users/${userId}/block`,
     { enabled }
   );
   return data.data;
@@ -49,8 +49,8 @@ export const toggleUserLocked = async (
   userId: number,
   locked: boolean
 ): Promise<AdminUserDto> => {
-  const { data } = await api.put<ApiResponse<AdminUserDto>>(
-    `/admin/users/${userId}/lock`,
+  const { data } = await api.post<ApiResponse<AdminUserDto>>(
+    `/admin/users/${userId}/unblock`,
     { locked }
   );
   return data.data;

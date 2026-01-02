@@ -32,7 +32,7 @@ export default function AdminUserCreatePage() {
         <CardFooter className="flex justify-center">
           <Button
             variant="ghost"
-            onClick={() => navigate("/users")}
+            onClick={() => navigate("/admin/users")}
           >
             ← Назад к списку пользователей
           </Button>

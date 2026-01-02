@@ -60,16 +60,12 @@ export function AdminUserCreateForm() {
           name="username"
           rules={{
             required: "Обязательное поле",
-            pattern: {
-              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: "Введите корректный email",
-            },
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username (email)</FormLabel>
+              <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input placeholder="user@example.com" {...field} />
+                <Input placeholder="username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -10,7 +10,7 @@ import { useAuthStore } from "@/shared/store/authStore";
 import { Button } from "@/shared/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-type RoleFilter = "ALL" | "ADMIN" | "USER";
+type RoleFilter = "ALL" | "ADMIN" | "USER" | "PREMIUM";
 type StatusFilter = "ALL" | "ENABLED" | "DISABLED" | "LOCKED";
 
 export default function AdminUsersPage() {
@@ -23,6 +23,13 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const { userId: currentUserId } = useAuthStore();
+
+  const ROLES: Array<AdminUserDto["role"]> = [
+  "USER",
+  "PREMIUM",
+  "ADMIN",
+];
+
 
   useEffect(() => {
     load();
@@ -38,13 +45,16 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleRoleChange(user: AdminUserDto) {
+  async function handleRoleChange(
+    user: AdminUserDto,
+    nextRole: AdminUserDto["role"]
+  ) {
     if (user.id === currentUserId) {
       alert("Нельзя изменить роль самому себе.");
       return;
     }
 
-    const nextRole = user.role === "ADMIN" ? "USER" : "ADMIN";
+    if (user.role === nextRole) return;
 
     const ok = confirm(
       `Вы уверены, что хотите назначить роль "${nextRole}" пользователю "${user.username}"?`
@@ -54,6 +64,7 @@ export default function AdminUsersPage() {
     await updateUserRole(user.id, { role: nextRole });
     load();
   }
+
 
   async function handleEnabled(user: AdminUserDto) {
     if (user.id === currentUserId) {
@@ -147,6 +158,7 @@ export default function AdminUsersPage() {
           <option value="ALL">Все роли</option>
           <option value="ADMIN">ADMIN</option>
           <option value="USER">USER</option>
+          <option value="PREMIUM">PREMIUM</option>
         </select>
 
         <select
@@ -190,7 +202,24 @@ export default function AdminUsersPage() {
                   <td className="p-2">{u.id}</td>
                   <td className="p-2">{u.username}</td>
                   <td className="p-2">{u.fullName}</td>
-                  <td className="p-2">{u.role}</td>
+                  <td className="p-2">
+                    <select
+                      value={u.role}
+                      disabled={isSelf}
+                      onChange={(e) =>
+                        handleRoleChange(u, e.target.value as AdminUserDto["role"])
+                      }
+                      className={`px-2 py-1 rounded border bg-slate-800 border-slate-700 ${
+                        isSelf ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {ROLES.map((role) => (
+                        <option key={role} value={role}>
+                          {role}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="p-2 text-center">
                     {u.enabled ? "✅" : "❌"}
                   </td>
@@ -201,18 +230,6 @@ export default function AdminUsersPage() {
                     {new Date(u.createdAt).toLocaleDateString()}
                   </td>
                   <td className="p-2 space-x-2">
-                    <button
-                      onClick={() => handleRoleChange(u)}
-                      disabled={isSelf}
-                      className={`px-2 py-1 rounded ${
-                        isSelf
-                          ? "bg-slate-600 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700"
-                      }`}
-                    >
-                      {u.role === "ADMIN" ? "Сделать USER" : "Сделать ADMIN"}
-                    </button>
-
                     <button
                       onClick={() => handleEnabled(u)}
                       disabled={isSelf}
