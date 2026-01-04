@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/shared/components/ui/dialog";
 
 import DiaryEntryForm from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
@@ -17,7 +18,9 @@ export function CreateEntryDialog({ open, onOpenChange }: Props) {
   const { createEntry } = useDiaryActions();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogTitle></DialogTitle>
+        <DialogDescription></DialogDescription>
         <DiaryEntryForm
           mode="create"
           onSubmit={async (payload) => {

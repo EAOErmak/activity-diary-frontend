@@ -1,25 +1,20 @@
 import { Button } from "@/shared/components/ui/button";
-import { useFormContext, useFieldArray,UseFieldArrayReturn  } from "react-hook-form";
+import { useFormContext, useFieldArray } from "react-hook-form";
 import { DiaryMetricItem } from "./DiaryMetricItem";
 import { DiaryEntryFormValues } from "../DiaryEntryForm";
 
 type Props = {
   show: boolean;
-  metricNames: any[];
-  units: any[];
-  fieldArray: UseFieldArrayReturn<
-    DiaryEntryFormValues,
-    "metrics",
-    "id"
-  >;
+  metricTypes: { id: number; label: string }[];
+  units: { id: number; label: string }[];
 };
 
 export function DiaryMetricsSection({
   show,
-  metricNames,
+  metricTypes,
   units,
 }: Props) {
-  const { control } = useFormContext();
+  const { control } = useFormContext<DiaryEntryFormValues>();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -34,7 +29,7 @@ export function DiaryMetricsSection({
         <DiaryMetricItem
           key={field.id}
           index={index}
-          metricNames={metricNames}
+          metricTypes={metricTypes}
           units={units}
           canRemove={fields.length > 1}
           onRemove={() => remove(index)}
@@ -43,16 +38,15 @@ export function DiaryMetricsSection({
 
       <Button
         type="button"
-        variant="surface"
+        variant="form"
         onClick={() =>
           append({
-            nameId: null,
-            unitId: null,
-            value: 1,
+            metricTypeId: null,
+            values: [],
           })
         }
       >
-        + Добавить активность
+        + Добавить метрику
       </Button>
     </div>
   );

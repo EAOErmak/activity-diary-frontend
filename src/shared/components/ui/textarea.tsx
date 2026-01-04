@@ -13,16 +13,17 @@ const Textarea = React.forwardRef<
       w-full
       min-h-[120px]
       rounded-2xl
-      border border-border
-      bg-surface
+      bg-input
       px-5 py-4
       text-base
-      text-surfaceForeground
-      placeholder:text-mutedForeground
+      text-foreground
+      placeholder:text-muted-foreground
       focus:outline-none
       focus:ring-2
-      focus:ring-primary/40
+      focus:ring-ring
       resize-none
+      transition-colors
+      hover:bg-[hsl(var(--input-hover))]
     `,
       className
     )}

@@ -30,6 +30,11 @@ export function DatePicker({ date, setDate }: Props) {
     date ? format(date, "HH:mm") : "00:00"
   );
 
+  React.useEffect(() => {
+    if (!date) return;
+    setTime(format(date, "HH:mm"));
+  }, [date]);
+
   const updateTime = (newTime: string) => {
     const [hours, minutes] = newTime.split(":").map(Number);
     const newDate = date ? new Date(date) : new Date();
@@ -45,13 +50,10 @@ export function DatePicker({ date, setDate }: Props) {
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
+          variant="form"
           className={cn(
-            "h-12 w-full justify-start rounded-full",
-            "border border-border bg-surface px-5 text-base",
-            "text-surfaceForeground",
-            "focus:outline-none focus:ring-2 focus:ring-primary/40",
-            !date && "text-mutedForeground"
+            "w-full justify-start",
+            !date && "text-muted-foreground"
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
@@ -65,7 +67,7 @@ export function DatePicker({ date, setDate }: Props) {
 
       <PopoverContent
         align="start"
-        className="w-auto rounded-2xl p-4"
+         className="w-auto rounded-2xl bg-popover p-4 text-popover-foreground shadow-md"
       >
         <Calendar
           mode="single"

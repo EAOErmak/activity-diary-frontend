@@ -25,6 +25,16 @@
   pointer-events: none;
 }
 
+/* скрыть scrollbar, но оставить скролл */
+.no-scrollbar {
+  -ms-overflow-style: none;     /* IE / Edge */
+  scrollbar-width: none;        /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;                /* Chrome / Safari */
+}
+
+
 /* Тема shadcn */
 @layer base {
   :root {
@@ -126,9 +136,6 @@
     --background: 220 33% 96%;
     --foreground: 215 25% 27%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
-
     --accent: 221 83% 96%;
     --accent-foreground: 221 83% 53%;
 
@@ -151,6 +158,8 @@
 
     --input: 210 40% 96%;
     --input-hover: 214 32% 88%;
+
+    --surface-bg: 0 0% 100%;
   }
 
   .dark {
@@ -224,7 +233,7 @@
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
-    --popover: 222 47% 10%;
+    --popover: 226 26.5% 20.4%;          /* #1A2236 */
     --popover-foreground: 210 40% 98%;
 
     --accent: 221 83% 20%;
@@ -233,9 +242,6 @@
     --ring: 221 83% 60%;
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
-
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
 
     --accent: 221 83% 20%;
     --accent-foreground: 221 83% 75%;
@@ -259,6 +265,8 @@
 
     --input: 222 35% 13%;
     --input-hover: 222 35% 16%;
+
+    --surface-bg: 222 40% 9%;
   }
 }
 

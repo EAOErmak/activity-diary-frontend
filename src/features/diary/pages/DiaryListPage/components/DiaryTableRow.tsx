@@ -1,6 +1,10 @@
 import type { DiaryEntryView } from "@/shared/types/diary"
 import { useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
+import { 
+  Pencil,
+  PanelLeftOpen 
+} from 'lucide-react';
 import {
   TableRow,
   TableCell,
@@ -70,7 +74,7 @@ export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
               })
             }
           >
-            Подробнее
+            <PanelLeftOpen />
           </Button>
 
         {(uiStatus === "ACTIVE" || uiStatus === "PLANNED") && (
@@ -84,7 +88,7 @@ export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
               })
             }
           >
-            Подробнее
+            <Pencil />
           </Button>
         )}
       </TableCell>

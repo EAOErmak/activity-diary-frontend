@@ -29,38 +29,36 @@ export function EditEntryDialog({
     useState<DiaryEntryFormValues | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
+useEffect(() => {
+  if (!open) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    (async () => {
-      try {
-        const entry: DiaryEntry =
-          await diaryApi.getEntry(entryId);
+  (async () => {
+    try {
+      const entry: DiaryEntry = await diaryApi.getEntry(entryId);
 
-        setValues({
-          categoryId: entry.categoryId,
-          subCategoryId: entry.subCategoryId,
-          description: entry.description ?? "",
-          mood: entry.mood ?? 3,
-          status: entry.status,
-          whenStarted: entry.whenStarted ?? "",
-          whenEnded: entry.whenEnded ?? "",
-          metrics:
-            entry.metrics?.map((m) => ({
-              id: m.id,
-              backendId: m.id,
-              nameId: m.metricTypeId,
-              unitId: m.unitId,
-              value: m.value,
-            })) ?? [],
-        });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [entryId, open]);
+      setValues({
+        categoryId: entry.categoryId,
+        subCategoryId: entry.subCategoryId,
+        description: entry.description ?? "",
+        mood: entry.mood ?? 3,
+        status: entry.status,
+        whenStarted: entry.whenStarted ?? "",
+        whenEnded: entry.whenEnded ?? "",
+
+        metrics: entry.metrics.map(m => ({
+          id: m.id,
+          metricTypeId: m.metricTypeId,
+          values: m.values,
+        })),
+      });
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [entryId, open]);
+
 
   const handleSubmit = async (payload: DiaryEntryUpdate) => {
     await diaryApi.updateEntry(entryId, payload);
@@ -69,9 +67,9 @@ export function EditEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Редактирование записи</DialogTitle>
+          <DialogTitle></DialogTitle>
         </DialogHeader>
 
         {loading || !values ? (

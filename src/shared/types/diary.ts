@@ -5,30 +5,32 @@
 export type EntryStatus = "WIN" | "LOSE" | "DELETED";
 
 // ==============================
-// ACTIVITY ITEMS
+// METRICS (NEW MODEL)
 // ==============================
 
+export type EntryMetricValue = {
+  unitId: number
+  unitName?: string
+  value: number
+}
+
 export type EntryMetricCreate = {
-  metricId: number;
-  unitId: number;
-  value: number;
-};
+  metricTypeId: number
+  values: EntryMetricValue[]
+}
 
 export type EntryMetricUpdate = {
-  id: number;
-  metricId: number;
-  unitId: number;
-  value: number;
-};
+  id: number
+  metricTypeId: number
+  values: EntryMetricValue[]
+}
 
 export type EntryMetricResponse = {
-  id: number;
-  metricTypeId: number;
-  metricTypeName: string;
-  unitId: number;
-  unitName: string;
-  value: number;
-};
+  id: number
+  metricTypeId: number
+  metricTypeName: string
+  values: EntryMetricValue[]
+}
 
 
 // ==============================
@@ -53,32 +55,25 @@ export type EntryFieldConfig = {
 // ==============================
 
 export type DiaryEntryCreate = {
-  categoryId: number;
-  subCategoryId: number | null;
-
-  whenStarted?: string;
-  whenEnded?: string;
-
-  mood?: number;
-  description?: string;
-
-  metrics?: EntryMetricCreate[];
-};
+  categoryId: number
+  subCategoryId: number | null
+  whenStarted?: string
+  whenEnded?: string
+  mood?: number
+  description?: string
+  metrics?: EntryMetricCreate[]
+}
 
 export type DiaryEntryUpdate = {
-  categoryId?: number;
-  subCategoryId?: number;
-
-  whenStarted?: string;
-  whenEnded?: string;
-
-  mood?: number;
-  description?: string;
-
-  status?: EntryStatus;
-
-  metrics?: (EntryMetricUpdate | EntryMetricCreate)[];
-};
+  categoryId?: number
+  subCategoryId?: number
+  whenStarted?: string
+  whenEnded?: string
+  mood?: number
+  description?: string
+  status?: EntryStatus
+  metrics?: (EntryMetricUpdate | EntryMetricCreate)[]
+}
 
 // ==============================
 // DIARY ENTRY (READ)

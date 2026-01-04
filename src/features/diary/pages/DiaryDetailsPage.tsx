@@ -156,13 +156,20 @@ export default function DiaryDetailsPage() {
           </h3>
 
           {entry.metrics?.length ? (
-            <ul className="list-disc pl-5 space-y-2 text-gray-300">
+            <ul className="space-y-3 text-gray-300">
               {entry.metrics.map((m) => (
                 <li key={m.id}>
-                  <span className="font-medium text-blue-400">
+                  <div className="font-medium text-blue-400">
                     {m.metricTypeName}
-                  </span>{" "}
-                  — {m.value}
+                  </div>
+
+                  <ul className="pl-4 list-disc space-y-1">
+                    {m.values.map((v, idx) => (
+                      <li key={idx}>
+                        {v.value} {v.unitName}
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>
@@ -172,15 +179,17 @@ export default function DiaryDetailsPage() {
             </p>
           )}
         </div>
+
         <div className="flex items-center justify-between">
           {/* LEFT */}
+          <div className="flex items-center mt-10"> 
           <Button onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5 mr-2" />
             Назад
           </Button>
-
+          </div>
           {/* RIGHT */}
-          <div className="flex items-center gap-2 py-10">
+          <div className="flex items-center gap-2 mt-10">
             {uiStatus === "PLANNED" && (
               <Button
                 onClick={() => setEditOpen(true)}

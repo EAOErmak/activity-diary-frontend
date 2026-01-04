@@ -7,6 +7,7 @@ import {
 } from "@/shared/components/ui/form";
 import { DatePicker } from "@/shared/components/ui/date-picker";
 import { useFormContext } from "react-hook-form";
+import { useEffect } from "react";
 
 function toDate(value?: string) {
   return value ? new Date(value) : undefined;
@@ -18,6 +19,22 @@ function toIso(value?: Date) {
 
 export function DiaryTimeSection() {
   const form = useFormContext();
+
+  useEffect(() => {
+    const now = new Date();
+    const isoNow = now.toISOString();
+
+    const started = form.getValues("whenStarted");
+    const ended = form.getValues("whenEnded");
+
+    if (!started) {
+      form.setValue("whenStarted", isoNow);
+    }
+
+    if (!ended) {
+      form.setValue("whenEnded", isoNow);
+    }
+  }, [form]);
 
   return (
     <div className="grid grid-cols-2 gap-4">
