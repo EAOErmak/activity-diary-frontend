@@ -1,0 +1,19 @@
+@layer base {
+  :root {
+    --background: var(--surface);
+    --foreground: var(--surface-foreground);
+
+    --card: var(--surface);
+    --card-foreground: var(--surface-foreground);
+
+    --popover: var(--surface);
+    --popover-foreground: var(--surface-foreground);
+
+    --accent: var(--surface-muted);
+    --accent-foreground: var(--surface-foreground);
+
+    --muted: var(--surface-muted);
+
+    --ring: var(--primary);
+  }
+}

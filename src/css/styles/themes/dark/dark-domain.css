@@ -1,0 +1,29 @@
+@layer base {
+  .dark {
+    --event-opacity: 0.4;
+
+    --event-planned-bg: 221 83% 20% / var(--event-opacity);
+    --event-active-bg: 270 95% 25% / var(--event-opacity);
+    --event-win-bg: 142 71% 22% / var(--event-opacity);
+    --event-lose-bg: 0 84% 25% / var(--event-opacity);
+
+    --event-planned-text: 221 83% 75%;
+    --event-active-text: 270 95% 80%;
+    --event-win-text: 142 71% 75%;
+    --event-lose-text: 0 84% 80%;
+
+    --event-planned-border: 221 83% 45%;
+    --event-active-border: 270 95% 50%;
+    --event-win-border: 142 71% 45%;
+    --event-lose-border: 0 84% 50%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}

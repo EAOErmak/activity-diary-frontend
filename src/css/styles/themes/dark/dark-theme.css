@@ -1,0 +1,23 @@
+@layer base {
+  .dark {
+    --page-bg: 222 47% 6%;
+
+    --surface: 222 47% 10%;
+    --surface-muted: 222 47% 13%;
+    --surface-foreground: 210 40% 98%;
+    --muted-foreground: 215 20% 65%;
+
+    --border: 222 47% 18%;
+
+    --primary: 221 83% 60%;
+    --primary-foreground: 222 47% 11%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --overlay: 0 0% 0% / 0.6;
+    --skeleton: 222 47% 18%;
+    --input: 222 35% 13%;
+    --input-hover: 222 35% 16%;
+  }
+}
