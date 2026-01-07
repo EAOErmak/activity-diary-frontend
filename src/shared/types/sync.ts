@@ -12,6 +12,7 @@ export enum GlobalSyncEntityType {
   DICTIONARY = "DICTIONARY",
   ENTRY_FIELD_CONFIG = "ENTRY_FIELD_CONFIG",
   SETTINGS = "SETTINGS",
+  TAG = "TAG",
 }
 
 // ================= COMMON =================

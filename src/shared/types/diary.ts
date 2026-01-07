@@ -61,6 +61,7 @@ export type DiaryEntryCreate = {
   whenEnded?: string
   mood?: number
   description?: string
+  tags?: string[]
   metrics?: EntryMetricCreate[]
 }
 
@@ -71,6 +72,7 @@ export type DiaryEntryUpdate = {
   whenEnded?: string
   mood?: number
   description?: string
+  tags?: string
   status?: EntryStatus
   metrics?: (EntryMetricUpdate | EntryMetricCreate)[]
 }
