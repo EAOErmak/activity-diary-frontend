@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { 
   Pencil,
-  PanelLeftOpen 
+  PanelLeftOpen, 
+  Eye,
+  PencilOff
 } from 'lucide-react';
 import {
   TableRow,
@@ -16,10 +18,11 @@ import {
 } from "@/shared/lib/uiStatus"
 import { STATUS_LABELS } from "../helpers"
 
-export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
+export function DiaryTableRow({ entry, onEdit }: { entry: DiaryEntryView; onEdit: (id: number) => void }) {
   const nav = useNavigate()
   const uiStatus = getUiStatus(entry)
   const location = useLocation()
+  const canEdit = uiStatus === "PLANNED" || uiStatus === "ACTIVE";
 
   return (
     <TableRow>
@@ -33,14 +36,14 @@ export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
         {entry.id}
       </TableCell>
 
-      {/* SUBCATEGORY */}
-      <TableCell className="font-medium text-primary">
-        {entry.subCategoryName}
-      </TableCell>
-
       {/* CATEGORY */}
       <TableCell className="text-surfaceForeground/80">
         {entry.categoryName}
+      </TableCell>
+
+      {/* SUBCATEGORY */}
+      <TableCell className="font-medium text-primary">
+        {entry.subCategoryName}
       </TableCell>
 
       {/* DATE */}
@@ -64,33 +67,37 @@ export function DiaryTableRow({ entry }: { entry: DiaryEntryView }) {
 
       {/* ACTIONS */}
       <TableCell className="text-right space-x-2">
+        {/* OPEN DETAILS */}
         <Button
-            size="sm"
-            variant="primary"
-            onClick={() =>
-              nav(`/diary/${entry.id}`, {
-                state: { background: location },
-                
-              })
-            }
+          size="sm"
+          variant="primary"
+          onClick={() =>
+            nav(`/diary/${entry.id}`, {
+              state: { background: location },       
+            })
+          }
           >
-            <PanelLeftOpen />
-          </Button>
+          <PanelLeftOpen />
+        </Button>
 
-        {(uiStatus === "ACTIVE" || uiStatus === "PLANNED") && (
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() =>
-              nav(`/diary/${entry.id}`, {
-                state: { background: location },
-                
-              })
+        {/* EDIT / VIEW */}
+        <Button
+          size="sm"
+          variant="primary"
+          disabled={!canEdit}
+          onClick={() => {
+            if (canEdit) {
+              onEdit(entry.id);
             }
-          >
+          }}
+          className={!canEdit ? "opacity-60 cursor-not-allowed" : ""}
+        >
+          {canEdit ? (
             <Pencil />
-          </Button>
-        )}
+          ) : (
+            <PencilOff />
+          )}
+        </Button>
       </TableCell>
     </TableRow>
   )

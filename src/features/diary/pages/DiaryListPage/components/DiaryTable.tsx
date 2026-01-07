@@ -9,7 +9,7 @@ import {
 import { DiaryTableRow } from "./DiaryTableRow";
 import type { DiaryEntryView } from "@/shared/types/diary";
 
-export function DiaryTable({ entries }: { entries: DiaryEntryView[] }) {
+export function DiaryTable({ entries, onEdit }: { entries: DiaryEntryView[]; onEdit: (id: number) => void }) {
   return (
     <Card className="max-w-6xl mx-auto overflow-hidden">
       <Table>
@@ -17,8 +17,8 @@ export function DiaryTable({ entries }: { entries: DiaryEntryView[] }) {
           <TableRow>
             <TableHead />
             <TableHead>ID</TableHead>
-            <TableHead>Подкатегория</TableHead>
             <TableHead>Категория</TableHead>
+            <TableHead>Подкатегория</TableHead>
             <TableHead>Дата</TableHead>
             <TableHead>Статус</TableHead>
             <TableHead className="text-right">Действия</TableHead>
@@ -27,7 +27,7 @@ export function DiaryTable({ entries }: { entries: DiaryEntryView[] }) {
 
         <TableBody>
           {entries.map((e) => (
-            <DiaryTableRow key={e.id} entry={e} />
+            <DiaryTableRow key={e.id} entry={e} onEdit={onEdit}/>
           ))}
         </TableBody>
       </Table>

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { diaryApi } from "@/api/diaryApi";
 import { Button } from "@/shared/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit3, Calendar, Activity, Play } from "lucide-react";
+import { Edit3, Calendar, Activity, Play, X } from "lucide-react";
 
 import type { DiaryEntry } from "@/shared/types/diary";
 import { getUiStatus, STATUS_STYLES } from "@/shared/lib/uiStatus";
@@ -61,7 +61,7 @@ export default function DiaryDetailsPage() {
 
   if (loading) {
     return (
-      <p className="text-center text-white mt-20">
+      <p className="text-center text-foreground mt-20">
         Загрузка...
       </p>
     );
@@ -69,7 +69,7 @@ export default function DiaryDetailsPage() {
 
   if (error) {
     return (
-      <p className="text-center text-red-400 mt-20">
+      <p className="text-center text-destructive mt-20">
         Ошибка: {error}
       </p>
     );
@@ -77,13 +77,14 @@ export default function DiaryDetailsPage() {
 
   if (!entry) {
     return (
-      <p className="text-center text-gray-400 mt-20">
+      <p className="text-center text-mutedForeground mt-20">
         Запись не найдена
       </p>
     );
   }
 
   const uiStatus = getUiStatus(entry);
+  const canEdit = uiStatus === "PLANNED" || uiStatus === "ACTIVE";
 
   /* ================================
      RENDER
@@ -96,33 +97,39 @@ export default function DiaryDetailsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="max-w-3xl mx-auto bg-[#151C2C] rounded-3xl p-8 shadow-xl"
+        className="relative max-w-3xl mx-auto bg-surface rounded-3xl p-8 shadow-xl"
       >
+        <Button
+          variant="ghost"
+          size="icon" 
+          onClick={() => navigate(-1)}
+          className="absolute top-4 right-4"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+
         {/* TITLE */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-blue-400 mb-1">
-            {entry.subCategoryName}
+          <h1 className="text-3xl font-bold text-primary mb-1">
+            {entry.categoryName}
           </h1>
-          <p className="text-xs text-slate-500">
-            ID: {entry.id}
-          </p>
         </div>
 
-        <p className="text-gray-400 text-lg mb-8">
-          {entry.categoryName}
+        <p className="text-mutedForeground text-lg mb-8">
+          {entry.subCategoryName}
         </p>
 
         {/* META */}
-        <div className="flex flex-wrap gap-6 text-gray-300 mb-8">
+        <div className="flex flex-wrap gap-6 text-foreground mb-8">
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-400" />
+            <Calendar className="w-5 h-5 text-primary" />
             {entry.whenStarted
               ? `Начато: ${new Date(entry.whenStarted).toLocaleString()}`
               : "Дата не указана"}
           </div>
 
           <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-blue-400" />
+            <Activity className="w-5 h-5 text-primary" />
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium ${
                 STATUS_STYLES[uiStatus]
@@ -135,15 +142,15 @@ export default function DiaryDetailsPage() {
 
         {/* COMMENT */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-blue-400 mb-2">
+          <h3 className="text-lg font-semibold text-primary mb-2">
             Комментарий
           </h3>
           {entry.description ? (
-            <p className="text-gray-300">
+            <p className="text-foreground">
               {entry.description}
             </p>
           ) : (
-            <p className="text-slate-500 italic">
+            <p className="text-mutedForeground italic">
               Комментарий отсутствует
             </p>
           )}
@@ -151,15 +158,15 @@ export default function DiaryDetailsPage() {
 
         {/* METRICS */}
         <div>
-          <h3 className="text-lg font-semibold text-blue-400 mb-3">
+          <h3 className="text-lg font-semibold text-primary mb-3">
             Активности
           </h3>
 
           {entry.metrics?.length ? (
-            <ul className="space-y-3 text-gray-300">
+            <ul className="space-y-3 text-foreground">
               {entry.metrics.map((m) => (
                 <li key={m.id}>
-                  <div className="font-medium text-blue-400">
+                  <div className="font-medium text-primary">
                     {m.metricTypeName}
                   </div>
 
@@ -174,40 +181,33 @@ export default function DiaryDetailsPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-slate-500 italic">
+            <p className="text-mutedForeground italic">
               Активности не указаны
             </p>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
-          {/* LEFT */}
-          <div className="flex items-center mt-10"> 
-          <Button onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Назад
-          </Button>
-          </div>
-          {/* RIGHT */}
-          <div className="flex items-center gap-2 mt-10">
-            {uiStatus === "PLANNED" && (
-              <Button
-                onClick={() => setEditOpen(true)}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500"
-              >
-                <Play className="w-4 h-4" />
-                Продолжить
-              </Button>
-            )}
-
+        <div className="flex items-center justify-center gap-2">
+          {uiStatus === "PLANNED" && (
             <Button
               onClick={() => setEditOpen(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500"
+              className="bg-primary text-primaryForeground hover:opacity-90 mt-6"
+            >
+              <Play className="w-4 h-4" />
+              Продолжить
+            </Button>
+          )}
+
+          {canEdit && (
+            <Button
+              onClick={() => setEditOpen(true)}
+              variant="primary"
+              className="mt-6"
             >
               <Edit3 className="w-4 h-4" />
               Редактировать
             </Button>
-          </div>
+          )}
         </div>
       </motion.div>
       {entry && (
