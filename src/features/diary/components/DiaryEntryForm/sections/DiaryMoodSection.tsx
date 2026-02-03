@@ -19,9 +19,7 @@ type Props = {
   show: boolean;
 };
 
-export function DiaryMoodSection({ show }: Props) {
-  if (!show) return null;
-
+export function DiaryMoodSection() {
   return (
     <FormField
       name="mood"

@@ -55,8 +55,6 @@ export type EntryFieldConfig = {
 // ==============================
 
 export type DiaryEntryCreate = {
-  categoryId: number
-  subCategoryId: number | null
   whenStarted?: string
   whenEnded?: string
   mood?: number
@@ -66,8 +64,6 @@ export type DiaryEntryCreate = {
 }
 
 export type DiaryEntryUpdate = {
-  categoryId?: number
-  subCategoryId?: number
   whenStarted?: string
   whenEnded?: string
   mood?: number
@@ -83,12 +79,6 @@ export type DiaryEntryUpdate = {
 
 export type DiaryEntry = {
   id: number;
-
-  categoryId: number;
-  categoryName: string;
-
-  subCategoryId: number;
-  subCategoryName: string;
 
   whenStarted: string | null;
   whenEnded: string | null;

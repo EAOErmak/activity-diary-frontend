@@ -4,13 +4,11 @@ import { DiaryMetricItem } from "./DiaryMetricItem";
 import { DiaryEntryFormValues } from "../DiaryEntryForm";
 
 type Props = {
-  show: boolean;
   metricTypes: { id: number; label: string }[];
   units: { id: number; label: string }[];
 };
 
 export function DiaryMetricsSection({
-  show,
   metricTypes,
   units,
 }: Props) {
@@ -20,8 +18,6 @@ export function DiaryMetricsSection({
     control,
     name: "metrics",
   });
-
-  if (!show) return null;
 
   return (
     <div className="space-y-4">

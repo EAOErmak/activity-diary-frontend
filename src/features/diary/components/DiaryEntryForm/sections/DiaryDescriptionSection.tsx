@@ -12,11 +12,8 @@ type Props = {
   show: boolean;
 };
 
-export function DiaryDescriptionSection({ show }: Props) {
+export function DiaryDescriptionSection() {
   const form = useFormContext();
-
-  if (!show) return null;
-
   return (
     <FormField
       control={form.control}
