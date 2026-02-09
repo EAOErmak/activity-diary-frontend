@@ -1,0 +1,9 @@
+@layer base {
+  :root {
+    /* CARD */
+    --card-bg: var(--card);
+    --card-foreground: var(--card-foreground);
+    --card-border: var(--border);
+    --card-muted-bg: var(--surface-muted);
+  }
+}

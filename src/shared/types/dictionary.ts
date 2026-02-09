@@ -20,8 +20,6 @@ export type DictionaryResponse = {
   allowedRole: string | null;
   parentId?: number | null;
 
-  entryFieldConfigId?: number | null;
-
   createdAt: string;
   updatedAt: string;
 };
@@ -35,7 +33,6 @@ export type DictionaryEntity = {
   type: DictionaryType;
   label: string;
   parentId?: number | null;
-  entryFieldConfigId?: number | null;
 };
 
 export type DictionaryPayload = Record<

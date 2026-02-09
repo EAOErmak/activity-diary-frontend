@@ -84,17 +84,7 @@ export default function AdminDashboardPage() {
         >
           <h2 className="text-xl font-semibold">Словари</h2>
           <p className="text-sm text-green-200">
-            Управление SUB_CATEGORY, CATEGORY, METRIC_NAME, METRIC_UNIT
-          </p>
-        </Link>
-
-        <Link
-          to="/admin/entry-config"
-          className="bg-purple-600 hover:bg-purple-700 transition p-6 rounded-2xl shadow flex flex-col gap-2"
-        >
-          <h2 className="text-xl font-semibold">Конфигурация записей</h2>
-          <p className="text-sm text-purple-200">
-            Управление полями формы дневника
+            Управление METRIC_NAME и METRIC_UNIT
           </p>
         </Link>
       </div>

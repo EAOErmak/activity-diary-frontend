@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   getDictionaryByTypeAdmin,
   createDictionaryItem,
@@ -20,24 +20,14 @@ import type {
   DictionaryResponse,
 } from "@/shared/types/adminDictionary";
 
-import { getAllAdminEntryConfigs } from "@/api/admin/entryFieldConfigAdminApi";
-import type { EntryFieldConfig } from "@/shared/types/diary";
-
-type Tab = "CATEGORY" | "SUB_CATEGORY" | "METRIC_NAME" | "METRIC_UNIT";
+type Tab = "METRIC_NAME" | "METRIC_UNIT";
 
 export default function AdminDictionaryPage() {
-  const [tab, setTab] = useState<Tab>("CATEGORY");
+  const [tab, setTab] = useState<Tab>("METRIC_NAME");
   const [items, setItems] = useState<DictionaryResponse[]>([]);
-  const [parents, setParents] = useState<DictionaryResponse[]>([]);
-  const [entryConfigs, setEntryConfigs] = useState<EntryFieldConfig[]>([]);
 
   const [label, setLabel] = useState("");
   const [allowedRole, setAllowedRole] = useState<string | null>(null);
-  const [parentId, setParentId] = useState<number | null>(null);
-  const [chartType, setChartType] = useState<"REPS_SUM" | "TIME_RANGE" | "COUNT_PER_DAY" | "MOOD_AVERAGE" | null>(null);
-
-  const [entryConfigId, setEntryConfigId] = useState<number | null>(null);
-
   const [loading, setLoading] = useState(false);
 
   // ============================
@@ -52,23 +42,6 @@ export default function AdminDictionaryPage() {
     try {
       const data = await getDictionaryByTypeAdmin(tab);
       setItems(data);
-
-      if (tab === "SUB_CATEGORY") {
-        const parents = await getDictionaryByTypeAdmin("CATEGORY");
-        setParents(parents);
-      } else {
-        setParents([]);
-        setParentId(null);
-      }
-
-      if (tab === "CATEGORY") {
-        const configs = await getAllAdminEntryConfigs();
-        setEntryConfigs(configs);
-      } else {
-        setEntryConfigs([]);
-        setEntryConfigId(null);
-        setChartType(null);
-      }
     } catch (e) {
       console.error(e);
       alert("Ошибка загрузки словаря");
@@ -82,22 +55,10 @@ export default function AdminDictionaryPage() {
   async function handleCreate() {
     if (!label.trim()) return alert("Введите название");
 
-    if (tab === "SUB_CATEGORY" && !parentId)
-      return alert("Выберите родительскую категорию");
-
-    if (tab === "CATEGORY" && !chartType)
-      return alert("Выберите тип графика");
-
-    if (tab === "CATEGORY" && !entryConfigId)
-      return alert("Выберите конфигурацию полей");
-
     const dto: DictionaryCreate = {
       type: tab,
       label: label.trim(),
       allowedRole,
-      parentId: tab === "SUB_CATEGORY" ? parentId! : undefined,
-      chartType: tab === "CATEGORY" ? chartType! : undefined,
-      entryFieldConfigId: tab === "CATEGORY" ? entryConfigId! : undefined,
     };
 
     try {
@@ -105,9 +66,6 @@ export default function AdminDictionaryPage() {
       await createDictionaryItem(dto);
       setLabel("");
       setAllowedRole(null);
-      setParentId(null);
-      setChartType(null);
-      setEntryConfigId(null);
       await load();
     } finally {
       setLoading(false);
@@ -159,15 +117,13 @@ export default function AdminDictionaryPage() {
     <div className="p-6 text-white">
       <h1 className="text-2xl font-bold mb-2">Словари</h1>
       <p className="text-slate-400 mb-6 text-sm">
-        Управление структурой данных, формой записей и аналитикой
+        Управление справочниками активности и единиц измерения
       </p>
 
       {/* ВКЛАДКИ */}
       <div className="flex gap-2 mb-6">
         {[
-          { id: "CATEGORY", label: "Что произошло" },
-          { id: "SUB_CATEGORY", label: "Тип активности" },
-          { id: "METRIC_NAME", label: "Название элемента" },
+          { id: "METRIC_NAME", label: "Название активности" },
           { id: "METRIC_UNIT", label: "Единицы измерения" },
         ].map((t) => (
           <button
@@ -195,83 +151,20 @@ export default function AdminDictionaryPage() {
           />
         </div>
 
-        {tab === "SUB_CATEGORY" && (
-          <div>
-            <label className="block mb-1 text-sm">Родитель</label>
-            <Select
-              value={parentId?.toString()}
-              onValueChange={(v) => setParentId(Number(v))}
-            >
-              <SelectTrigger className="w-[220px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {parents.map((p) => (
-                  <SelectItem key={p.id} value={p.id.toString()}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {tab === "CATEGORY" && (
-          <>
-            <div>
-              <label className="block mb-1 text-sm">Тип графика</label>
-              <Select value={chartType ?? ""} onValueChange={(v) =>
-                setChartType(
-                  v as "REPS_SUM" | "TIME_RANGE" | "COUNT_PER_DAY" | "MOOD_AVERAGE"
-                )
-              }>
-                <SelectTrigger className="w-[220px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="REPS_SUM">REPS_SUM</SelectItem>
-                  <SelectItem value="TIME_RANGE">TIME_RANGE</SelectItem>
-                  <SelectItem value="COUNT_PER_DAY">COUNT_PER_DAY</SelectItem>
-                  <SelectItem value="MOOD_AVERAGE">MOOD_AVERAGE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm">Конфигурация полей</label>
-              <Select
-                value={entryConfigId?.toString()}
-                onValueChange={(v) => setEntryConfigId(Number(v))}
-              >
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue placeholder="Выберите конфиг" />
-                </SelectTrigger>
-                <SelectContent>
-                  {entryConfigs.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </>
-        )}
-
         <div>
           <label className="block mb-1 text-sm">Доступ</label>
           <Select
             value={allowedRole ?? "ALL"}
             onValueChange={(v) => setAllowedRole(v === "ALL" ? null : v)}
           >
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Все</SelectItem>
-              <SelectItem value="USER">USER</SelectItem>
-              <SelectItem value="ADMIN">ADMIN</SelectItem>
-              <SelectItem value="PREMIUM">PREMIUM</SelectItem>
+              <SelectItem value="USER">Пользователь</SelectItem>
+              <SelectItem value="ADMIN">Администратор</SelectItem>
+              <SelectItem value="PREMIUM">Премиум</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -286,20 +179,20 @@ export default function AdminDictionaryPage() {
       </div>
 
       {/* TABLE */}
-      <table className="w-full border border-slate-700 rounded">
+      <table className="w-full border border-slate-700 rounded table-fixed">
         <thead className="bg-slate-800">
           <tr>
-            <th>ID</th>
-            <th>Label</th>
-            <th>Role</th>
-            <th>Active</th>
+            <th className="w-20 px-3 py-2 text-left">ID</th>
+            <th className="px-3 py-2 text-left">Название</th>
+            <th className="w-56 px-3 py-2 text-left">Роль доступа</th>
+            <th className="w-24 px-3 py-2 text-center">Активен</th>
           </tr>
         </thead>
         <tbody>
           {items.map((i) => (
             <tr key={i.id} className="border-t border-slate-700">
-              <td>{i.id}</td>
-              <td>{i.label}</td>
+              <td className="px-3 py-2">{i.id}</td>
+              <td className="px-3 py-2 truncate">{i.label}</td>
               <td>
                 <Select
                   value={i.allowedRole ?? "ALL"}
@@ -307,18 +200,21 @@ export default function AdminDictionaryPage() {
                     handleRoleChange(i, v === "ALL" ? null : v)
                   }
                 >
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className="w-[180px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">Все</SelectItem>
-                    <SelectItem value="USER">USER</SelectItem>
-                    <SelectItem value="ADMIN">ADMIN</SelectItem>
+                    <SelectItem value="USER">Пользователь</SelectItem>
+                    <SelectItem value="ADMIN">Администратор</SelectItem>
+                    <SelectItem value="PREMIUM">Премиум</SelectItem>
                   </SelectContent>
                 </Select>
               </td>
-              <td>
-                <Switch checked={i.active} onCheckedChange={() => handleToggle(i)} />
+              <td className="px-3 py-2 text-center">
+                <div className="inline-flex justify-center">
+                  <Switch checked={i.active} onCheckedChange={() => handleToggle(i)} />
+                </div>
               </td>
             </tr>
           ))}

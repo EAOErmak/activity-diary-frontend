@@ -3,6 +3,7 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
 } from "axios";
+import { toast } from "sonner";
 import { useAuthStore } from "@/shared/store/authStore";
 
 // ======================================================
@@ -74,9 +75,23 @@ function processQueue(error: any, token: string | null) {
 }
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    const data: any = response.data;
+    if (data && data.success === false) {
+      toast.error(data.message ?? "Ошибка");
+      return Promise.reject(
+        new Error(data.message ?? "Ошибка")
+      );
+    }
+    return response;
+  },
 
   async (error: AxiosError) => {
+    const message =
+      (error.response?.data as any)?.message ?? error.message;
+    if (message) {
+      toast.error(message);
+    }
     const originalRequest = error.config as AxiosRequestConfig & {
       _retry?: boolean;
     };

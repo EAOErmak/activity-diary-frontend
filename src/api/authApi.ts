@@ -39,27 +39,4 @@ export const refreshTokenRequest = async (
   return r.data.data;
 };
 
-/*
-export const confirmLoginRequest = async (
-  dto: VerificationConfirm
-): Promise<AuthResponse> => {
-  const r = await api.post<ApiResponse<AuthResponse>>("/auth/login/confirm", dto);
-  return r.data.data;
-};
-
-export const confirmVerificationRequest = async (
-  dto: VerificationConfirm
-): Promise<void> => {
-  const r = await api.post<ApiResponse<void>>("/auth/verification/confirm", dto);
-  return r.data.data;
-};
-
-export const requestVerificationRequest = async (
-  dto: VerificationRequest
-): Promise<void> => {
-  const r = await api.post<ApiResponse<void>>("/auth/verification/request", dto);
-  return r.data.data;
-};
-*/
-
 

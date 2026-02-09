@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import DiaryEntryForm, {
@@ -28,26 +28,25 @@ export default function DiaryEditPage() {
 
         setStatus(entry.status);
 
-        // Заполняем форму, только если запись не DELETED
+        // Р—Р°РїРѕР»РЅСЏРµРј С„РѕСЂРјСѓ, С‚РѕР»СЊРєРѕ РµСЃР»Рё Р·Р°РїРёСЃСЊ РЅРµ DELETED
         if (entry.status !== "DELETED") {
-          setValues({
-            categoryId: entry.categoryId,
-            subCategoryId: entry.subCategoryId,
-
+          setValues({     
             description: entry.description ?? "",
             mood: entry.mood ?? 3,
             status: entry.status, // WIN / LOSE
 
             whenStarted: entry.whenStarted ?? "",
             whenEnded: entry.whenEnded ?? "",
+            tags: [],
 
             metrics:
               entry.metrics?.map((m) => ({
                 id: m.id,
-                backendId: m.id,
-                nameId: m.metricTypeId,
-                unitId: m.unitId,
-                value: m.value,
+                metricTypeId: m.metricTypeId,
+                values: m.values.map((v) => ({
+                  unitId: v.unitId,
+                  value: v.value,
+                })),
               })) ?? [],
           });
         }
@@ -64,17 +63,17 @@ export default function DiaryEditPage() {
   };
 
   if (loading)
-    return <p className="text-white text-center p-10">Загрузка...</p>;
+    return <p className="text-white text-center p-10">Р—Р°РіСЂСѓР·РєР°...</p>;
 
   // =============== DELETED ===============
   if (status === "DELETED") {
     return (
       <Card className="max-w-xl mx-auto bg-slate-900 text-white p-8 mt-10 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 text-center">
-          Запись недоступна
+          Р—Р°РїРёСЃСЊ РЅРµРґРѕСЃС‚СѓРїРЅР°
         </h2>
         <p className="text-gray-300 text-center mb-6">
-          Эта запись была помечена как удалённая и больше не может быть изменена.
+          Р­С‚Р° Р·Р°РїРёСЃСЊ Р±С‹Р»Р° РїРѕРјРµС‡РµРЅР° РєР°Рє СѓРґР°Р»С‘РЅРЅР°СЏ Рё Р±РѕР»СЊС€Рµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РёР·РјРµРЅРµРЅР°.
         </p>
 
         <div className="flex justify-center">
@@ -82,7 +81,7 @@ export default function DiaryEditPage() {
             className="bg-blue-600 hover:bg-blue-700"
             onClick={() => nav("/diary")}
           >
-            Вернуться назад
+            Р’РµСЂРЅСѓС‚СЊСЃСЏ РЅР°Р·Р°Рґ
           </Button>
         </div>
       </Card>
@@ -91,15 +90,18 @@ export default function DiaryEditPage() {
 
   // =============== NORMAL EDIT ===============
   if (!values)
-    return <p className="text-white text-center p-10">Ошибка загрузки записи</p>;
+    return <p className="text-white text-center p-10">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РїРёСЃРё</p>;
 
   return (
     <DiaryEntryForm
       mode="edit"
-      title="Редактирование записи"
-      submitLabel="Сохранить изменения"
+      title="Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ Р·Р°РїРёСЃРё"
+      submitLabel="РЎРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ"
       initialValues={values}
       onSubmit={handleSubmit}
     />
   );
 }
+
+
+

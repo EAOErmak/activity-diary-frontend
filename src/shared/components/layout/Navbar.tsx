@@ -1,15 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Moon, Sun, User, LogOut, Shield } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/shared/components/ui/dropdown-menu";
+import { Link } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-import { useAuthStore } from "@/shared/store/authStore";
 import { useTheme } from "@/theme-provider";
 import { Menu } from "lucide-react";
 import { useState } from "react";
@@ -22,9 +13,7 @@ import {
 import UserNavigation from "@/shared/components/navigation/UserNavigation";
 
 export default function Navbar() {
-  const { username, isAuthenticated, logout, role } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
-  const nav = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -40,7 +29,10 @@ export default function Navbar() {
         </Button>
 
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-          <SheetContent side="left" className="w-[90vw] sm:w-80 p-4 [&>button]:hidden">
+          <SheetContent
+            side="left"
+            className="w-[90vw] sm:w-80 p-0 bg-surface text-surfaceForeground border-r border-border [&>button]:hidden"
+          >
             <UserNavigation onNavigate={() => setMenuOpen(false)} />
           </SheetContent>            
         </Sheet>
@@ -69,60 +61,10 @@ export default function Navbar() {
             )}
           </Button>
 
-          {/* USER MENU */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="
-                  rounded-full p-2
-                  text-mutedForeground
-                  hover:bg-surfaceMuted
-                "
-              >
-                <User className="h-5 w-5" />
-              </button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent className="w-52 bg-surface text-surfaceForeground border border-border">
-              {isAuthenticated ? (
-                <>
-                  <DropdownMenuLabel className="font-semibold">
-                    {username}
-                  </DropdownMenuLabel>
-
-                  <DropdownMenuSeparator />
-               
-                  <DropdownMenuItem onClick={() => nav("/settings")}>
-                    Настройки
-                  </DropdownMenuItem>        
-
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem
-                    onClick={() => {
-                      logout();
-                      nav("/", { replace: true });
-                    }}
-                    className="text-event-loseText"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Выйти
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem onClick={() => nav("/login")}>
-                    Войти
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => nav("/register")}>
-                    Регистрация
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
     </header>
   );
 }
+
+

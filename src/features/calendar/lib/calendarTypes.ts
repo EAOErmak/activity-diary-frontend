@@ -5,8 +5,7 @@ export type CalendarEvent = {
   start: Date;
   end: Date;
 
-  categoryName: string;
-  subCategoryName?: string | null;
+  firstTag?: string | null;
 
   status: EntryStatus;
 };

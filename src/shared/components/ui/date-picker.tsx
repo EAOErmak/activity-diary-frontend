@@ -23,9 +23,10 @@ import {
 type Props = {
   date?: Date;
   setDate: (date: Date | undefined) => void;
+  showTime?: boolean;
 };
 
-export function DatePicker({ date, setDate }: Props) {
+export function DatePicker({ date, setDate, showTime = true }: Props) {
   const [time, setTime] = React.useState(
     date ? format(date, "HH:mm") : "00:00"
   );
@@ -58,9 +59,9 @@ export function DatePicker({ date, setDate }: Props) {
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
           {date ? (
-            format(date, "dd.MM.yyyy HH:mm")
+            format(date, showTime ? "dd.MM.yyyy HH:mm" : "dd.MM.yyyy")
           ) : (
-            <span>Выбери дату и время</span>
+            <span>{showTime ? "Выбери дату и время" : "Выбери дату"}</span>
           )}
         </Button>
       </PopoverTrigger>
@@ -76,59 +77,66 @@ export function DatePicker({ date, setDate }: Props) {
             if (!d) return;
             const [h, m] = time.split(":").map(Number);
             const newDate = new Date(d);
-            newDate.setHours(h);
-            newDate.setMinutes(m);
+            if (showTime) {
+              newDate.setHours(h);
+              newDate.setMinutes(m);
+            } else {
+              newDate.setHours(0);
+              newDate.setMinutes(0);
+            }
             setDate(newDate);
           }}
         />
 
-        <div className="mt-4 flex items-center gap-3">
-          <Clock className="h-4 w-4 text-primary" />
+        {showTime && (
+          <div className="mt-4 flex items-center gap-3">
+            <Clock className="h-4 w-4 text-primary" />
 
-          {/* Hours */}
-          <Select
-            value={time.split(":")[0]}
-            onValueChange={(h) =>
-              updateTime(`${h}:${time.split(":")[1]}`)
-            }
-          >
-            <SelectTrigger className="w-[90px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 24 }).map((_, i) => {
-                const v = String(i).padStart(2, "0");
-                return (
-                  <SelectItem key={v} value={v}>
-                    {v}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+            {/* Hours */}
+            <Select
+              value={time.split(":")[0]}
+              onValueChange={(h) =>
+                updateTime(`${h}:${time.split(":")[1]}`)
+              }
+            >
+              <SelectTrigger className="w-[90px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 24 }).map((_, i) => {
+                  const v = String(i).padStart(2, "0");
+                  return (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
 
-          {/* Minutes */}
-          <Select
-            value={time.split(":")[1]}
-            onValueChange={(m) =>
-              updateTime(`${time.split(":")[0]}:${m}`)
-            }
-          >
-            <SelectTrigger className="w-[90px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 60 }).map((_, i) => {
-                const v = String(i).padStart(2, "0");
-                return (
-                  <SelectItem key={v} value={v}>
-                    {v}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
+            {/* Minutes */}
+            <Select
+              value={time.split(":")[1]}
+              onValueChange={(m) =>
+                updateTime(`${time.split(":")[0]}:${m}`)
+              }
+            >
+              <SelectTrigger className="w-[90px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 60 }).map((_, i) => {
+                  const v = String(i).padStart(2, "0");
+                  return (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

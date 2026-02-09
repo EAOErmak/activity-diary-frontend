@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 
 import {
   Dialog,
@@ -39,13 +39,12 @@ useEffect(() => {
       const entry: DiaryEntry = await diaryApi.getEntry(entryId);
 
       setValues({
-        categoryId: entry.categoryId,
-        subCategoryId: entry.subCategoryId,
         description: entry.description ?? "",
         mood: entry.mood ?? 3,
         status: entry.status,
         whenStarted: entry.whenStarted ?? "",
         whenEnded: entry.whenEnded ?? "",
+        tags: [],
 
         metrics: entry.metrics.map(m => ({
           id: m.id,
@@ -67,9 +66,9 @@ useEffect(() => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle></DialogTitle>
+          <DialogTitle>Редактирование записи</DialogTitle>
         </DialogHeader>
 
         {loading || !values ? (
@@ -88,3 +87,6 @@ useEffect(() => {
     </Dialog>
   );
 }
+
+
+

@@ -30,8 +30,7 @@ export function mapToCalendarEvents(
       start: new Date(e.whenStarted!),
       end: new Date(e.whenEnded!),
 
-      categoryName: e.categoryName,
-      subCategoryName: e.subCategoryName,
+      firstTag: e.firstTag,
       status: e.status,
     }));
 }

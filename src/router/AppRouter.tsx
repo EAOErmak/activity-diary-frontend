@@ -12,6 +12,7 @@ import DiaryListPage from "@/features/diary/pages/DiaryListPage/DiaryListPage";
 import DiaryFormPage from "@/features/diary/pages/DiaryFormPage";
 import DiaryDetailsPage from "@/features/diary/pages/DiaryDetailsPage";
 import DiaryEditPage from "@/features/diary/pages/DiaryEditPage";
+import EntryTemplatesPage from "@/features/entry-templates/pages/EntryTemplatesPage";
 
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -21,8 +22,8 @@ import CalendarPage from "@/features/calendar/pages/CalendarPage";
 
 import AdminDictionaryPage from "@/features/admin/dictionary/pages/AdminDictionaryPage";
 import AdminUsersPage from "@/features/admin/users/pages/AdminUsersPage";
+import AdminTagsPage from "@/features/admin/tags/pages/AdminTagsPage";
 import AdminDashboardPage from "@/features/admin/dashboard/pages/AdminDashboardPage";
-import AdminEntryConfigPage from "@/features/admin/entry-config/pages/AdminEntryConfigPage";
 import AdminLayout from "@/features/admin/layout/AdminLayout";
 
 // 🆕 MODAL
@@ -58,6 +59,7 @@ export default function AppRouter() {
         >
           <Route path="/diary" element={<DiaryListPage />} />
           <Route path="/diary/new" element={<DiaryFormPage />} />
+          <Route path="/entry-templates" element={<EntryTemplatesPage />} />
 
           {/* ❗ ОСТАЁТСЯ как обычная страница (deep link) 
           <Route path="/diary/:id" element={<DiaryDetailsPage />} />*/}
@@ -90,9 +92,9 @@ export default function AppRouter() {
         >
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/tags" element={<AdminTagsPage />} />
           <Route path="/admin/users/create" element={<AdminUserCreatePage />} />
           <Route path="/admin/dictionary" element={<AdminDictionaryPage />} />
-          <Route path="/admin/entry-config" element={<AdminEntryConfigPage />} />
         </Route>
 
         {/* FALLBACK */}

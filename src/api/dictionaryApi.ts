@@ -12,7 +12,6 @@ const mapDictionary = (d: DictionaryResponse): DictionaryEntity => ({
   type: d.type,
   label: d.label,
   parentId: d.parentId ?? null,
-  entryFieldConfigId: d.entryFieldConfigId ?? null,
 });
 
 // ============================
@@ -40,7 +39,6 @@ export const getAll = async (): Promise<{
       type: d.type,
       label: d.label,
       parentId: d.parentId ?? null,
-      entryFieldConfigId: d.entryFieldConfigId ?? null,
     });
   }
 

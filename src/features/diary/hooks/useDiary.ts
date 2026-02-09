@@ -5,6 +5,7 @@ import type {
   DiaryEntryUpdate,
   DiaryEntry,
 } from "@/shared/types/diary";
+import { toast } from "sonner";
 
 export function useDiaryActions() {
   const repo = useDiaryRepository.getState();
@@ -15,12 +16,13 @@ export function useDiaryActions() {
     repo.setFull(created);
     repo.appendView({
       id: created.id,
-      categoryName: created.categoryName,
-      subCategoryName: created.subCategoryName,
       whenStarted: created.whenStarted,
       whenEnded: created.whenEnded,
       status: created.status,
+      firstTag: created.firstTag ?? null,
     });
+    window.dispatchEvent(new Event("diary:changed"));
+    toast.success("Запись создана");
 
     return created;
   }
@@ -31,11 +33,10 @@ export function useDiaryActions() {
     repo.setFull(updated);
     repo.updateView({
       id: updated.id,
-      categoryName: updated.categoryName,
-      subCategoryName: updated.subCategoryName,
       whenStarted: updated.whenStarted,
       whenEnded: updated.whenEnded,
       status: updated.status,
+      firstTag: updated.firstTag ?? null,
     });
 
     return updated;

@@ -12,14 +12,19 @@ import { CreateEntryDialog } from "@/features/diary/components/CreateEntryDialog
 
 export default function CalendarPage() {
   const [baseDate, setBaseDate] = useState(() => new Date());
-  const { days, events } = useCalendarWeek(baseDate);
+  const [tags, setTags] = useState<string[]>([]);
+  const { days, events } = useCalendarWeek(baseDate, tags);
   const [createOpen, setCreateOpen] = useState(false);
   
   return (
     <div className="min-h-screen bg-page p-6">
       <div className="mx-auto max-w-[1200px]">
         <div className="grid grid-cols-[320px_1fr] gap-8">
-          <CalendarSidebar />
+          <CalendarSidebar
+            onSelectDay={(day) => setBaseDate(day)}
+            tags={tags}
+            onTagsChange={setTags}
+          />
 
           <div className="space-y-6">
             <CalendarHeader

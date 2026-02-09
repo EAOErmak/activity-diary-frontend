@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 
 import { Form } from "@/shared/components/ui/form";
@@ -11,8 +11,6 @@ import {
 } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { useDictionary } from "@/shared/hooks/useDictionary";
-import { useSubCategories } from "@/shared/hooks/useSubCategories";
-import { useEntryFieldConfig } from "@/shared/hooks/useEntryFieldConfig";
 
 import type {
   DiaryEntryCreate,
@@ -21,13 +19,11 @@ import type {
 } from "@/shared/types/diary";
 
 import {
-  DiaryCategorySection,
   DiaryDescriptionSection,
   DiaryMetricsSection,
   DiaryMoodSection,
   DiaryStatusSection,
-  DiaryTimeSection,
-  DiaryTagsSection,     
+  DiaryTimeSection,   
 } from "./sections";
 
 /* ==============================
@@ -44,7 +40,7 @@ export type DiaryEntryFormValues = {
   tags: string[]   
 
   metrics: {
-    id?: number            // id EntryMetric (только для edit)
+    id?: number
     metricTypeId: number | null
     values: {
       unitId: number | null
@@ -164,7 +160,7 @@ export default function DiaryEntryForm(props: Props) {
 
             {mode === "edit" && <DiaryStatusSection />}
 
-            <DiaryTimeSection />
+            <DiaryTimeSection mode={mode} />
 
             <DiaryMetricsSection
               metricTypes={useDictionary("METRIC_NAME")}
@@ -187,3 +183,10 @@ export default function DiaryEntryForm(props: Props) {
     </div>
   );
 }
+
+
+
+
+
+
+

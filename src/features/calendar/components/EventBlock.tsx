@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { format, startOfDay, endOfDay } from "date-fns";
+﻿import React, { useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { CalendarEvent } from "../lib/calendarTypes";
 import { getEventPosition } from "../utils/eventPosition";
 import { getUiStatus, STATUS_STYLES, getLeftBarColor } from "../../../shared/lib/uiStatus";
@@ -17,22 +17,14 @@ export default function EventBlock({
   startHour,
   hourHeight,
 }: Props) {
+  const nav = useNavigate();
+  const location = useLocation();
   const { top, height } = useMemo(
     () => getEventPosition(event, day, startHour, hourHeight),
     [event, day, startHour, hourHeight]
   );
 
-  const dayStart = startOfDay(day);
-  const dayEnd = endOfDay(day);
-
-  const visibleStart = event.start < dayStart ? dayStart : event.start;
-  const visibleEnd = event.end > dayEnd ? dayEnd : event.end;
-
-  const title = event.subCategoryName ?? event.categoryName ?? "Без названия";
-  const timeLabel = `${format(visibleStart, "HH:mm")} — ${format(
-    visibleEnd,
-    "HH:mm"
-  )}`;
+  const title = event.firstTag ?? "Без названия";
 
   // ✅ ВАЖНО: вычисляем UI-статус
   const uiStatus = getUiStatus({
@@ -40,52 +32,63 @@ export default function EventBlock({
     status: event.status,
     whenStarted: event.start.toISOString(),
     whenEnded: event.end.toISOString(),
-    categoryName: event.categoryName ?? "",
-    subCategoryName: event.subCategoryName ?? null,
+    firstTag: event.firstTag ?? null,
   });
 
-return (
-  <div
-    className={`
-      absolute
-      right-2
-      z-10
-      flex
-      rounded-r-xl
-      px-3 py-2
-      text-[12px]
-      shadow-sm
-      overflow-hidden
-      ${STATUS_STYLES[uiStatus]}
-      bg-opacity-[var(--event-opacity)]
-    `}
-    style={{
-      top,
-      height,
-      left: 0,
-    }}
-    title={`${title} — ${timeLabel}`}
-  >
-    {/* LEFT STATUS BAR */}
+  return (
     <div
       className={`
-        absolute left-0 top-0 bottom-0
-        w-1.5
-        ${getLeftBarColor(uiStatus)}
+        absolute
+        right-2
+        z-10
+        flex
+        rounded-r-xl
+        px-3 py-2
+        text-[12px]
+        shadow-sm
+        overflow-hidden
+        cursor-pointer
+        ${STATUS_STYLES[uiStatus]}
+        bg-opacity-[var(--event-opacity)]
       `}
-    />
+      style={{
+        top,
+        height,
+        left: 0,
+      }}
+      title={title}
+      role="button"
+      tabIndex={0}
+      onClick={() =>
+        nav(`/diary/${event.id}`, {
+          state: { background: location },
+        })
+      }
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          nav(`/diary/${event.id}`, {
+            state: { background: location },
+          });
+        }
+      }}
+    >
+      {/* LEFT STATUS BAR */}
+      <div
+        className={`
+          absolute left-0 top-0 bottom-0
+          w-1.5
+          ${getLeftBarColor(uiStatus)}
+        `}
+      />
 
-    {/* CONTENT */}
-    <div className="pl-3 w-full">
-      <div className="font-medium truncate leading-tight">
-        {title}
-      </div>
-
-      <div className="mt-0.5 text-[11px] opacity-80">
-        {timeLabel}
+      {/* CONTENT */}
+      <div className="pl-3 w-full">
+        <div className="font-medium truncate leading-tight">
+          {title}
+        </div>
+        {/* time label hidden in calendar grid */}
       </div>
     </div>
-  </div>
-);
-
+  );
 }

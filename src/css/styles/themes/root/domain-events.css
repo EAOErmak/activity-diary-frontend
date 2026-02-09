@@ -1,0 +1,21 @@
+@layer base {
+  :root {
+    /* EVENTS */
+    --event-opacity: 0.6;
+
+    --event-planned-bg: 221 83% 96% / var(--event-opacity);
+    --event-active-bg: 270 95% 95% / var(--event-opacity);
+    --event-win-bg: 142 76% 94% / var(--event-opacity);
+    --event-lose-bg: 0 93% 94% / var(--event-opacity);
+
+    --event-planned-text: 221 83% 53%;
+    --event-active-text: 270 95% 60%;
+    --event-win-text: 142 71% 45%;
+    --event-lose-text: 0 84% 60%;
+
+    --event-planned-border: 221 83% 70%;
+    --event-active-border: 270 95% 75%;
+    --event-win-border: 142 71% 65%;
+    --event-lose-border: 0 84% 70%;
+  }
+}

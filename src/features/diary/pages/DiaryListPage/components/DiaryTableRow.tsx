@@ -31,19 +31,9 @@ export function DiaryTableRow({ entry, onEdit }: { entry: DiaryEntryView; onEdit
         <div className={`h-full w-1 ${STATUS_LEFT_BAR[uiStatus]}`} />
       </TableCell>
 
-      {/* ID */}
-      <TableCell className="text-mutedForeground">
-        {entry.id}
-      </TableCell>
-
       {/* CATEGORY */}
       <TableCell className="text-surfaceForeground/80">
-        {entry.categoryName}
-      </TableCell>
-
-      {/* SUBCATEGORY */}
-      <TableCell className="font-medium text-primary">
-        {entry.subCategoryName}
+        {entry.firstTag}
       </TableCell>
 
       {/* DATE */}

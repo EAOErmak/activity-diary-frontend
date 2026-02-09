@@ -1,6 +1,8 @@
 /* ROOT (always) */
 @import "@/css/styles/themes/root/root-theme.css";
 @import "@/css/styles/themes/root/root-semantic.css";
+@import "@/css/styles/themes/root/components-button.css";
+@import "@/css/styles/themes/root/components-card.css";
 @import "@/css/styles/themes/root/root-domain.css";
 
 /* DARK overrides */

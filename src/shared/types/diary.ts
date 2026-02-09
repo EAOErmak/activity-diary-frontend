@@ -37,19 +37,6 @@ export type EntryMetricResponse = {
 // ENTRY FIELD CONFIG
 // ==============================
 
-export type EntryFieldConfig = {
-  id?: number;
-  name: string;
-
-  showSubCategory: boolean;
-  showMetrics: boolean;
-  showMood: boolean;
-  showDescription: boolean;
-
-  requiredSubCategory: boolean;
-  requiredMetrics: boolean;
-};
-
 // ==============================
 // DIARY ENTRY (CREATE / UPDATE)
 // ==============================
@@ -87,6 +74,7 @@ export type DiaryEntry = {
   mood: number | null;
   description: string | null;
   status: EntryStatus;
+  firstTag?: string | null;
 
   userId: number;
 
@@ -98,11 +86,10 @@ export type DiaryEntry = {
 
 export type DiaryEntryView = {
   id: number;
-  categoryName: string;
-  subCategoryName?: string | null;
   whenStarted: string | null;
   whenEnded: string | null;
   status: EntryStatus;
+  firstTag: string | null;
 };
 
 // ==============================

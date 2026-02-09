@@ -16,9 +16,7 @@ export function DiaryTable({ entries, onEdit }: { entries: DiaryEntryView[]; onE
         <TableHeader>
           <TableRow>
             <TableHead />
-            <TableHead>ID</TableHead>
             <TableHead>Категория</TableHead>
-            <TableHead>Подкатегория</TableHead>
             <TableHead>Дата</TableHead>
             <TableHead>Статус</TableHead>
             <TableHead className="text-right">Действия</TableHead>

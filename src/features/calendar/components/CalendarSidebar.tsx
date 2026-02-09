@@ -1,21 +1,72 @@
+import { useState } from "react";
 import MiniCalendar from "@/features/calendar/components/MiniCalendar";
-import CategoryList from "@/features/calendar/components/CategoryList";
-import PrioritizeList from "@/features/calendar/components/PrioritizeList";
 import { Card } from "@/shared/components/ui/card";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 
-export function CalendarSidebar() {
+type Props = {
+  onSelectDay?: (day: Date) => void;
+  tags: string[];
+  onTagsChange: (tags: string[]) => void;
+};
+
+export function CalendarSidebar({ onSelectDay, tags, onTagsChange }: Props) {
+  const [input, setInput] = useState("");
+
+  const addItem = () => {
+    const value = input.trim();
+    if (!value) return;
+    const normalized = value.toLowerCase();
+    if (tags.includes(normalized)) {
+      setInput("");
+      return;
+    }
+    onTagsChange([normalized, ...tags]);
+    setInput("");
+  };
+
   return (
     <aside className="w-[320px] space-y-4">
       <Card className="p-4">
-        <MiniCalendar />
+        <MiniCalendar onSelect={onSelectDay} />
       </Card>
 
       <Card className="p-4">
-        <CategoryList />
-      </Card>
+        <h3 className="text-sm font-medium mb-3">Список</h3>
+        <Label className="mb-2 block text-xs text-mutedForeground">Новая запись</Label>
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addItem();
+            }
+          }}
+          placeholder="Введите слово и нажмите Enter"
+        />
 
-      <Card className="p-4">
-        <PrioritizeList />
+        {tags.length > 0 && (
+          <ul className="mt-3 space-y-2 text-sm">
+            {tags.map((item, idx) => (
+              <li
+                key={`${item}-${idx}`}
+                className="rounded-lg bg-surface px-3 py-2 border border-border text-surfaceForeground flex items-center justify-between gap-2"
+              >
+                <span className="truncate">{item}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onTagsChange(tags.filter((_, i) => i !== idx))
+                  }
+                  className="text-xs text-mutedForeground hover:text-destructive"
+                >
+                  Удалить
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </aside>
   );

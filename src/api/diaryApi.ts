@@ -3,33 +3,31 @@ import type {
   DiaryEntryCreate,
   DiaryEntryUpdate,
   DiaryEntry,
-  EntryFieldConfig,
   Page,
   DiaryEntryView,
 } from "@/shared/types/diary";
 import type { ApiResponse } from "@/shared/types/api";
 
 // ==============================
-// GET ALL MY ENTRIES (PAGE)
-// ==============================
-export const getDiaryAllForSync = async (): Promise<DiaryEntryView[]> => {
-  const { data } = await api.get<ApiResponse<DiaryEntryView[]>>(
-    "/diary/all"
-  );
-  return data.data;
-};
-
-// ==============================
 // GET MY ENTRIES (PAGE)
 // ==============================
+type DiaryMineFilters = {
+  uiStatus?: string;
+  now?: string;
+  tags?: string[];
+  from?: string;
+  to?: string;
+};
+
 export const getMyEntries = async (
   page = 0,
-  size = 20
+  size = 20,
+  filters: DiaryMineFilters = {}
 ): Promise<Page<DiaryEntryView>> => {
   const { data } = await api.get<ApiResponse<Page<DiaryEntryView>>>(
     "/diary/mine",
     {
-      params: { page, size },
+      params: { page, size, ...filters },
     }
   );
 
@@ -94,26 +92,6 @@ export const deleteEntry = async (id: number): Promise<void> => {
   await api.delete(`/diary/${id}`);
 };
 
-// ==============================
-// GET ENTRY FIELD CONFIG
-// ==============================
-export const getEntryFieldConfig = async (
-  categoryId: number
-): Promise<EntryFieldConfig> => {
-  const { data } = await api.get<ApiResponse<EntryFieldConfig>>(
-    `/diary/entry-config/${categoryId}`
-  );
-
-  return data.data;
-};
-
-export const getAllEntryFieldConfigs = async (): Promise<EntryFieldConfig[]> => {
-  const { data } = await api.get<ApiResponse<EntryFieldConfig[]>>(
-    `/entry-config/all`
-  );
-
-  return data.data;
-};
 
 // ==============================
 // SINGLE EXPORT OBJECT
@@ -124,8 +102,5 @@ export const diaryApi = {
   createEntry,
   updateEntry,
   deleteEntry,
-  getEntryFieldConfig,
   getEntriesByRange,
-  getDiaryAllForSync,
-  getAllEntryFieldConfigs,
 };

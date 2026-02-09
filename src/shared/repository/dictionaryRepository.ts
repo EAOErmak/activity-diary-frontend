@@ -3,8 +3,6 @@ import type { DictionaryEntity } from "@/shared/types/dictionary";
 import type { Repository } from "./Repository";
 import type { DictionaryType } from "@/shared/types/dictionary";
 import type { DictionaryPayload } from "@/shared/types/dictionary";
-import type { EntryFieldConfig } from "@/shared/types/diary";
-import { useEntryFieldConfigRepository } from "./entryFieldConfigRepository";
 
 /* ================================
    TYPES
@@ -17,7 +15,6 @@ export type DictionaryRepoState = {
   hydrate: () => void;
   setAll: (data: DictionaryPayload, version: number) => void;
   getType: (type: DictionaryType) => DictionaryEntity[];
-  getCategoryConfig: (categoryId?: number | null) => EntryFieldConfig | null;
 };
 
 const emptyDictionaryPayload = (): DictionaryPayload => ({
@@ -63,19 +60,6 @@ const dictionaryRepoCreator: StateCreator<DictionaryRepoState> = (set, get) => (
     return get().items[type] ?? [];
   },
 
-  getCategoryConfig(categoryId) {
-    if (categoryId == null) return null;
-
-    const category = get().items.CATEGORY.find(
-      (c) => c.id === categoryId
-    );
-
-    if (!category?.entryFieldConfigId) return null;
-
-    return useEntryFieldConfigRepository
-      .getState()
-      .getById(category.entryFieldConfigId);
-  },
 });
 
 /* ================================

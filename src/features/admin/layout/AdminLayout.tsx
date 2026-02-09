@@ -20,8 +20,8 @@ export default function AdminLayout() {
         <Button variant="ghost" onClick={() => nav("/admin/dictionary")}>
           Словари
         </Button>
-        <Button variant="ghost" onClick={() => nav("/admin/entry-config")}>
-          Конфигурация
+        <Button variant="ghost" onClick={() => nav("/admin/tags")}>
+          Теги
         </Button>
 
         <div className="mt-auto">

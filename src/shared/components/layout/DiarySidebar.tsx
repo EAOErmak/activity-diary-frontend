@@ -17,6 +17,12 @@ export function DiarySidebar() {
           All Entries
         </Button>
       </Link>
+      <Link to="/entry-templates">
+        <Button variant="surface" className="w-full justify-start">
+          <List className="mr-2 h-4 w-4" />
+          Шаблоны
+        </Button>
+      </Link>
       <Link to="/settings">
         <Button variant="surface" className="w-full justify-start">
           <Settings className="mr-2 h-4 w-4" />

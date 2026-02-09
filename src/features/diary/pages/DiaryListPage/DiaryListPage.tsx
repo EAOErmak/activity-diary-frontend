@@ -1,43 +1,66 @@
-import React, { useMemo, useState } from "react";
-import { useDiaryRepository } from "@/shared/repository/diaryRepository";
+import React, { useCallback, useEffect, useState } from "react";
+import { diaryApi } from "@/api/diaryApi";
 import { DiaryListHeader } from "@/features/diary/pages/DiaryListPage/components/DiaryListHeader";
 import { DiaryListFilters } from "@/features/diary/pages/DiaryListPage/components/DiaryListFilters";
 import { CreateEntryDialog } from "@/features/diary/components/CreateEntryDialog";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
-import { getDisplayStatus, DisplayStatus } from "@/features/diary/pages/DiaryListPage/helpers";
+import { DisplayStatus } from "@/features/diary/pages/DiaryListPage/helpers";
 import { DiaryTable } from "@/features/diary/pages/DiaryListPage/components/DiaryTable";
+import type { DiaryEntryView } from "@/shared/types/diary";
 
 export default function DiaryListPage() {
-  const entries = useDiaryRepository((s) => s.list);
+  const [entries, setEntries] = useState<DiaryEntryView[]>([]);
 
   const [status, setStatus] = useState<DisplayStatus | "">("");
-  const [search, setSearch] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagQuery, setTagQuery] = useState("");
   const [date, setDate] = useState<Date | undefined>();
   const [createOpen, setCreateOpen] = useState(false);
   const [editEntryId, setEditEntryId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+  const load = useCallback(async () => {
+    const nowIso = new Date().toISOString();
+    const query = tagQuery.trim().toLowerCase();
+    const mergedTags = query ? [query, ...tags] : tags;
+    const tagsParam = mergedTags.length ? mergedTags : undefined;
 
-    return entries.filter((e) => {
-      const ds = getDisplayStatus(e);
-      const byStatus = status ? ds === status : true;
-      const title = (e.subCategoryName ?? "").toLowerCase();
-      const bySearch = q ? title.includes(q) : true;
-      const byDate =
-        !date || !e.whenStarted
-          ? !date
-          : new Date(e.whenStarted).toDateString() === date.toDateString();
+    let from: string | undefined;
+    let to: string | undefined;
+    if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      from = start.toISOString();
+      to = end.toISOString();
+    }
 
-      return byStatus && bySearch && byDate;
+    const result = await diaryApi.getMyEntries(0, 20, {
+      uiStatus: status || undefined,
+      now: nowIso,
+      tags: tagsParam,
+      from,
+      to,
     });
-  }, [entries, status, search, date]);
+
+    setEntries(result.content ?? []);
+  }, [status, tags, tagQuery, date]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const onChanged = () => load();
+    window.addEventListener("diary:changed", onChanged);
+    return () => window.removeEventListener("diary:changed", onChanged);
+  }, [load]);
 
   return (
     <div className="min-h-screen bg-page text-foreground p-6 sm:p-10">
       <DiaryListHeader
-        count={filtered.length}
+        count={entries.length}
         onCreate={() => {
           setEditOpen(false);
           setEditEntryId(null);
@@ -63,20 +86,23 @@ export default function DiaryListPage() {
 
       <DiaryListFilters
         status={status}
-        search={search}
+        tags={tags}
+        tagQuery={tagQuery}
         date={date}
         onStatusChange={setStatus}
-        onSearchChange={setSearch}
+        onTagsChange={setTags}
+        onTagQueryChange={setTagQuery}
         onDateChange={setDate}
         onReset={() => {
           setStatus("");
-          setSearch("");
+          setTags([]);
+          setTagQuery("");
           setDate(undefined);
         }}
       />
 
     <DiaryTable
-      entries={filtered}
+      entries={entries}
       onEdit={(id) => {
         setEditEntryId(id);
         setEditOpen(true);

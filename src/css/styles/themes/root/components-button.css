@@ -1,0 +1,11 @@
+@layer base {
+  :root {
+    /* BUTTON */
+    --button-bg: var(--primary);
+    --button-foreground: var(--primary-foreground);
+    --button-border: var(--border);
+
+    --button-muted-bg: var(--surface-muted);
+    --button-muted-foreground: var(--foreground);
+  }
+}
