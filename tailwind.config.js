@@ -53,6 +53,7 @@ module.exports = {
   				ring: 'hsl(var(--sidebar-ring))'
   			},
 			surface_second: "hsl(var(--surface-bg))",
+			metricSurface: "hsl(var(--metric-surface))",
   		}
   	}
   },

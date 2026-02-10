@@ -19,5 +19,8 @@
     --skeleton: 222 47% 18%;
     --input: 222 35% 13%;
     --input-hover: 222 35% 16%;
+
+    /* diary metrics */
+    --metric-surface: 222 47% 12%;
   }
 }

@@ -109,7 +109,9 @@ export default function EntryTemplateForm(props: Props) {
                 const metrics = values.metrics
                   .filter((m) => m.metricTypeId && m.values.length > 0)
                   .map((m) => ({
-                    ...(m.id ? { id: m.id } : {}),
+                    // react-hook-form field array adds a string id for keys;
+                    // send id only if it is a real numeric backend id
+                    ...(typeof m.id === "number" ? { id: m.id } : {}),
                     metricTypeId: m.metricTypeId!,
                     values: m.values
                       .filter((v) => v.unitId)
@@ -180,5 +182,4 @@ export default function EntryTemplateForm(props: Props) {
     </div>
   );
 }
-
 

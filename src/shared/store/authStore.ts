@@ -83,7 +83,7 @@ export const useAuthStore = create<AuthState>()(
         // ✅ СИГНАЛ AXIOS, ЧТО ВЫХОД УЖЕ ИДЁТ
         set({ isLoggingOut: true });
 
-        localStorage.removeItem("auth-storage");
+        localStorage.clear();
 
         set({
           accessToken: null,

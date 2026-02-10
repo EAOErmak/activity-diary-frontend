@@ -131,10 +131,10 @@ export default function EntryTemplatesPage() {
             <button
               type="button"
               onClick={() => setTemplateKind("entry")}
-              className={`rounded-xl border p-4 text-left transition ${
+              className={`rounded-xl p-4 text-left bg-input text-foreground transition-colors hover:bg-[hsl(var(--input-hover))] focus:outline-none focus:ring-2 focus:ring-ring ${
                 templateKind === "entry"
-                  ? "border-primary bg-surface_second"
-                  : "border-border bg-surface"
+                  ? "border border-primary"
+                  : "border border-transparent"
               }`}
             >
               <div className="text-base font-semibold">Шаблоны записей</div>
@@ -145,14 +145,14 @@ export default function EntryTemplatesPage() {
             <button
               type="button"
               onClick={() => setTemplateKind("weekday")}
-              className={`rounded-xl border p-4 text-left transition ${
+              className={`rounded-xl p-4 text-left bg-input text-foreground transition-colors hover:bg-[hsl(var(--input-hover))] focus:outline-none focus:ring-2 focus:ring-ring ${
                 templateKind === "weekday"
-                  ? "border-primary bg-surface_second"
-                  : "border-border bg-surface"
+                  ? "border border-primary"
+                  : "border border-transparent"
               }`}
             >
               <div className="text-base font-semibold">
-                Шаблоны дня недели
+                Шаблоны Дней
               </div>
               <div className="text-sm text-muted-foreground">
                 Планирование повторяющихся дней
@@ -161,10 +161,10 @@ export default function EntryTemplatesPage() {
             <button
               type="button"
               onClick={() => setTemplateKind("week")}
-              className={`rounded-xl border p-4 text-left transition ${
+              className={`rounded-xl p-4 text-left bg-input text-foreground transition-colors hover:bg-[hsl(var(--input-hover))] focus:outline-none focus:ring-2 focus:ring-ring ${
                 templateKind === "week"
-                  ? "border-primary bg-surface_second"
-                  : "border-border bg-surface"
+                  ? "border border-primary"
+                  : "border border-transparent"
               }`}
             >
               <div className="text-base font-semibold">Шаблоны недели</div>

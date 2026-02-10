@@ -9,22 +9,39 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
 
 type Props = {
-  show: boolean;
+  requireTag?: boolean;
 };
 
-export function DiaryDescriptionSection() {
+const MAX_DESCRIPTION_LENGTH = 1000;
+
+export function DiaryDescriptionSection({ requireTag = false }: Props) {
   const form = useFormContext();
   return (
     <FormField
       control={form.control}
       name="description"
+      rules={{
+        maxLength: {
+          value: MAX_DESCRIPTION_LENGTH,
+          message: `Максимум ${MAX_DESCRIPTION_LENGTH} символов`,
+        },
+        validate: (value: string) => {
+          if (!requireTag) return true;
+          if (!value) {
+            return "Добавь тег вида #тег (минимум 2 символа)";
+          }
+          const hasTag = /#([\p{L}\p{N}_-]{2,})/u.test(value);
+          return hasTag || "Добавь тег вида #тег (минимум 2 символа)";
+        },
+      }}
       render={({ field }) => (
         <FormItem>
           <FormLabel>Комментарий</FormLabel>
 
           <FormControl>
             <Textarea
-              placeholder="Опиши подробнее…"
+              placeholder="Комментарий к записи"
+              maxLength={MAX_DESCRIPTION_LENGTH}
               {...field}
             />
           </FormControl>

@@ -34,7 +34,7 @@ export function DiaryMetricItem({
   const values = form.watch(`metrics.${index}.values`) ?? [];
 
   return (
-    <div className="bg-surface_second rounded-xl p-3 space-y-3">
+    <div className="bg-metricSurface rounded-xl p-3 space-y-3">
       {/* ===== METRIC TYPE ===== */}
       <div className="flex gap-2 items-end">
         <FormField
@@ -70,7 +70,9 @@ export function DiaryMetricItem({
             type="button"
             size="icon"
             variant="ghost"
+            className="text-muted-foreground hover:text-destructive"
             onClick={onRemove}
+            aria-label="Удалить метрику"
           >
             ✕
           </Button>
@@ -121,12 +123,25 @@ export function DiaryMetricItem({
                 <FormItem>
                   <FormControl>
                     <Input
-                      type="number"
-                      min={0}
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(Number(e.target.value))
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="0"
+                      value={
+                        field.value === 0
+                          ? ""
+                          : String(field.value ?? "")
                       }
+                      onBlur={(e) => {
+                        if (e.target.value === "") {
+                          field.onChange(0);
+                        }
+                        field.onBlur();
+                      }}
+                      onChange={(e) => {
+                        const next = e.target.value.replace(/\D+/g, "");
+                        field.onChange(next === "" ? "" : Number(next));
+                      }}
                     />
                   </FormControl>
                 </FormItem>
@@ -138,11 +153,13 @@ export function DiaryMetricItem({
               type="button"
               size="icon"
               variant="ghost"
+              className="text-muted-foreground hover:text-destructive"
               onClick={() => {
                 const next = [...values];
                 next.splice(valueIndex, 1);
                 form.setValue(`metrics.${index}.values`, next);
               }}
+              aria-label="Удалить значение метрики"
             >
               ✕
             </Button>

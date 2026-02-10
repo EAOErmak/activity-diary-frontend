@@ -27,7 +27,7 @@ export function DiaryMetricsSection({
           index={index}
           metricTypes={metricTypes}
           units={units}
-          canRemove={fields.length > 1}
+          canRemove={fields.length > 0}
           onRemove={() => remove(index)}
         />
       ))}

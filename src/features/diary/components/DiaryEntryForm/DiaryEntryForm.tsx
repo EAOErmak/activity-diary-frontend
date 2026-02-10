@@ -141,7 +141,9 @@ export default function DiaryEntryForm(props: Props) {
                   status: values.status,
 
                   metrics: values.metrics.map(m => ({
-                    ...(m.id ? { id: m.id } : {}),
+                    // react-hook-form field array adds a string id for keys;
+                    // send id only if it is a real numeric backend id
+                    ...(typeof m.id === "number" ? { id: m.id } : {}),
                     metricTypeId: m.metricTypeId!,
                     values: m.values.map(v => ({
                       unitId: v.unitId!,
@@ -154,7 +156,7 @@ export default function DiaryEntryForm(props: Props) {
             })}
             className="space-y-6"
           >
-            <DiaryDescriptionSection />
+            <DiaryDescriptionSection requireTag={mode === "create"} />
 
             <DiaryMoodSection />
 

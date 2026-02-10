@@ -1,22 +1,22 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 
+import { Button } from "@/shared/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/shared/components/ui/form";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
-import { Button } from "@/shared/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -38,41 +38,56 @@ type ScheduleTemplateFormValues = {
 type Props = {
   title: string;
   submitLabel?: string;
+  namePlaceholder?: string;
   itemLabel: string;
   itemPlaceholder?: string;
   emptyOptionsHint?: string;
   options: ScheduleTemplateOption[];
   requireItems?: boolean;
+  fixedSlotLabels?: string[];
+  requireAllFixedSlots?: boolean;
   onSubmit: (payload: { name: string; itemIds: number[] }) => void | Promise<void>;
 };
 
 export default function ScheduleTemplateForm({
   title,
   submitLabel = "Сохранить",
+  namePlaceholder = "Например: Шаблон",
   itemLabel,
   itemPlaceholder = "Выберите шаблон",
   emptyOptionsHint,
   options,
   requireItems = true,
+  fixedSlotLabels,
+  requireAllFixedSlots = false,
   onSubmit,
 }: Props) {
+  const fixedSlotsCount = fixedSlotLabels?.length ?? 0;
+  const isFixedSlotsMode = fixedSlotsCount > 0;
+
   const form = useForm<ScheduleTemplateFormValues>({
     defaultValues: {
       name: "",
-      items: [],
+      items: isFixedSlotsMode
+        ? Array.from({ length: fixedSlotsCount }, () => ({
+            templateId: null,
+          }))
+        : [],
     },
   });
 
-  const { control, formState: { isSubmitting, errors } } = form;
+  const {
+    control,
+    formState: { errors, isSubmitting },
+  } = form;
 
-  const { fields, append, remove } = useFieldArray({
+  const { append, fields, remove } = useFieldArray({
     control,
     name: "items",
   });
 
   const hasOptions = options.length > 0;
-  const itemsError = (errors.items as { message?: string } | undefined)
-    ?.message;
+  const itemsError = (errors.items as { message?: string } | undefined)?.message;
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
@@ -95,9 +110,22 @@ export default function ScheduleTemplateForm({
                 }
                 form.clearErrors("name");
 
+                if (isFixedSlotsMode && requireAllFixedSlots) {
+                  const hasEmptySlot = values.items.some(
+                    (item) => item.templateId === null
+                  );
+                  if (hasEmptySlot) {
+                    form.setError("items", {
+                      type: "required",
+                      message: "Заполните все 7 дней недели",
+                    });
+                    return;
+                  }
+                }
+
                 const itemIds = values.items
                   .map((item) => item.templateId)
-                  .filter((value): value is number => !!value);
+                  .filter((value): value is number => value !== null);
 
                 if (requireItems && itemIds.length === 0) {
                   form.setError("items", {
@@ -120,7 +148,7 @@ export default function ScheduleTemplateForm({
                     <FormLabel>Название</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Например: Рабочий день"
+                        placeholder={namePlaceholder}
                         maxLength={120}
                         {...field}
                       />
@@ -132,17 +160,17 @@ export default function ScheduleTemplateForm({
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium">
-                    {itemLabel}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="surface"
-                    disabled={!hasOptions}
-                    onClick={() => append({ templateId: null })}
-                  >
-                    Добавить {itemLabel.toLowerCase()}
-                  </Button>
+                  <div className="text-sm font-medium">{itemLabel}</div>
+                  {!isFixedSlotsMode && (
+                    <Button
+                      type="button"
+                      variant="surface"
+                      disabled={!hasOptions}
+                      onClick={() => append({ templateId: null })}
+                    >
+                      Добавить {itemLabel.toLowerCase()}
+                    </Button>
+                  )}
                 </div>
 
                 {!hasOptions && (
@@ -151,7 +179,7 @@ export default function ScheduleTemplateForm({
                   </div>
                 )}
 
-                {fields.length === 0 && hasOptions && (
+                {!isFixedSlotsMode && fields.length === 0 && hasOptions && (
                   <div className="text-sm text-muted-foreground">
                     Выберите элементы, которые будут входить в шаблон.
                   </div>
@@ -162,6 +190,11 @@ export default function ScheduleTemplateForm({
                     key={field.id}
                     className="flex flex-col gap-2 sm:flex-row sm:items-center"
                   >
+                    {isFixedSlotsMode && (
+                      <div className="text-sm text-muted-foreground sm:w-40">
+                        {fixedSlotLabels?.[index] ?? `${itemLabel} ${index + 1}`}
+                      </div>
+                    )}
                     <FormField
                       control={control}
                       name={`items.${index}.templateId`}
@@ -169,15 +202,9 @@ export default function ScheduleTemplateForm({
                         <FormItem className="flex-1">
                           <FormControl>
                             <Select
-                              value={
-                                selectField.value
-                                  ? String(selectField.value)
-                                  : ""
-                              }
+                              value={selectField.value ? String(selectField.value) : ""}
                               onValueChange={(value) =>
-                                selectField.onChange(
-                                  value ? Number(value) : null
-                                )
+                                selectField.onChange(value ? Number(value) : null)
                               }
                             >
                               <SelectTrigger>
@@ -185,10 +212,7 @@ export default function ScheduleTemplateForm({
                               </SelectTrigger>
                               <SelectContent>
                                 {options.map((option) => (
-                                  <SelectItem
-                                    key={option.id}
-                                    value={String(option.id)}
-                                  >
+                                  <SelectItem key={option.id} value={String(option.id)}>
                                     {option.name}
                                   </SelectItem>
                                 ))}
@@ -198,29 +222,21 @@ export default function ScheduleTemplateForm({
                         </FormItem>
                       )}
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => remove(index)}
-                    >
-                      Удалить
-                    </Button>
+                    {!isFixedSlotsMode && (
+                      <Button type="button" variant="ghost" onClick={() => remove(index)}>
+                        Удалить
+                      </Button>
+                    )}
                   </div>
                 ))}
 
                 {itemsError && (
-                  <div className="text-sm text-destructive">
-                    {itemsError}
-                  </div>
+                  <div className="text-sm text-destructive">{itemsError}</div>
                 )}
               </div>
 
               <CardFooter className="px-0">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? "Сохранение..." : submitLabel}
                 </Button>
               </CardFooter>
