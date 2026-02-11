@@ -8,21 +8,26 @@ import {
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
 import DayTemplateForm from "@/features/entry-templates/components/ScheduleTemplateForm/DayTemplateForm";
 import type { ScheduleTemplateOption } from "@/features/entry-templates/components/ScheduleTemplateForm/types";
+import type { DayTemplateView } from "@/shared/types/scheduleTemplate";
 import { toast } from "sonner";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  template: DayTemplateView | null;
   entryTemplates: ScheduleTemplateOption[];
-  onCreated?: () => void;
+  onUpdated?: () => void;
 };
 
-export function CreateDayTemplateDialog({
+export function EditDayTemplateDialog({
   open,
   onOpenChange,
+  template,
   entryTemplates,
-  onCreated,
+  onUpdated,
 }: Props) {
+  if (!template) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
@@ -30,22 +35,28 @@ export function CreateDayTemplateDialog({
         <DialogDescription />
 
         <DayTemplateForm
-          title="Шаблон дня"
+          title="Редактировать шаблон дня"
+          submitLabel="Сохранить изменения"
           namePlaceholder="Например: День тренировок"
           itemPlaceholder="Выберите шаблон записи"
           emptyOptionsHint="Сначала создайте хотя бы один шаблон записи."
           entryTemplates={entryTemplates}
+          initialName={template.name}
+          initialSelectedItems={template.items.map((item) => ({
+            templateId: item.entryTemplateId,
+            slot: item.position,
+          }))}
           onSubmit={async ({ name, selectedItems }) => {
-            await scheduleTemplateApi.createDayTemplate({
+            await scheduleTemplateApi.updateDayTemplate(template.id, {
               name,
               items: selectedItems.map(({ templateId, slot }) => ({
                 entryTemplateId: templateId,
                 position: slot,
               })),
             });
-            toast.success("Шаблон дня создан");
+            toast.success("Шаблон дня обновлен");
             onOpenChange(false);
-            onCreated?.();
+            onUpdated?.();
           }}
         />
       </DialogContent>

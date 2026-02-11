@@ -1,54 +1,87 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { CreateEntryTemplateDialog } from "@/features/entry-templates/components/CreateEntryTemplateDialog";
-import { CreateDayTemplateDialog } from "@/features/entry-templates/components/CreateDayTemplateDialog";
-import { CreateWeekTemplateDialog } from "@/features/entry-templates/components/CreateWeekTemplateDialog";
-import { EditEntryTemplateDialog } from "@/features/entry-templates/components/EditEntryTemplateDialog";
 import { entryTemplateApi } from "@/api/entryTemplateApi";
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
-import type { DiaryEntryTemplateView, DiaryEntryTemplate } from "@/shared/types/entryTemplate";
+import { CreateDayTemplateDialog } from "@/features/entry-templates/components/CreateDayTemplateDialog";
+import { CreateEntryTemplateDialog } from "@/features/entry-templates/components/CreateEntryTemplateDialog";
+import { CreateWeekTemplateDialog } from "@/features/entry-templates/components/CreateWeekTemplateDialog";
+import { EditDayTemplateDialog } from "@/features/entry-templates/components/EditDayTemplateDialog";
+import { EditEntryTemplateDialog } from "@/features/entry-templates/components/EditEntryTemplateDialog";
+import { EditWeekTemplateDialog } from "@/features/entry-templates/components/EditWeekTemplateDialog";
 import type { EntryTemplateFormValues } from "@/features/entry-templates/components/EntryTemplateForm/EntryTemplateForm";
-import type { ScheduleTemplateView } from "@/shared/types/scheduleTemplate";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import type { DiaryEntryTemplate, DiaryEntryTemplateView } from "@/shared/types/entryTemplate";
+import type { DayTemplateView, WeekTemplateView } from "@/shared/types/scheduleTemplate";
 
 export default function EntryTemplatesPage() {
-  const [templateKind, setTemplateKind] = useState<
-    "entry" | "weekday" | "week"
-  >("entry");
+  const [templateKind, setTemplateKind] = useState<"entry" | "weekday" | "week">(
+    "entry"
+  );
   const [entryOpen, setEntryOpen] = useState(false);
   const [dayOpen, setDayOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
+
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
-  const [templates, setTemplates] = useState<DiaryEntryTemplateView[]>([]);
-  const [scheduleTemplates, setScheduleTemplates] = useState<ScheduleTemplateView[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [scheduleLoading, setScheduleLoading] = useState(false);
   const [editValues, setEditValues] = useState<EntryTemplateFormValues | null>(
     null
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const result = await entryTemplateApi.listEntryTemplates(0, 50);
-    setTemplates(result ?? []);
-    setLoading(false);
+  const [editDayOpen, setEditDayOpen] = useState(false);
+  const [editWeekOpen, setEditWeekOpen] = useState(false);
+  const [editingDayTemplate, setEditingDayTemplate] = useState<DayTemplateView | null>(
+    null
+  );
+  const [editingWeekTemplate, setEditingWeekTemplate] = useState<WeekTemplateView | null>(
+    null
+  );
+
+  const [entryTemplates, setEntryTemplates] = useState<DiaryEntryTemplateView[]>([]);
+  const [dayTemplates, setDayTemplates] = useState<DayTemplateView[]>([]);
+  const [weekTemplates, setWeekTemplates] = useState<WeekTemplateView[]>([]);
+
+  const [entryLoading, setEntryLoading] = useState(false);
+  const [dayLoading, setDayLoading] = useState(false);
+  const [weekLoading, setWeekLoading] = useState(false);
+
+  const loadEntryTemplates = useCallback(async () => {
+    setEntryLoading(true);
+    try {
+      const result = await entryTemplateApi.listEntryTemplates(0, 50);
+      setEntryTemplates(result ?? []);
+    } finally {
+      setEntryLoading(false);
+    }
   }, []);
 
-  const loadSchedule = useCallback(async () => {
-    setScheduleLoading(true);
-    const result = await scheduleTemplateApi.listTemplates(0, 50);
-    setScheduleTemplates(result ?? []);
-    setScheduleLoading(false);
+  const loadDayTemplates = useCallback(async () => {
+    setDayLoading(true);
+    try {
+      const result = await scheduleTemplateApi.listDayTemplates(0, 50);
+      setDayTemplates(result ?? []);
+    } finally {
+      setDayLoading(false);
+    }
+  }, []);
+
+  const loadWeekTemplates = useCallback(async () => {
+    setWeekLoading(true);
+    try {
+      const result = await scheduleTemplateApi.listWeekTemplates(0, 50);
+      setWeekTemplates(result ?? []);
+    } finally {
+      setWeekLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    load();
-    loadSchedule();
-  }, [load, loadSchedule]);
+    void loadEntryTemplates();
+    void loadDayTemplates();
+    void loadWeekTemplates();
+  }, [loadEntryTemplates, loadDayTemplates, loadWeekTemplates]);
 
-  const openEdit = async (id: number) => {
+  const openEntryTemplateEdit = async (id: number) => {
     const template: DiaryEntryTemplate = await entryTemplateApi.getEntryTemplate(
       id
     );
@@ -62,35 +95,36 @@ export default function EntryTemplatesPage() {
     setEditOpen(true);
   };
 
-  const removeTemplate = async (id: number) => {
+  const openDayTemplateEdit = (template: DayTemplateView) => {
+    setEditingDayTemplate(template);
+    setEditDayOpen(true);
+  };
+
+  const openWeekTemplateEdit = (template: WeekTemplateView) => {
+    setEditingWeekTemplate(template);
+    setEditWeekOpen(true);
+  };
+
+  const removeEntryTemplate = async (id: number) => {
     const confirmed = window.confirm("Удалить шаблон?");
     if (!confirmed) return;
     await entryTemplateApi.deleteEntryTemplate(id);
-    await load();
+    await loadEntryTemplates();
   };
 
-  const removeScheduleTemplate = async (id: number) => {
-    const confirmed = window.confirm("Удалить шаблон?");
+  const removeDayTemplate = async (id: number) => {
+    const confirmed = window.confirm("Удалить шаблон дня?");
     if (!confirmed) return;
-    await scheduleTemplateApi.deleteTemplate(id);
-    await loadSchedule();
+    await scheduleTemplateApi.deleteDayTemplate(id);
+    await Promise.all([loadDayTemplates(), loadWeekTemplates()]);
   };
 
-  const getScheduleKind = (template: ScheduleTemplateView) => {
-    const raw =
-      template.kind ?? template.type ?? template.templateType ?? "";
-    return String(raw).toLowerCase();
+  const removeWeekTemplate = async (id: number) => {
+    const confirmed = window.confirm("Удалить шаблон недели?");
+    if (!confirmed) return;
+    await scheduleTemplateApi.deleteWeekTemplate(id);
+    await loadWeekTemplates();
   };
-
-  const dayTemplates = scheduleTemplates.filter((tpl) => {
-    const kind = getScheduleKind(tpl);
-    return kind.includes("day");
-  });
-
-  const weekTemplates = scheduleTemplates.filter((tpl) => {
-    const kind = getScheduleKind(tpl);
-    return kind.includes("week");
-  });
 
   return (
     <div className="min-h-screen bg-page text-foreground p-6 sm:p-10 space-y-6">
@@ -117,7 +151,7 @@ export default function EntryTemplatesPage() {
           {templateKind === "entry"
             ? "Создать шаблон записи"
             : templateKind === "weekday"
-            ? "Создать шаблон дня недели"
+            ? "Создать шаблон дня"
             : "Создать шаблон недели"}
         </Button>
       </div>
@@ -151,9 +185,7 @@ export default function EntryTemplatesPage() {
                   : "border border-transparent"
               }`}
             >
-              <div className="text-base font-semibold">
-                Шаблоны Дней
-              </div>
+              <div className="text-base font-semibold">Шаблоны дней</div>
               <div className="text-sm text-muted-foreground">
                 Планирование повторяющихся дней
               </div>
@@ -182,35 +214,31 @@ export default function EntryTemplatesPage() {
             {templateKind === "entry"
               ? "Ваши шаблоны записей"
               : templateKind === "weekday"
-              ? "Ваши шаблоны дня недели"
+              ? "Ваши шаблоны дня"
               : "Ваши шаблоны недели"}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {templateKind === "entry" ? (
+          {templateKind === "entry" && (
             <>
-              {loading && (
-                <div className="text-sm text-muted-foreground">
-                  Загрузка...
-                </div>
+              {entryLoading && (
+                <div className="text-sm text-muted-foreground">Загрузка...</div>
               )}
-              {!loading && templates.length === 0 && (
+              {!entryLoading && entryTemplates.length === 0 && (
                 <div className="text-sm text-muted-foreground">
                   Здесь появятся созданные шаблоны.
                 </div>
               )}
-              {!loading && templates.length > 0 && (
+              {!entryLoading && entryTemplates.length > 0 && (
                 <div className="space-y-3">
-                  {templates.map((tpl) => (
+                  {entryTemplates.map((tpl) => (
                     <div
                       key={tpl.id}
-                      className="rounded-xl border border-border p-4 space-y-3"
+                      className="rounded-xl border border-border bg-input p-4 space-y-3"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <div className="text-lg font-semibold truncate">
-                            {tpl.name}
-                          </div>
+                          <div className="text-lg font-semibold truncate">{tpl.name}</div>
                           <div className="text-sm text-muted-foreground">
                             Настроение: {tpl.mood ?? "—"}
                           </div>
@@ -218,13 +246,13 @@ export default function EntryTemplatesPage() {
                         <div className="flex gap-2">
                           <Button
                             variant="surface"
-                            onClick={() => openEdit(tpl.id)}
+                            onClick={() => openEntryTemplateEdit(tpl.id)}
                           >
                             Редактировать
                           </Button>
                           <Button
                             variant="ghost"
-                            onClick={() => removeTemplate(tpl.id)}
+                            onClick={() => removeEntryTemplate(tpl.id)}
                           >
                             Удалить
                           </Button>
@@ -241,60 +269,97 @@ export default function EntryTemplatesPage() {
                 </div>
               )}
             </>
-          ) : (
+          )}
+
+          {templateKind === "weekday" && (
             <>
-              {scheduleLoading && (
+              {dayLoading && (
+                <div className="text-sm text-muted-foreground">Загрузка...</div>
+              )}
+              {!dayLoading && dayTemplates.length === 0 && (
                 <div className="text-sm text-muted-foreground">
-                  Загрузка...
+                  Здесь появятся шаблоны дня.
                 </div>
               )}
-              {!scheduleLoading &&
-                (templateKind === "weekday"
-                  ? dayTemplates
-                  : weekTemplates
-                ).length === 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    {templateKind === "weekday"
-                      ? "Здесь появятся шаблоны дня недели."
-                      : "Здесь появятся шаблоны недели."}
-                  </div>
-                )}
-              {!scheduleLoading &&
-                (templateKind === "weekday"
-                  ? dayTemplates
-                  : weekTemplates
-                ).length > 0 && (
-                  <div className="space-y-3">
-                    {(templateKind === "weekday"
-                      ? dayTemplates
-                      : weekTemplates
-                    ).map((tpl) => (
-                      <div
-                        key={tpl.id}
-                        className="rounded-xl border border-border p-4 space-y-3"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="text-lg font-semibold truncate">
-                              {tpl.name}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              ID: {tpl.id}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              onClick={() => removeScheduleTemplate(tpl.id)}
-                            >
-                              Удалить
-                            </Button>
+              {!dayLoading && dayTemplates.length > 0 && (
+                <div className="space-y-3">
+                  {dayTemplates.map((tpl) => (
+                    <div
+                      key={tpl.id}
+                      className="rounded-xl border border-border bg-input p-4 space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="text-lg font-semibold truncate">{tpl.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Записей в шаблоне: {tpl.items.length}
                           </div>
                         </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="surface"
+                            onClick={() => openDayTemplateEdit(tpl)}
+                          >
+                            Редактировать
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => removeDayTemplate(tpl.id)}
+                          >
+                            Удалить
+                          </Button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {templateKind === "week" && (
+            <>
+              {weekLoading && (
+                <div className="text-sm text-muted-foreground">Загрузка...</div>
+              )}
+              {!weekLoading && weekTemplates.length === 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Здесь появятся шаблоны недели.
+                </div>
+              )}
+              {!weekLoading && weekTemplates.length > 0 && (
+                <div className="space-y-3">
+                  {weekTemplates.map((tpl) => (
+                    <div
+                      key={tpl.id}
+                      className="rounded-xl border border-border bg-input p-4 space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="text-lg font-semibold truncate">{tpl.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Дней в шаблоне: {tpl.items.length}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="surface"
+                            onClick={() => openWeekTemplateEdit(tpl)}
+                          >
+                            Редактировать
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => removeWeekTemplate(tpl.id)}
+                          >
+                            Удалить
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </CardContent>
@@ -303,17 +368,17 @@ export default function EntryTemplatesPage() {
       <CreateEntryTemplateDialog
         open={entryOpen}
         onOpenChange={setEntryOpen}
-        onCreated={load}
+        onCreated={loadEntryTemplates}
       />
 
       <CreateDayTemplateDialog
         open={dayOpen}
         onOpenChange={setDayOpen}
-        entryTemplates={templates.map((tpl) => ({
+        entryTemplates={entryTemplates.map((tpl) => ({
           id: tpl.id,
           name: tpl.name,
         }))}
-        onCreated={loadSchedule}
+        onCreated={loadDayTemplates}
       />
 
       <CreateWeekTemplateDialog
@@ -323,7 +388,37 @@ export default function EntryTemplatesPage() {
           id: tpl.id,
           name: tpl.name,
         }))}
-        onCreated={loadSchedule}
+        onCreated={loadWeekTemplates}
+      />
+
+      <EditDayTemplateDialog
+        open={editDayOpen}
+        onOpenChange={(next) => {
+          setEditDayOpen(next);
+          if (!next) setEditingDayTemplate(null);
+        }}
+        template={editingDayTemplate}
+        entryTemplates={entryTemplates.map((tpl) => ({
+          id: tpl.id,
+          name: tpl.name,
+        }))}
+        onUpdated={async () => {
+          await Promise.all([loadDayTemplates(), loadWeekTemplates()]);
+        }}
+      />
+
+      <EditWeekTemplateDialog
+        open={editWeekOpen}
+        onOpenChange={(next) => {
+          setEditWeekOpen(next);
+          if (!next) setEditingWeekTemplate(null);
+        }}
+        template={editingWeekTemplate}
+        dayTemplates={dayTemplates.map((tpl) => ({
+          id: tpl.id,
+          name: tpl.name,
+        }))}
+        onUpdated={loadWeekTemplates}
       />
 
       {editOpen && editId !== null && editValues && (
@@ -335,7 +430,7 @@ export default function EntryTemplatesPage() {
             if (!next) setEditId(null);
           }}
           initialValues={editValues}
-          onUpdated={load}
+          onUpdated={loadEntryTemplates}
         />
       )}
     </div>
