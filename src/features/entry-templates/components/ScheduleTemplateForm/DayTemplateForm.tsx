@@ -96,6 +96,7 @@ export default function DayTemplateForm({
 
   const hasOptions = entryTemplates.length > 0;
   const itemsError = (errors.items as { message?: string } | undefined)?.message;
+  const watchedItems = form.watch("items");
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
@@ -147,7 +148,7 @@ export default function DayTemplateForm({
               })}
               className="space-y-6"
             >
-              <div className="space-y-4 rounded-xl border border-border/60 bg-background/40 p-4">
+              <div className="space-y-4 rounded-xl border border-transparent bg-input p-4 transition-colors hover:border-border/60 focus-within:border-border/60">
                 <FormField
                   control={control}
                   name="name"
@@ -167,7 +168,7 @@ export default function DayTemplateForm({
                 />
               </div>
 
-              <div className="space-y-3 rounded-xl border border-border/60 bg-background/40 p-4">
+              <div className="space-y-3 rounded-xl border border-transparent bg-input p-4 transition-colors hover:border-border/60 focus-within:border-border/60">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="text-sm font-medium">Записи дня</div>
@@ -180,6 +181,7 @@ export default function DayTemplateForm({
                     type="button"
                     size="sm"
                     variant="form"
+                    className="border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus-visible:border-border/60"
                     disabled={!hasOptions}
                     onClick={() => append({ templateId: null })}
                   >
@@ -203,13 +205,14 @@ export default function DayTemplateForm({
                 {fields.map((field, index) => (
                   <div
                     key={field.id}
-                    className="rounded-lg border border-border/60 bg-background/60 p-3"
+                    className={`rounded-lg border bg-[hsl(var(--input-hover))] p-3 transition-colors ${
+                      watchedItems?.[index]?.templateId !== null &&
+                      watchedItems?.[index]?.templateId !== undefined
+                        ? "border-border/60"
+                        : "border-transparent hover:border-border/60 focus-within:border-border/60"
+                    }`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <div className="text-xs font-medium text-muted-foreground sm:w-20">
-                        #{index + 1}
-                      </div>
-
                       <FormField
                         control={control}
                         name={`items.${index}.templateId`}
@@ -228,7 +231,14 @@ export default function DayTemplateForm({
                                   )
                                 }
                               >
-                                <SelectTrigger>
+                                <SelectTrigger
+                                  className={
+                                    selectField.value !== null &&
+                                    selectField.value !== undefined
+                                      ? "border border-border/60 bg-surface hover:bg-surface"
+                                      : "border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus:border-border/60"
+                                  }
+                                >
                                   <SelectValue placeholder={itemPlaceholder} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -250,7 +260,8 @@ export default function DayTemplateForm({
                       <Button
                         type="button"
                         size="sm"
-                        variant="ghost"
+                        variant="form"
+                        className="border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus-visible:border-border/60"
                         onClick={() => remove(index)}
                       >
                         Удалить

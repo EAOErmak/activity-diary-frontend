@@ -231,10 +231,16 @@ export default function EntryTemplatesPage() {
               )}
               {!entryLoading && entryTemplates.length > 0 && (
                 <div className="space-y-3">
-                  {entryTemplates.map((tpl) => (
+                  {entryTemplates.map((tpl) => {
+                    const previewDescription = tpl.description
+                      ?.replace(/#([\p{L}\p{N}_-]{2,})/gu, "")
+                      .replace(/\s{2,}/g, " ")
+                      .trim();
+
+                    return (
                     <div
                       key={tpl.id}
-                      className="rounded-xl border border-border bg-input p-4 space-y-3"
+                      className="rounded-xl bg-input p-4 space-y-3"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -246,12 +252,14 @@ export default function EntryTemplatesPage() {
                         <div className="flex gap-2">
                           <Button
                             variant="surface"
+                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                             onClick={() => openEntryTemplateEdit(tpl.id)}
                           >
                             Редактировать
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="surface"
+                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                             onClick={() => removeEntryTemplate(tpl.id)}
                           >
                             Удалить
@@ -259,13 +267,14 @@ export default function EntryTemplatesPage() {
                         </div>
                       </div>
 
-                      {tpl.description && (
+                      {previewDescription && (
                         <div className="text-sm text-muted-foreground">
-                          {tpl.description}
+                          {previewDescription}
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -286,7 +295,7 @@ export default function EntryTemplatesPage() {
                   {dayTemplates.map((tpl) => (
                     <div
                       key={tpl.id}
-                      className="rounded-xl border border-border bg-input p-4 space-y-3"
+                      className="rounded-xl bg-input p-4 space-y-3"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -298,12 +307,14 @@ export default function EntryTemplatesPage() {
                         <div className="flex gap-2">
                           <Button
                             variant="surface"
+                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                             onClick={() => openDayTemplateEdit(tpl)}
                           >
                             Редактировать
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="surface"
+                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                             onClick={() => removeDayTemplate(tpl.id)}
                           >
                             Удалить
@@ -332,7 +343,7 @@ export default function EntryTemplatesPage() {
                   {weekTemplates.map((tpl) => (
                     <div
                       key={tpl.id}
-                      className="rounded-xl border border-border bg-input p-4 space-y-3"
+                      className="rounded-xl bg-input p-4 space-y-3"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -344,12 +355,14 @@ export default function EntryTemplatesPage() {
                         <div className="flex gap-2">
                           <Button
                             variant="surface"
+                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                             onClick={() => openWeekTemplateEdit(tpl)}
                           >
                             Редактировать
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="surface"
+                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                             onClick={() => removeWeekTemplate(tpl.id)}
                           >
                             Удалить
