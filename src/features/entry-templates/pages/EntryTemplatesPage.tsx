@@ -89,6 +89,8 @@ export default function EntryTemplatesPage() {
       name: template.name,
       mood: template.mood ?? 3,
       description: template.description ?? "",
+      timeStart: template.timeStart ?? "",
+      timeEnd: template.timeEnd ?? "",
       metrics: template.metrics ?? [],
     });
     setEditId(id);

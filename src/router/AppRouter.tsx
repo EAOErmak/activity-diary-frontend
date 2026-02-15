@@ -13,6 +13,7 @@ import DiaryFormPage from "@/features/diary/pages/DiaryFormPage";
 import DiaryDetailsPage from "@/features/diary/pages/DiaryDetailsPage";
 import DiaryEditPage from "@/features/diary/pages/DiaryEditPage";
 import EntryTemplatesPage from "@/features/entry-templates/pages/EntryTemplatesPage";
+import GoalsPage from "@/features/goals/pages/GoalsPage";
 
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -60,6 +61,7 @@ export default function AppRouter() {
           <Route path="/diary" element={<DiaryListPage />} />
           <Route path="/diary/new" element={<DiaryFormPage />} />
           <Route path="/entry-templates" element={<EntryTemplatesPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
 
           {/* ❗ ОСТАЁТСЯ как обычная страница (deep link) 
           <Route path="/diary/:id" element={<DiaryDetailsPage />} />*/}

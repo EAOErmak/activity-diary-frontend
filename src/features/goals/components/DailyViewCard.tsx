@@ -1,0 +1,122 @@
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
+import { formatDailyTime, getDiaryEntrySquareClass } from "@/features/goals/lib/goalsUtils";
+
+type Props = {
+  dailyDateLabel: string;
+  dailyDateKey: string;
+  dailyEntries: DiaryEntryGoalSummary[];
+  isLoadingDailyEntries: boolean;
+  isDailyPreviewTarget: boolean;
+  canDropOnDailyDate: boolean;
+  draggingTemplate: boolean;
+  creatingDate: string | null;
+  isEraserOn: boolean;
+  onPrevDay: () => void;
+  onNextDay: () => void;
+  onHoverDate: (dateKey: string) => void;
+  onDeleteDayGoal: (dateKey: string) => void;
+  onDeleteEntryGoal: (entryGoalId: number, entryName?: string | null) => void;
+};
+
+export function DailyViewCard({
+  dailyDateLabel,
+  dailyDateKey,
+  dailyEntries,
+  isLoadingDailyEntries,
+  isDailyPreviewTarget,
+  canDropOnDailyDate,
+  draggingTemplate,
+  creatingDate,
+  isEraserOn,
+  onPrevDay,
+  onNextDay,
+  onHoverDate,
+  onDeleteDayGoal,
+  onDeleteEntryGoal,
+}: Props) {
+  return (
+    <Card className="w-full min-w-0">
+      <CardHeader className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle>Daily View</CardTitle>
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="form" size="sm" onClick={onPrevDay}>
+              Prev
+            </Button>
+            <div className="min-w-[11rem] text-center text-sm font-semibold text-foreground capitalize">
+              {dailyDateLabel}
+            </div>
+            <Button type="button" variant="form" size="sm" onClick={onNextDay}>
+              Next
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="text-xs text-muted-foreground">Entries: {dailyEntries.length}</div>
+
+        <div
+          data-goal-date={dailyDateKey}
+          onClick={() => {
+            if (isEraserOn && canDropOnDailyDate) {
+              onDeleteDayGoal(dailyDateKey);
+            }
+          }}
+          onPointerEnter={() => {
+            if (draggingTemplate) onHoverDate(dailyDateKey);
+          }}
+          className={[
+            "rounded-xl border bg-surface p-3 transition-all",
+            isDailyPreviewTarget
+              ? canDropOnDailyDate
+                ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
+                : "border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
+              : "border-border",
+            creatingDate === dailyDateKey ? "animate-pulse" : "",
+          ].join(" ")}
+        >
+          {isLoadingDailyEntries && <div className="text-sm text-muted-foreground">Loading entries...</div>}
+
+          {!isLoadingDailyEntries && dailyEntries.length === 0 && (
+            <div className="text-sm text-muted-foreground">No goal entries for this day.</div>
+          )}
+
+          {!isLoadingDailyEntries && dailyEntries.length > 0 && (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3">
+              {dailyEntries.map((entry, index) => {
+                const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
+                const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
+                const entryTitle = entry.status
+                  ? `${entryName} - ${startedLabel} - ${entry.status}`
+                  : `${entryName} - ${startedLabel}`;
+
+                return (
+                  <div
+                    key={entry.id}
+                    title={entryTitle}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (isEraserOn) {
+                        onDeleteEntryGoal(entry.id, entryName);
+                      }
+                    }}
+                    className={[
+                      "h-[120px] w-[120px] rounded-xl border p-2 flex items-center justify-center",
+                      "text-sm font-semibold leading-tight break-words text-center",
+                      isEraserOn ? "cursor-pointer" : "cursor-default",
+                      getDiaryEntrySquareClass(entry.status),
+                    ].join(" ")}
+                  >
+                    {entryName}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

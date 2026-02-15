@@ -13,6 +13,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Global hidden scrollbars ===== */
+html,
+body,
+#root,
+* {
+  -ms-overflow-style: none; /* IE / Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome / Safari */
+}
+
 /* ===== Calendar overlay scrollbar ===== */
 
 .calendar-scroll {
@@ -46,6 +64,12 @@
 }
 
 @layer base {
+  #root {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
   * {
     @apply border-border;
   }

@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   NotebookPen,
   Layers,
+  Target,
   Settings,
   ShieldCheck,
   UserCircle2,
@@ -46,6 +47,12 @@ export default function UserNavigation({ onNavigate }: Props) {
       to: "/entry-templates",
       label: "Шаблоны",
       icon: Layers,
+      show: true,
+    },
+    {
+      to: "/goals",
+      label: "Цели",
+      icon: Target,
       show: true,
     },
     {

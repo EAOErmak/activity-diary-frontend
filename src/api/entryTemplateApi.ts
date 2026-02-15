@@ -7,6 +7,42 @@ import type {
   DiaryEntryTemplateView,
 } from "@/shared/types/entryTemplate";
 
+function isValidHourMinute(hour: number, minute: number): boolean {
+  return Number.isInteger(hour) && Number.isInteger(minute) && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
+function toTimeString(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function normalizeLocalTime(value: unknown): string | null {
+  if (value == null) return null;
+
+  if (typeof value === "string") {
+    const match = value.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d(?:\.\d{1,9})?)?$/);
+    if (!match) return null;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    return isValidHourMinute(hour, minute) ? toTimeString(hour, minute) : null;
+  }
+
+  if (Array.isArray(value)) {
+    const [rawHour, rawMinute] = value;
+    const hour = Number(rawHour);
+    const minute = Number(rawMinute);
+    return isValidHourMinute(hour, minute) ? toTimeString(hour, minute) : null;
+  }
+
+  if (typeof value === "object") {
+    const obj = value as { hour?: unknown; minute?: unknown };
+    const hour = Number(obj.hour);
+    const minute = Number(obj.minute);
+    return isValidHourMinute(hour, minute) ? toTimeString(hour, minute) : null;
+  }
+
+  return null;
+}
+
 export const createEntryTemplate = async (
   payload: DiaryEntryTemplateCreate
 ): Promise<DiaryEntryTemplateView> => {
@@ -49,7 +85,16 @@ export const getEntryTemplate = async (
     throw new Error("Empty/invalid response for getEntryTemplate");
   }
 
-  return dto as DiaryEntryTemplate;
+  const normalized = dto as DiaryEntryTemplate & {
+    timeStart?: unknown;
+    timeEnd?: unknown;
+  };
+
+  return {
+    ...normalized,
+    timeStart: normalizeLocalTime(normalized.timeStart),
+    timeEnd: normalizeLocalTime(normalized.timeEnd),
+  };
 };
 
 

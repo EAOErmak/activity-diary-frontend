@@ -13,6 +13,8 @@ export type DiaryEntryTemplateCreate = {
   name: string
   mood?: number
   description?: string
+  timeStart?: string
+  timeEnd?: string
   metrics?: EntryTemplateMetricUpsert[]
 }
 
@@ -20,6 +22,8 @@ export type DiaryEntryTemplateUpdate = {
   name?: string
   mood?: number | null
   description?: string | null
+  timeStart?: string | null
+  timeEnd?: string | null
   metrics?: EntryTemplateMetricUpsert[]
 }
 
@@ -28,6 +32,8 @@ export type DiaryEntryTemplateView = {
   name: string
   mood: number | null
   description: string | null
+  timeStart?: string | null
+  timeEnd?: string | null
   createdAt: string
   updatedAt: string
 }
