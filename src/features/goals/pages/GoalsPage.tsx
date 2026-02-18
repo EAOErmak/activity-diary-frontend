@@ -38,6 +38,8 @@ import {
   toDisplayDate,
   toIsoDate,
 } from "@/features/goals/lib/goalsUtils";
+import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
+import { useAuthStore } from "@/shared/store/authStore";
 
 type PointerPosition = {
   x: number;
@@ -56,6 +58,7 @@ export default function GoalsPage() {
   const [eraserMode, setEraserMode] = useState<EraserMode>("eraseOff");
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
   const [lastActionText, setLastActionText] = useState("");
+  const userId = useAuthStore((state) => state.userId);
 
   const hoverDateRef = useRef<string | null>(null);
   useEffect(() => {
@@ -81,6 +84,7 @@ export default function GoalsPage() {
   const {
     dayScores,
     setDayScores,
+    dayGoalIdsByDate,
     weekScores,
     dailyEntries,
     isLoadingDailyEntries,
@@ -366,6 +370,40 @@ export default function GoalsPage() {
     [eraserMode, reloadAll]
   );
 
+  const handleConfirmDayGoal = useCallback(async (dayGoalId: number) => {
+    if (eraserMode === "eraseOn") return;
+
+    setCreatingDate(dailyDateKey);
+    try {
+      await goalApi.confirmDayGoal(dayGoalId);
+      setLastActionText(`Day goal confirmed on ${toDisplayDate(dailyDateKey)}`);
+      await reloadAll();
+    } finally {
+      setCreatingDate(null);
+    }
+  }, [dailyDateKey, eraserMode, reloadAll]);
+
+  const handleConfirmEntryGoal = useCallback(
+    async (entry: DiaryEntryGoalSummary, entryName: string) => {
+      if (eraserMode === "eraseOn") return;
+      if (!entry?.id) return;
+      if (!userId) {
+        setLastActionText("Unable to confirm entry goal: user is not authenticated");
+        return;
+      }
+      setCreatingDate(dailyDateKey);
+
+      try {
+        await goalApi.confirmEntryGoal(entry.id, userId);
+        setLastActionText(`Entry goal "${entryName}" confirmed`);
+        await reloadAll();
+      } finally {
+        setCreatingDate(null);
+      }
+    },
+    [dailyDateKey, eraserMode, reloadAll, userId]
+  );
+
   const applyGoalToDate = useCallback(
     async (dateKey: string, template: DragTemplatePayload) => {
       if (eraserMode !== "eraseOff") return;
@@ -543,7 +581,7 @@ export default function GoalsPage() {
   }, [replaceDialog]);
 
   return (
-    <div className="w-full min-h-screen bg-page text-foreground p-4 sm:p-6 lg:p-8">
+    <div className="w-full min-h-screen bg-page text-foreground p-4 sm:p-6 lg:p-8 pb-20 sm:pb-24 lg:pb-4">
       {draggingTemplate && dragPointer && (
         <GoalsDragPreview x={dragPointer.x} y={dragPointer.y} canDrop={canDropAtPointer} />
       )}
@@ -600,6 +638,7 @@ export default function GoalsPage() {
           <DailyViewCard
             dailyDateLabel={dailyDateLabel}
             dailyDateKey={dailyDateKey}
+            currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
             dailyEntries={dailyEntries}
             isLoadingDailyEntries={isLoadingDailyEntries}
             isDailyPreviewTarget={isDailyPreviewTarget}
@@ -616,6 +655,12 @@ export default function GoalsPage() {
             onDeleteEntryGoal={(entryGoalId, entryName) => {
               void handleDeleteEntryGoal(entryGoalId, entryName);
             }}
+            onConfirmDayGoal={(dayGoalId) => {
+              void handleConfirmDayGoal(dayGoalId);
+            }}
+            onConfirmEntryGoal={(entry, entryName) => {
+              void handleConfirmEntryGoal(entry, entryName);
+            }}
           />
         </div>
 
@@ -626,6 +671,8 @@ export default function GoalsPage() {
           filterKind={filterKind}
           filterName={filterName}
           draggingTemplate={draggingTemplate}
+          entryGoals={dailyEntries}
+          entryDateLabel={dailyDateLabel}
           onEraserModeChange={setEraserMode}
           onFilterKindChange={setFilterKind}
           onFilterNameChange={setFilterName}

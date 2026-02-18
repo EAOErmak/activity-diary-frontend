@@ -1,11 +1,15 @@
+import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
 import { formatDailyTime, getDiaryEntrySquareClass } from "@/features/goals/lib/goalsUtils";
 
+const LONG_PRESS_MS = 600;
+
 type Props = {
   dailyDateLabel: string;
   dailyDateKey: string;
+  currentDayGoalId: number | null;
   dailyEntries: DiaryEntryGoalSummary[];
   isLoadingDailyEntries: boolean;
   isDailyPreviewTarget: boolean;
@@ -18,11 +22,14 @@ type Props = {
   onHoverDate: (dateKey: string) => void;
   onDeleteDayGoal: (dateKey: string) => void;
   onDeleteEntryGoal: (entryGoalId: number, entryName?: string | null) => void;
+  onConfirmDayGoal: (dayGoalId: number) => void;
+  onConfirmEntryGoal: (entry: DiaryEntryGoalSummary, entryName: string) => void;
 };
 
 export function DailyViewCard({
   dailyDateLabel,
   dailyDateKey,
+  currentDayGoalId,
   dailyEntries,
   isLoadingDailyEntries,
   isDailyPreviewTarget,
@@ -35,7 +42,32 @@ export function DailyViewCard({
   onHoverDate,
   onDeleteDayGoal,
   onDeleteEntryGoal,
+  onConfirmDayGoal,
+  onConfirmEntryGoal,
 }: Props) {
+  const dayLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggeredRef = useRef(false);
+
+  const clearDayLongPressTimer = useCallback(() => {
+    if (!dayLongPressTimerRef.current) return;
+    clearTimeout(dayLongPressTimerRef.current);
+    dayLongPressTimerRef.current = null;
+  }, []);
+
+  const clearLongPressTimer = useCallback(() => {
+    if (!longPressTimerRef.current) return;
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearDayLongPressTimer();
+      clearLongPressTimer();
+    };
+  }, [clearDayLongPressTimer, clearLongPressTimer]);
+
   return (
     <Card className="w-full min-w-0">
       <CardHeader className="space-y-3">
@@ -64,6 +96,28 @@ export function DailyViewCard({
               onDeleteDayGoal(dailyDateKey);
             }
           }}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            if (isEraserOn) return;
+            if (!currentDayGoalId) return;
+
+            clearDayLongPressTimer();
+            dayLongPressTimerRef.current = setTimeout(() => {
+              onConfirmDayGoal(currentDayGoalId);
+            }, LONG_PRESS_MS);
+          }}
+          onPointerUp={(event) => {
+            event.stopPropagation();
+            clearDayLongPressTimer();
+          }}
+          onPointerLeave={(event) => {
+            event.stopPropagation();
+            clearDayLongPressTimer();
+          }}
+          onPointerCancel={(event) => {
+            event.stopPropagation();
+            clearDayLongPressTimer();
+          }}
           onPointerEnter={() => {
             if (draggingTemplate) onHoverDate(dailyDateKey);
           }}
@@ -77,44 +131,79 @@ export function DailyViewCard({
             creatingDate === dailyDateKey ? "animate-pulse" : "",
           ].join(" ")}
         >
-          {isLoadingDailyEntries && <div className="text-sm text-muted-foreground">Loading entries...</div>}
+          <div className="relative min-h-[120px]">
+            {isLoadingDailyEntries && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-surface/70">
+                <div className="text-sm text-muted-foreground">Loading entries...</div>
+              </div>
+            )}
 
-          {!isLoadingDailyEntries && dailyEntries.length === 0 && (
-            <div className="text-sm text-muted-foreground">No goal entries for this day.</div>
-          )}
+            {dailyEntries.length === 0 && (
+              <div className="text-sm text-muted-foreground">No goal entries for this day.</div>
+            )}
 
-          {!isLoadingDailyEntries && dailyEntries.length > 0 && (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3">
-              {dailyEntries.map((entry, index) => {
-                const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
-                const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
-                const entryTitle = entry.status
-                  ? `${entryName} - ${startedLabel} - ${entry.status}`
-                  : `${entryName} - ${startedLabel}`;
+            {dailyEntries.length > 0 && (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3">
+                {dailyEntries.map((entry, index) => {
+                  const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
+                  const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
+                  const entryTitle = entry.status
+                    ? `${entryName} - ${startedLabel} - ${entry.status}`
+                    : `${entryName} - ${startedLabel}`;
 
-                return (
-                  <div
-                    key={entry.id}
-                    title={entryTitle}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (isEraserOn) {
-                        onDeleteEntryGoal(entry.id, entryName);
-                      }
-                    }}
-                    className={[
-                      "h-[120px] w-[120px] rounded-xl border p-2 flex items-center justify-center",
-                      "text-sm font-semibold leading-tight break-words text-center",
-                      isEraserOn ? "cursor-pointer" : "cursor-default",
-                      getDiaryEntrySquareClass(entry.status),
-                    ].join(" ")}
-                  >
-                    {entryName}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  return (
+                    <div
+                      key={entry.id}
+                      title={entryTitle}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (longPressTriggeredRef.current) {
+                          longPressTriggeredRef.current = false;
+                          return;
+                        }
+                        if (isEraserOn) {
+                          onDeleteEntryGoal(entry.id, entryName);
+                        }
+                      }}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        if (isEraserOn) return;
+                        longPressTriggeredRef.current = false;
+                        clearLongPressTimer();
+                        longPressTimerRef.current = setTimeout(() => {
+                          longPressTriggeredRef.current = true;
+                          onConfirmEntryGoal(entry, entryName);
+                        }, LONG_PRESS_MS);
+                      }}
+                      onPointerUp={(event) => {
+                        event.stopPropagation();
+                        clearLongPressTimer();
+                      }}
+                      onPointerLeave={(event) => {
+                        event.stopPropagation();
+                        clearLongPressTimer();
+                      }}
+                      onPointerCancel={(event) => {
+                        event.stopPropagation();
+                        clearLongPressTimer();
+                      }}
+                      onContextMenu={(event) => {
+                        if (isEraserOn) event.preventDefault();
+                      }}
+                      className={[
+                        "h-[120px] w-[120px] rounded-xl border p-2 flex items-center justify-center",
+                        "text-sm font-semibold leading-tight break-words text-center",
+                        isEraserOn ? "cursor-pointer" : "cursor-default",
+                        getDiaryEntrySquareClass(entry.status),
+                      ].join(" ")}
+                    >
+                      {entryName}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

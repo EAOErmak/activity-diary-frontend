@@ -93,7 +93,18 @@ export function GoalCalendarCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {lastActionText && <div className="rounded-xl border border-border bg-surface p-3 text-sm">{lastActionText}</div>}
+        <div className="min-h-[44px]">
+          <div
+            title={lastActionText || undefined}
+            className={[
+              "rounded-xl border border-border bg-surface p-3 text-sm",
+              "whitespace-nowrap overflow-hidden text-ellipsis",
+              lastActionText ? "opacity-100" : "opacity-0 pointer-events-none",
+            ].join(" ")}
+          >
+            {lastActionText || "\u00A0"}
+          </div>
+        </div>
 
         <div className="overflow-x-auto pb-1">
           <div className="w-max" style={{ minWidth: `${28 + weeks.length * 28}px` }}>

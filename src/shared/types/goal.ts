@@ -1,8 +1,45 @@
+import type { EntryMetricCreate } from "@/shared/types/diary";
+
 export type GoalKind = "entry" | "day" | "week";
 
 export type GoalDropCreate = {
   templateId: number;
   targetDate: string; // LocalDate: YYYY-MM-DD
+};
+
+export type GoalEntryConfirmCreate = {
+  whenStarted: string;
+  whenEnded: string;
+  mood?: number;
+  description: string;
+  metrics?: EntryMetricCreate[];
+};
+
+export type EntryMetricGoalValue = {
+  unitId?: number;
+  expectedValue?: number;
+  value?: number;
+  unit?: { id?: number | null } | null;
+};
+
+export type EntryMetricGoal = {
+  metricTypeId?: number;
+  metricType?: { id?: number | null } | null;
+  values?: EntryMetricGoalValue[] | null;
+};
+
+export type DiaryEntryGoalDetail = {
+  id: number;
+  position?: number | null;
+  whenStarted?: string | null;
+  whenEnded?: string | null;
+  expectedDurationMin?: number | null;
+  name?: string | null;
+  mood?: number | null;
+  description?: string | null;
+  completeness?: number | null;
+  currentEntryId?: number | null;
+  metricGoals?: EntryMetricGoal[] | null;
 };
 
 export type DiaryEntryGoalView = {
@@ -56,6 +93,9 @@ export type DiaryEntryGoalSummary = {
   status?: string | null;
   whenStarted?: string | null;
   whenEnded?: string | null;
+  mood?: number | null;
+  description?: string | null;
+  metrics?: EntryMetricCreate[] | null;
   completeness?: number | null;
   currentEntryId?: number | null;
 };
