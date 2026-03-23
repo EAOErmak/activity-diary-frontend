@@ -40,6 +40,7 @@ export type WeekPreviewDay = {
   isInYear: boolean;
   hasScore: boolean;
   score: number;
+  dayGoalId: number | null;
 };
 
 export type WeekPreviewStats = {

@@ -5,9 +5,9 @@ import type { GoalCalendarStats } from "@/features/goals/lib/goalsTypes";
 import {
   WEEKDAY_LABELS,
   addDays,
-  getCompletionColor,
   getDropIndicatorStyle,
   getHeatCellStyle,
+  getWeekCalendarBandColor,
   isDateInRange,
   toDisplayDate,
   toIsoDate,
@@ -62,6 +62,8 @@ export function GoalCalendarCard({
   onSelectDay,
   onSelectWeek,
 }: Props) {
+  const weekLegendLevels = [0, 17, 33, 50, 67, 83, 100];
+
   return (
     <Card className="w-full min-w-0">
       <CardHeader className="space-y-4">
@@ -219,7 +221,11 @@ export function GoalCalendarCard({
                         isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
                         isSelectedWeek ? "shadow-[0_0_0_2px_rgba(59,130,246,0.35)] border-sky-300" : "",
                       ].join(" ")}
-                      style={getHeatCellStyle(score, hasScore && isInCurrentYear)}
+                      style={
+                        hasScore && isInCurrentYear
+                          ? { backgroundColor: getWeekCalendarBandColor(score) }
+                          : undefined
+                      }
                     />
                   );
                 })}
@@ -232,17 +238,17 @@ export function GoalCalendarCard({
           <span>No goal</span>
           <span className="h-4 w-4 rounded-md border border-border/70 bg-surfaceMuted" />
           <span className="mx-1">|</span>
-          <span>Less</span>
+          <span>0%</span>
           <div className="flex items-center gap-1">
-            {[20, 40, 60, 80, 100].map((level) => (
+            {weekLegendLevels.map((level) => (
               <span
                 key={`legend-${level}`}
                 className="h-4 w-4 rounded-md border border-border/40"
-                style={{ backgroundColor: getCompletionColor(level) }}
+                style={{ backgroundColor: getWeekCalendarBandColor(level) }}
               />
             ))}
           </div>
-          <span>More</span>
+          <span>100%</span>
         </div>
       </CardContent>
     </Card>

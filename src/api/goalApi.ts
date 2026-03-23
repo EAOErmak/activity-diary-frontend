@@ -1,5 +1,6 @@
 import api from "@/api/http/axiosInstance";
 import type { ApiResponse } from "@/shared/types/api";
+import type { DiaryEntryCreate } from "@/shared/types/diary";
 import type {
   DiaryEntryGoalDetail,
   DayGoalSummary,
@@ -27,11 +28,22 @@ export const createEntryGoal = async (
 ): Promise<DiaryEntryGoalView> => {
   const { data } = await api.post<
     ApiResponse<DiaryEntryGoalView> | DiaryEntryGoalView
-  >("/goal/drop/entry-template", payload);
+  >("/goal/entry/drop", payload);
   return unwrapData<DiaryEntryGoalView>(data);
 };
 
 export const confirmEntryGoal = async (
+  goalId: number,
+  userId: number,
+  payload: DiaryEntryCreate
+): Promise<DiaryEntryGoalDetail> => {
+  const { data } = await api.post<
+    ApiResponse<DiaryEntryGoalDetail> | DiaryEntryGoalDetail
+  >(`/goal/entry/${goalId}/confirm`, payload, { params: { userId } });
+  return unwrapData<DiaryEntryGoalDetail>(data);
+};
+
+export const confirmEntryGoalSimple = async (
   goalId: number,
   userId: number
 ): Promise<DiaryEntryGoalDetail> => {
@@ -55,7 +67,7 @@ export const createDayGoal = async (
 ): Promise<DayGoalView> => {
   const { data } = await api.post<
     ApiResponse<DayGoalView> | DayGoalView
-  >("/goal/drop/day-template", payload);
+  >("/goal/day/drop", payload);
   return unwrapData<DayGoalView>(data);
 };
 
@@ -68,7 +80,7 @@ export const createWeekGoal = async (
 ): Promise<WeekGoalView> => {
   const { data } = await api.post<
     ApiResponse<WeekGoalView> | WeekGoalView
-  >("/goal/drop/week-template", payload);
+  >("/goal/week/drop", payload);
   return unwrapData<WeekGoalView>(data);
 };
 
@@ -77,7 +89,7 @@ export const replaceDayGoal = async (
 ): Promise<DayGoalView> => {
   const { data } = await api.post<
     ApiResponse<DayGoalView> | DayGoalView
-  >("/goal/replace/day-template", payload);
+  >("/goal/day/replace", payload);
   return unwrapData<DayGoalView>(data);
 };
 
@@ -86,20 +98,20 @@ export const replaceWeekGoal = async (
 ): Promise<WeekGoalView> => {
   const { data } = await api.post<
     ApiResponse<WeekGoalView> | WeekGoalView
-  >("/goal/replace/week-template", payload);
+  >("/goal/week/replace", payload);
   return unwrapData<WeekGoalView>(data);
 };
 
 export const deleteWeekGoal = async (targetDate: string): Promise<void> => {
-  await api.delete("/goal/delete/week", { params: { targetDate } });
+  await api.delete("/goal/week", { params: { targetDate } });
 };
 
 export const deleteDayGoal = async (targetDate: string): Promise<void> => {
-  await api.delete("/goal/delete/day", { params: { targetDate } });
+  await api.delete("/goal/day", { params: { targetDate } });
 };
 
 export const deleteEntryGoal = async (entryGoalId: number): Promise<void> => {
-  await api.delete("/goal/delete/entry", { params: { entryGoalId } });
+  await api.delete("/goal/entry", { params: { entryGoalId } });
 };
 
 export const listDaySummaries = async (
@@ -143,6 +155,7 @@ export const listWeekSummaries = async (
 export const goalApi = {
   createEntryGoal,
   confirmEntryGoal,
+  confirmEntryGoalSimple,
   getEntryGoalDetail,
   createDayGoal,
   confirmDayGoal,

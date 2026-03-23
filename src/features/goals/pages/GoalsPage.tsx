@@ -8,6 +8,7 @@ import {
 } from "react";
 import { goalApi } from "@/api/goalApi";
 import { DailyViewCard } from "@/features/goals/components/DailyViewCard";
+import { ConfirmEntryGoalDialog } from "@/features/goals/components/ConfirmEntryGoalDialog";
 import { GoalCalendarCard } from "@/features/goals/components/GoalCalendarCard";
 import { GoalsDragPreview } from "@/features/goals/components/GoalsDragPreview";
 import { ReplaceGoalDialog } from "@/features/goals/components/ReplaceGoalDialog";
@@ -38,12 +39,18 @@ import {
   toDisplayDate,
   toIsoDate,
 } from "@/features/goals/lib/goalsUtils";
+import type { DiaryEntryCreate } from "@/shared/types/diary";
 import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
 import { useAuthStore } from "@/shared/store/authStore";
 
 type PointerPosition = {
   x: number;
   y: number;
+};
+
+type EntryConfirmDialogState = {
+  goalId: number;
+  entryName: string;
 };
 
 export default function GoalsPage() {
@@ -58,6 +65,10 @@ export default function GoalsPage() {
   const [eraserMode, setEraserMode] = useState<EraserMode>("eraseOff");
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
   const [lastActionText, setLastActionText] = useState("");
+  const [entryConfirmDialog, setEntryConfirmDialog] = useState<EntryConfirmDialogState | null>(
+    null
+  );
+  const [isSubmittingEntryConfirm, setIsSubmittingEntryConfirm] = useState(false);
   const userId = useAuthStore((state) => state.userId);
 
   const hoverDateRef = useRef<string | null>(null);
@@ -141,6 +152,7 @@ export default function GoalsPage() {
       const isInYear = isDateInRange(date, yearStart, yearEnd);
       const hasScore = dateKey in dayScores;
       const score = hasScore ? dayScores[dateKey] ?? 0 : 0;
+      const dayGoalId = dayGoalIdsByDate[dateKey] ?? null;
 
       return {
         date,
@@ -149,9 +161,10 @@ export default function GoalsPage() {
         isInYear,
         hasScore,
         score,
+        dayGoalId,
       };
     });
-  }, [dayScores, weekPreviewStart, yearEnd, yearStart]);
+  }, [dayGoalIdsByDate, dayScores, weekPreviewStart, yearEnd, yearStart]);
 
   const weekPreviewStats = useMemo(() => {
     const daysWithGoal = weekPreviewDays.filter((day) => day.isInYear && day.hasScore);
@@ -370,20 +383,32 @@ export default function GoalsPage() {
     [eraserMode, reloadAll]
   );
 
-  const handleConfirmDayGoal = useCallback(async (dayGoalId: number) => {
+  const handleConfirmDayGoal = useCallback(async (dayGoalId: number, dateKey: string) => {
     if (eraserMode === "eraseOn") return;
 
-    setCreatingDate(dailyDateKey);
+    setCreatingDate(dateKey);
     try {
       await goalApi.confirmDayGoal(dayGoalId);
-      setLastActionText(`Day goal confirmed on ${toDisplayDate(dailyDateKey)}`);
+      setLastActionText(`Day goal confirmed on ${toDisplayDate(dateKey)}`);
       await reloadAll();
     } finally {
       setCreatingDate(null);
     }
-  }, [dailyDateKey, eraserMode, reloadAll]);
+  }, [eraserMode, reloadAll]);
 
   const handleConfirmEntryGoal = useCallback(
+    (entry: DiaryEntryGoalSummary, entryName: string) => {
+      if (eraserMode === "eraseOn") return;
+      if (!entry?.id) return;
+      setEntryConfirmDialog({
+        goalId: entry.id,
+        entryName,
+      });
+    },
+    [eraserMode]
+  );
+
+  const handleConfirmEntryGoalSimple = useCallback(
     async (entry: DiaryEntryGoalSummary, entryName: string) => {
       if (eraserMode === "eraseOn") return;
       if (!entry?.id) return;
@@ -394,7 +419,7 @@ export default function GoalsPage() {
       setCreatingDate(dailyDateKey);
 
       try {
-        await goalApi.confirmEntryGoal(entry.id, userId);
+        await goalApi.confirmEntryGoalSimple(entry.id, userId);
         setLastActionText(`Entry goal "${entryName}" confirmed`);
         await reloadAll();
       } finally {
@@ -402,6 +427,29 @@ export default function GoalsPage() {
       }
     },
     [dailyDateKey, eraserMode, reloadAll, userId]
+  );
+
+  const handleSubmitEntryGoalConfirm = useCallback(
+    async (goalId: number, payload: DiaryEntryCreate) => {
+      if (!userId) {
+        setLastActionText("Unable to confirm entry goal: user is not authenticated");
+        throw new Error("User is not authenticated");
+      }
+      setCreatingDate(dailyDateKey);
+      setIsSubmittingEntryConfirm(true);
+
+      try {
+        await goalApi.confirmEntryGoal(goalId, userId, payload);
+        const entryLabel = entryConfirmDialog?.entryName ?? String(goalId);
+        setLastActionText(`Entry goal "${entryLabel}" confirmed`);
+        await reloadAll();
+        setEntryConfirmDialog(null);
+      } finally {
+        setIsSubmittingEntryConfirm(false);
+        setCreatingDate(null);
+      }
+    },
+    [dailyDateKey, entryConfirmDialog?.entryName, reloadAll, userId]
   );
 
   const applyGoalToDate = useCallback(
@@ -630,6 +678,9 @@ export default function GoalsPage() {
             onNextWeek={() => shiftWeekPreview(7)}
             onHoverDate={setHoverDate}
             onSelectDailyDate={setDailyDateWithSync}
+            onConfirmDayGoal={(dayGoalId, dateKey) => {
+              void handleConfirmDayGoal(dayGoalId, dateKey);
+            }}
             onDeleteDayGoal={(dateKey) => {
               void handleDeleteDayGoalOnDate(dateKey);
             }}
@@ -656,10 +707,13 @@ export default function GoalsPage() {
               void handleDeleteEntryGoal(entryGoalId, entryName);
             }}
             onConfirmDayGoal={(dayGoalId) => {
-              void handleConfirmDayGoal(dayGoalId);
+              void handleConfirmDayGoal(dayGoalId, dailyDateKey);
             }}
             onConfirmEntryGoal={(entry, entryName) => {
               void handleConfirmEntryGoal(entry, entryName);
+            }}
+            onConfirmEntryGoalSimple={(entry, entryName) => {
+              void handleConfirmEntryGoalSimple(entry, entryName);
             }}
           />
         </div>
@@ -695,6 +749,19 @@ export default function GoalsPage() {
         onConfirm={() => {
           void handleConfirmReplaceGoal();
         }}
+      />
+
+      <ConfirmEntryGoalDialog
+        open={Boolean(entryConfirmDialog)}
+        goalId={entryConfirmDialog?.goalId ?? null}
+        entryName={entryConfirmDialog?.entryName ?? ""}
+        isSubmitting={isSubmittingEntryConfirm}
+        onOpenChange={(open) => {
+          if (!open && !isSubmittingEntryConfirm) {
+            setEntryConfirmDialog(null);
+          }
+        }}
+        onSubmit={handleSubmitEntryGoalConfirm}
       />
     </div>
   );

@@ -1,7 +1,10 @@
+import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import type { WeekPreviewDay, WeekPreviewStats } from "@/features/goals/lib/goalsTypes";
 import { getCompletionColor, normalizeScore } from "@/features/goals/lib/goalsUtils";
+
+const LONG_PRESS_MS = 600;
 
 type Props = {
   monthLabel: string;
@@ -16,6 +19,7 @@ type Props = {
   onNextWeek: () => void;
   onHoverDate: (dateKey: string) => void;
   onSelectDailyDate: (date: Date) => void;
+  onConfirmDayGoal: (dayGoalId: number, dateKey: string) => void;
   onDeleteDayGoal: (dateKey: string) => void;
 };
 
@@ -32,8 +36,24 @@ export function WeekViewCard({
   onNextWeek,
   onHoverDate,
   onSelectDailyDate,
+  onConfirmDayGoal,
   onDeleteDayGoal,
 }: Props) {
+  const dayLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dayLongPressTriggeredRef = useRef(false);
+
+  const clearDayLongPressTimer = useCallback(() => {
+    if (!dayLongPressTimerRef.current) return;
+    clearTimeout(dayLongPressTimerRef.current);
+    dayLongPressTimerRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearDayLongPressTimer();
+    };
+  }, [clearDayLongPressTimer]);
+
   return (
     <Card className="w-full min-w-0">
       <CardHeader className="space-y-3">
@@ -87,11 +107,37 @@ export function WeekViewCard({
                 data-goal-date={day.dateKey}
                 onClick={() => {
                   if (!day.isInYear) return;
+                  if (dayLongPressTriggeredRef.current) {
+                    dayLongPressTriggeredRef.current = false;
+                    return;
+                  }
                   if (isEraserOn) {
                     onDeleteDayGoal(day.dateKey);
                     return;
                   }
                   onSelectDailyDate(day.date);
+                }}
+                onPointerDown={() => {
+                  if (!day.isInYear) return;
+                  if (isEraserOn) return;
+                  const dayGoalId = day.dayGoalId;
+                  if (!dayGoalId) return;
+
+                  dayLongPressTriggeredRef.current = false;
+                  clearDayLongPressTimer();
+                  dayLongPressTimerRef.current = setTimeout(() => {
+                    dayLongPressTriggeredRef.current = true;
+                    onConfirmDayGoal(dayGoalId, day.dateKey);
+                  }, LONG_PRESS_MS);
+                }}
+                onPointerUp={() => {
+                  clearDayLongPressTimer();
+                }}
+                onPointerLeave={() => {
+                  clearDayLongPressTimer();
+                }}
+                onPointerCancel={() => {
+                  clearDayLongPressTimer();
                 }}
                 onPointerEnter={() => {
                   if (draggingTemplate) onHoverDate(day.dateKey);

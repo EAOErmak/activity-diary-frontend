@@ -110,6 +110,26 @@ export const getCompletionColor = (score: number): string => {
   return `hsl(${hue} ${saturation}% ${lightness}%)`;
 };
 
+const WEEK_CALENDAR_BAND_COLORS = [
+  "hsl(0 86% 45%)",
+  "hsl(12 88% 47%)",
+  "hsl(24 90% 49%)",
+  "hsl(42 92% 50%)",
+  "hsl(72 74% 43%)",
+  "hsl(98 62% 38%)",
+  "hsl(120 54% 34%)",
+];
+
+export const getWeekCalendarBandColor = (score: number): string => {
+  const normalized = normalizeScore(score);
+  const bandSize = 100 / WEEK_CALENDAR_BAND_COLORS.length;
+  const index = Math.min(
+    WEEK_CALENDAR_BAND_COLORS.length - 1,
+    Math.floor(normalized / bandSize)
+  );
+  return WEEK_CALENDAR_BAND_COLORS[index];
+};
+
 export const getHeatCellStyle = (
   score: number,
   hasScore: boolean

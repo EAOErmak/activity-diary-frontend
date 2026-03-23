@@ -24,6 +24,7 @@ type Props = {
   onDeleteEntryGoal: (entryGoalId: number, entryName?: string | null) => void;
   onConfirmDayGoal: (dayGoalId: number) => void;
   onConfirmEntryGoal: (entry: DiaryEntryGoalSummary, entryName: string) => void;
+  onConfirmEntryGoalSimple: (entry: DiaryEntryGoalSummary, entryName: string) => void;
 };
 
 export function DailyViewCard({
@@ -44,10 +45,11 @@ export function DailyViewCard({
   onDeleteEntryGoal,
   onConfirmDayGoal,
   onConfirmEntryGoal,
+  onConfirmEntryGoalSimple,
 }: Props) {
   const dayLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressTriggeredRef = useRef(false);
+  const entryLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const entryLongPressTriggeredRef = useRef(false);
 
   const clearDayLongPressTimer = useCallback(() => {
     if (!dayLongPressTimerRef.current) return;
@@ -55,18 +57,18 @@ export function DailyViewCard({
     dayLongPressTimerRef.current = null;
   }, []);
 
-  const clearLongPressTimer = useCallback(() => {
-    if (!longPressTimerRef.current) return;
-    clearTimeout(longPressTimerRef.current);
-    longPressTimerRef.current = null;
+  const clearEntryLongPressTimer = useCallback(() => {
+    if (!entryLongPressTimerRef.current) return;
+    clearTimeout(entryLongPressTimerRef.current);
+    entryLongPressTimerRef.current = null;
   }, []);
 
   useEffect(() => {
     return () => {
       clearDayLongPressTimer();
-      clearLongPressTimer();
+      clearEntryLongPressTimer();
     };
-  }, [clearDayLongPressTimer, clearLongPressTimer]);
+  }, [clearDayLongPressTimer, clearEntryLongPressTimer]);
 
   return (
     <Card className="w-full min-w-0">
@@ -157,35 +159,37 @@ export function DailyViewCard({
                       title={entryTitle}
                       onClick={(event) => {
                         event.stopPropagation();
-                        if (longPressTriggeredRef.current) {
-                          longPressTriggeredRef.current = false;
+                        if (entryLongPressTriggeredRef.current) {
+                          entryLongPressTriggeredRef.current = false;
                           return;
                         }
                         if (isEraserOn) {
                           onDeleteEntryGoal(entry.id, entryName);
+                          return;
                         }
+                        onConfirmEntryGoal(entry, entryName);
                       }}
                       onPointerDown={(event) => {
                         event.stopPropagation();
                         if (isEraserOn) return;
-                        longPressTriggeredRef.current = false;
-                        clearLongPressTimer();
-                        longPressTimerRef.current = setTimeout(() => {
-                          longPressTriggeredRef.current = true;
-                          onConfirmEntryGoal(entry, entryName);
+                        entryLongPressTriggeredRef.current = false;
+                        clearEntryLongPressTimer();
+                        entryLongPressTimerRef.current = setTimeout(() => {
+                          entryLongPressTriggeredRef.current = true;
+                          onConfirmEntryGoalSimple(entry, entryName);
                         }, LONG_PRESS_MS);
                       }}
                       onPointerUp={(event) => {
                         event.stopPropagation();
-                        clearLongPressTimer();
+                        clearEntryLongPressTimer();
                       }}
                       onPointerLeave={(event) => {
                         event.stopPropagation();
-                        clearLongPressTimer();
+                        clearEntryLongPressTimer();
                       }}
                       onPointerCancel={(event) => {
                         event.stopPropagation();
-                        clearLongPressTimer();
+                        clearEntryLongPressTimer();
                       }}
                       onContextMenu={(event) => {
                         if (isEraserOn) event.preventDefault();
