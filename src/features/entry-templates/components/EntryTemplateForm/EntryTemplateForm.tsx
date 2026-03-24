@@ -87,6 +87,8 @@ type TimeSelectControlProps = {
 
 function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const hourRef = useRef<HTMLDivElement | null>(null);
+  const minuteRef = useRef<HTMLDivElement | null>(null);
   const valueRef = useRef(value);
   const { hour, minute } = splitTime(value);
   const selectedHour = hour || "00";
@@ -100,7 +102,10 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
     const element = containerRef.current;
     if (!element) return;
 
-    const handleWheel = (event: WheelEvent) => {
+    const updateValueByPart = (
+      event: WheelEvent,
+      part: "hours" | "minutes"
+    ) => {
       const direction = Math.sign(event.deltaY);
       if (direction === 0) return;
 
@@ -110,17 +115,38 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
       const currentValue = valueRef.current || "00:00";
       const nextValue = addMinutes(
         currentValue,
-        direction * TIME_WHEEL_STEP_MINUTES
+        direction *
+          (part === "hours" ? 60 : TIME_WHEEL_STEP_MINUTES)
       );
 
       valueRef.current = nextValue;
       onChange(nextValue);
     };
 
+    const handleWheel = (event: WheelEvent) => {
+      updateValueByPart(event, "minutes");
+    };
+
+    const handleHourWheel = (event: WheelEvent) => {
+      updateValueByPart(event, "hours");
+    };
+
+    const handleMinuteWheel = (event: WheelEvent) => {
+      updateValueByPart(event, "minutes");
+    };
+
     element.addEventListener("wheel", handleWheel, { passive: false });
+    hourRef.current?.addEventListener("wheel", handleHourWheel, {
+      passive: false,
+    });
+    minuteRef.current?.addEventListener("wheel", handleMinuteWheel, {
+      passive: false,
+    });
 
     return () => {
       element.removeEventListener("wheel", handleWheel);
+      hourRef.current?.removeEventListener("wheel", handleHourWheel);
+      minuteRef.current?.removeEventListener("wheel", handleMinuteWheel);
     };
   }, [onChange]);
 
@@ -134,9 +160,11 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
           onChange(nextValue);
         }}
       >
-        <SelectTrigger className="w-full font-mono tabular-nums">
-          <SelectValue />
-        </SelectTrigger>
+        <div ref={hourRef}>
+          <SelectTrigger className="w-full font-mono tabular-nums">
+            <SelectValue />
+          </SelectTrigger>
+        </div>
         <SelectContent>
           {HOURS.map((item) => (
             <SelectItem key={item} value={item}>
@@ -156,9 +184,11 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
           onChange(nextValue);
         }}
       >
-        <SelectTrigger className="w-full font-mono tabular-nums">
-          <SelectValue />
-        </SelectTrigger>
+        <div ref={minuteRef}>
+          <SelectTrigger className="w-full font-mono tabular-nums">
+            <SelectValue />
+          </SelectTrigger>
+        </div>
         <SelectContent>
           {MINUTES.map((item) => (
             <SelectItem key={item} value={item}>
@@ -232,11 +262,17 @@ export default function EntryTemplateForm(props: Props) {
   const {
     formState: { isSubmitting },
   } = form;
+  const syncingRef = useRef<"timeStart" | "timeEnd" | null>(null);
 
   const units = useDictionary("METRIC_UNIT");
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
+      if (syncingRef.current === name) {
+        syncingRef.current = null;
+        return;
+      }
+
       if (name !== "timeStart") return;
 
       const startValue = value.timeStart;
@@ -247,7 +283,11 @@ export default function EntryTemplateForm(props: Props) {
 
       const endMinutes = toMinutes(value.timeEnd);
       if (endMinutes == null || endMinutes <= startMinutes) {
-        form.setValue("timeEnd", addMinutes(startValue, 1), {
+        const nextEndValue = addMinutes(startValue, 1);
+        if (value.timeEnd === nextEndValue) return;
+
+        syncingRef.current = "timeEnd";
+        form.setValue("timeEnd", nextEndValue, {
           shouldDirty: true,
         });
       }
@@ -258,6 +298,11 @@ export default function EntryTemplateForm(props: Props) {
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
+      if (syncingRef.current === name) {
+        syncingRef.current = null;
+        return;
+      }
+
       if (name !== "timeEnd") return;
 
       const endValue = value.timeEnd;
@@ -268,7 +313,11 @@ export default function EntryTemplateForm(props: Props) {
 
       const startMinutes = toMinutes(value.timeStart);
       if (startMinutes == null || startMinutes >= endMinutes) {
-        form.setValue("timeStart", addMinutes(endValue, -1), {
+        const nextStartValue = addMinutes(endValue, -1);
+        if (value.timeStart === nextStartValue) return;
+
+        syncingRef.current = "timeStart";
+        form.setValue("timeStart", nextStartValue, {
           shouldDirty: true,
         });
       }

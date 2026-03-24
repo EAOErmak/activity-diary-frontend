@@ -48,9 +48,9 @@ export default function AnalyticsFiltersV3({
   onReset,
 }: Props) {
   return (
-    <Card className="mb-6 border border-border shadow-sm">
-      <CardContent className="grid gap-4 pt-6 md:grid-cols-2 xl:grid-cols-4">
-        <div className="xl:col-span-2">
+    <Card className="mb-6 shadow-sm">
+      <CardContent className="grid gap-4 pt-4 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.35fr)_minmax(12rem,1fr)_minmax(9rem,0.82fr)_minmax(9rem,0.82fr)_auto] xl:items-end xl:[&>*]:min-w-0">
+        <div className="min-w-0">
           <TagAutocompleteV2
             tags={tags}
             isLoading={isLoadingTags}
@@ -90,9 +90,13 @@ export default function AnalyticsFiltersV3({
           <DatePicker date={toDate} setDate={onToDateChange} showTime={false} />
         </div>
 
-        <div className="flex items-end md:col-span-2 xl:col-span-4">
-          <Button variant="form" className="w-full" onClick={onReset}>
-            Сбросить фильтры
+        <div className="flex items-end md:col-span-2 xl:col-span-1">
+          <Button
+            variant="primary"
+            className="w-full xl:w-auto xl:min-w-[8.5rem]"
+            onClick={onReset}
+          >
+            Сбросить
           </Button>
         </div>
       </CardContent>

@@ -112,9 +112,9 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
   const [time, setTime] = React.useState(
     date ? format(date, "HH:mm") : "00:00"
   );
-  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
-  const hoursWheelRef = React.useRef<HTMLDivElement | null>(null);
-  const minutesWheelRef = React.useRef<HTMLDivElement | null>(null);
+  const triggerElementRef = React.useRef<HTMLButtonElement | null>(null);
+  const hoursWheelElementRef = React.useRef<HTMLDivElement | null>(null);
+  const minutesWheelElementRef = React.useRef<HTMLDivElement | null>(null);
   const dateRef = React.useRef(displayDate);
   const timeRef = React.useRef(time);
   const triggerWheelFrameRef = React.useRef<number | null>(null);
@@ -242,31 +242,62 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
     },
     [commitDate]
   );
+  const handleHoursWheel = React.useMemo(
+    () => handleTimePartWheel("hours"),
+    [handleTimePartWheel]
+  );
+  const handleMinutesWheel = React.useMemo(
+    () => handleTimePartWheel("minutes"),
+    [handleTimePartWheel]
+  );
 
-  React.useEffect(() => {
-    const triggerElement = triggerRef.current;
-    const hoursElement = hoursWheelRef.current;
-    const minutesElement = minutesWheelRef.current;
+  const setTriggerRef = React.useCallback(
+    (node: HTMLButtonElement | null) => {
+      triggerElementRef.current?.removeEventListener("wheel", handleTriggerWheel);
 
-    const handleHoursWheel = handleTimePartWheel("hours");
-    const handleMinutesWheel = handleTimePartWheel("minutes");
+      if (node) {
+        node.addEventListener("wheel", handleTriggerWheel, {
+          passive: false,
+        });
+      }
 
-    triggerElement?.addEventListener("wheel", handleTriggerWheel, {
-      passive: false,
-    });
-    hoursElement?.addEventListener("wheel", handleHoursWheel, {
-      passive: false,
-    });
-    minutesElement?.addEventListener("wheel", handleMinutesWheel, {
-      passive: false,
-    });
+      triggerElementRef.current = node;
+    },
+    [handleTriggerWheel]
+  );
 
-    return () => {
-      triggerElement?.removeEventListener("wheel", handleTriggerWheel);
-      hoursElement?.removeEventListener("wheel", handleHoursWheel);
-      minutesElement?.removeEventListener("wheel", handleMinutesWheel);
-    };
-  }, [handleTimePartWheel, handleTriggerWheel]);
+  const setHoursWheelRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      hoursWheelElementRef.current?.removeEventListener("wheel", handleHoursWheel);
+
+      if (node) {
+        node.addEventListener("wheel", handleHoursWheel, {
+          passive: false,
+        });
+      }
+
+      hoursWheelElementRef.current = node;
+    },
+    [handleHoursWheel]
+  );
+
+  const setMinutesWheelRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      minutesWheelElementRef.current?.removeEventListener(
+        "wheel",
+        handleMinutesWheel
+      );
+
+      if (node) {
+        node.addEventListener("wheel", handleMinutesWheel, {
+          passive: false,
+        });
+      }
+
+      minutesWheelElementRef.current = node;
+    },
+    [handleMinutesWheel]
+  );
 
   const handleCalendarSelect = React.useCallback(
     (nextSelectedDate: Date | undefined) => {
@@ -294,7 +325,7 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          ref={triggerRef}
+          ref={setTriggerRef}
           type="button"
           variant="form"
           className={cn(
@@ -329,7 +360,7 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
               value={hours}
               onValueChange={(nextHours) => updateTime(`${nextHours}:${minutes}`)}
             >
-              <div ref={hoursWheelRef}>
+              <div ref={setHoursWheelRef}>
                 <SelectTrigger className="w-[90px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -350,7 +381,7 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
                 updateTime(`${hours}:${nextMinutes}`)
               }
             >
-              <div ref={minutesWheelRef}>
+              <div ref={setMinutesWheelRef}>
                 <SelectTrigger className="w-[90px]">
                   <SelectValue />
                 </SelectTrigger>

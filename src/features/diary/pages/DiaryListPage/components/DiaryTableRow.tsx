@@ -5,7 +5,6 @@ import {
   Pencil,
   PanelLeftOpen, 
   Eye,
-  PencilOff
 } from 'lucide-react';
 import {
   TableRow,
@@ -22,7 +21,7 @@ export function DiaryTableRow({ entry, onEdit }: { entry: DiaryEntryView; onEdit
   const nav = useNavigate()
   const uiStatus = getUiStatus(entry)
   const location = useLocation()
-  const canEdit = uiStatus === "PLANNED" || uiStatus === "ACTIVE";
+  const canEdit = entry.status !== "DELETED";
 
   return (
     <TableRow>
@@ -82,11 +81,7 @@ export function DiaryTableRow({ entry, onEdit }: { entry: DiaryEntryView; onEdit
           }}
           className={!canEdit ? "opacity-60 cursor-not-allowed" : ""}
         >
-          {canEdit ? (
-            <Pencil />
-          ) : (
-            <PencilOff />
-          )}
+          <Pencil />
         </Button>
       </TableCell>
     </TableRow>

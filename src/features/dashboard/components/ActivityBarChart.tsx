@@ -4,7 +4,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  ReferenceArea,
   XAxis,
   YAxis,
 } from "recharts";
@@ -30,25 +29,8 @@ import {
 
 export const description = "A grouped bar chart on a single axis";
 
-const POINT_COLORS = [
-  "#3b82f6",
-  "#14b8a6",
-  "#f97316",
-  "#8b5cf6",
-  "#ef4444",
-  "#eab308",
-  "#06b6d4",
-  "#84cc16",
-  "#f43f5e",
-  "#6366f1",
-];
-
-const GROUP_BACKGROUNDS = [
-  "rgba(148, 163, 184, 0.08)",
-  "rgba(148, 163, 184, 0.14)",
-];
-
 const SERIES_SPACER_COUNT = 2;
+const GOLDEN_ANGLE = 137.508;
 
 const numberFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 2,
@@ -83,7 +65,6 @@ type FlattenedPoint = {
   value: number;
   color: string;
   seriesLabel: string;
-  isFirstInSeries: boolean;
   isSpacer: boolean;
 };
 
@@ -96,6 +77,18 @@ type SeriesGroup = {
 
 const getSeriesLabel = (index: number, total: number) =>
   total === 1 ? "Primary series" : `Series ${index + 1}`;
+
+const createRandomPointPalette = (size: number) => {
+  let hue = Math.floor(Math.random() * 360);
+  return Array.from({ length: size }, () => {
+    hue = (hue + GOLDEN_ANGLE) % 360;
+
+    const saturation = 68 + Math.floor(Math.random() * 14);
+    const lightness = 48 + Math.floor(Math.random() * 10);
+
+    return `hsl(${Math.round(hue)}, ${saturation}%, ${lightness}%)`;
+  });
+};
 
 const getSourceSeries = (data: ChartResponse): ChartSeries[] => {
   if (Array.isArray(data.series) && data.series.length > 0) {
@@ -112,6 +105,13 @@ const getSourceSeries = (data: ChartResponse): ChartSeries[] => {
 export default function ActivityBarChart({ data, tagName }: Props) {
   const { chartPoints, pointByKey, seriesGroups } = useMemo(() => {
     const sourceSeries = getSourceSeries(data);
+    const paletteSize = sourceSeries.reduce((maxSize, series) => {
+      const visiblePointsCount = (series.points ?? []).filter((point) =>
+        point?.label
+      ).length;
+      return Math.max(maxSize, visiblePointsCount);
+    }, 0);
+    const pointPalette = createRandomPointPalette(Math.max(paletteSize, 1));
 
     const normalizedGroups = sourceSeries
       .map((series, seriesIndex) => {
@@ -123,9 +123,8 @@ export default function ActivityBarChart({ data, tagName }: Props) {
             key: `series-${seriesIndex}-point-${pointIndex}`,
             label: point.label,
             value: toNumber(point.value),
-            color: POINT_COLORS[pointIndex % POINT_COLORS.length],
+            color: pointPalette[pointIndex % pointPalette.length],
             seriesLabel,
-            isFirstInSeries: pointIndex === 0,
             isSpacer: false,
           }))
           .filter((point) => Number.isFinite(point.value));
@@ -152,7 +151,6 @@ export default function ActivityBarChart({ data, tagName }: Props) {
           value: 0,
           color: "transparent",
           seriesLabel: group.label,
-          isFirstInSeries: false,
           isSpacer: true,
         });
       }
@@ -171,10 +169,13 @@ export default function ActivityBarChart({ data, tagName }: Props) {
     };
   }, [data]);
 
+  const primaryChartColor =
+    chartPoints.find((point) => !point.isSpacer)?.color ?? "hsl(221, 83%, 53%)";
+
   const chartConfig = {
     value: {
       label: data.unit ? `Value (${data.unit})` : "Value",
-      color: POINT_COLORS[0],
+      color: primaryChartColor,
     },
   } satisfies ChartConfig;
 
@@ -184,7 +185,6 @@ export default function ActivityBarChart({ data, tagName }: Props) {
   const xAxisLabelMaxLength =
     visiblePointsCount > 24 ? 7 : visiblePointsCount > 14 ? 9 : 12;
   const xAxisLabelFontSize = visiblePointsCount > 24 ? 10 : 11;
-  const xAxisSeriesFontSize = visiblePointsCount > 24 ? 9 : 10;
   const chartHeightClass = visiblePointsCount > 24 ? "h-[420px]" : "h-[380px]";
   const barCategoryGap =
     visiblePointsCount > 24 ? "4%" : visiblePointsCount > 14 ? "8%" : "14%";
@@ -204,7 +204,7 @@ export default function ActivityBarChart({ data, tagName }: Props) {
   const normalizedSeries: any[] = [];
 
   return (
-    <Card className="border border-border">
+    <Card>
       <CardHeader>
         <CardTitle>{data.title ?? CHART_TYPE_LABELS[data.chartType]}</CardTitle>
         <CardDescription>
@@ -239,26 +239,15 @@ export default function ActivityBarChart({ data, tagName }: Props) {
               maxBarSize={maxBarSize}
               margin={{ top: 20, right: 16, left: 4, bottom: 12 }}
             >
-              {seriesGroups.map((group, index) => (
-                <ReferenceArea
-                  key={`group-${group.label}`}
-                  x1={group.startKey}
-                  x2={group.endKey}
-                  fill={GROUP_BACKGROUNDS[index % GROUP_BACKGROUNDS.length]}
-                  ifOverflow="extendDomain"
-                  strokeOpacity={0}
-                />
-              ))}
-
               <CartesianGrid vertical={false} />
 
               <XAxis
                 dataKey="key"
                 tickLine={false}
                 axisLine={false}
-                tickMargin={12}
+                tickMargin={8}
                 interval={xAxisInterval}
-                height={72}
+                height={56}
                 tick={(props) => {
                   const point = pointByKey.get(String(props.payload?.value));
 
@@ -266,24 +255,10 @@ export default function ActivityBarChart({ data, tagName }: Props) {
 
                   return (
                     <g transform={`translate(${props.x},${props.y})`}>
-                      {point.isFirstInSeries && (
-                        <text
-                          x={0}
-                          y={0}
-                          dy={-6}
-                          textAnchor="middle"
-                          fill="currentColor"
-                          className="text-mutedForeground"
-                          style={{ fontSize: xAxisSeriesFontSize, fontWeight: 600 }}
-                        >
-                          {point.seriesLabel}
-                        </text>
-                      )}
-
                       <text
                         x={0}
                         y={0}
-                        dy={14}
+                        dy={8}
                         textAnchor="middle"
                         fill="currentColor"
                         className="text-mutedForeground"

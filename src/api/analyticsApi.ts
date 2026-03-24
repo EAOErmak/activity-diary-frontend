@@ -5,6 +5,7 @@ import type {
   ChartResponse,
   MultiChartResponse,
 } from "@/shared/types/analytics";
+import { normalizeChartType } from "@/shared/types/analytics";
 
 export async function getAnalyticsChart(
   filter: ChartFilter
@@ -12,7 +13,10 @@ export async function getAnalyticsChart(
   const { data } = await api.get<ApiResponse<ChartResponse>>(
     "/analytics/charts",
     {
-      params: filter,
+      params: {
+        ...filter,
+        chartType: normalizeChartType(filter.chartType),
+      },
     }
   );
 

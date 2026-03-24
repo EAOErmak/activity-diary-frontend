@@ -104,7 +104,7 @@ export default function DiaryDetailsPage() {
     status: entry.status,
     firstTag: entry.firstTag ?? null,
   });
-  const canEdit = uiStatus === "PLANNED" || uiStatus === "ACTIVE";
+  const canEdit = entry.status !== "DELETED";
   const title = entry.firstTag ?? "Запись";
 
   const readCssVar = (name: string) => {

@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 
 type Props = {
   index: number;
@@ -31,7 +31,11 @@ export function DiaryMetricItem({
 }: Props) {
   const form = useFormContext();
 
-  const values = form.watch(`metrics.${index}.values`) ?? [];
+  const values =
+    useWatch({
+      control: form.control,
+      name: `metrics.${index}.values`,
+    }) ?? [];
 
   return (
     <div className="bg-metricSurface rounded-xl p-3 space-y-3">

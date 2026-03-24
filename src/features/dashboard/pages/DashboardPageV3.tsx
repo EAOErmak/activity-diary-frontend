@@ -7,6 +7,7 @@ import AnalyticsFiltersV3 from "@/features/dashboard/components/AnalyticsFilters
 import { Card, CardContent } from "@/shared/components/ui/card";
 import {
   CHART_TYPE_LABELS,
+  DEFAULT_CHART_TYPE,
   type ChartResponse,
   type ChartType,
 } from "@/shared/types/analytics";
@@ -20,8 +21,7 @@ const buildDefaultFromDate = () => {
 export default function DashboardPageV3() {
   const [tagQuery, setTagQuery] = useState("");
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
-  const [chartType, setChartType] =
-    useState<ChartType>("TRAINING_PROGRESS");
+  const [chartType, setChartType] = useState<ChartType>(DEFAULT_CHART_TYPE);
   const [fromDate, setFromDate] = useState<Date | undefined>(
     buildDefaultFromDate()
   );
@@ -121,7 +121,7 @@ export default function DashboardPageV3() {
           onReset={() => {
             setTagQuery("");
             setSelectedTagId(null);
-            setChartType("TRAINING_PROGRESS");
+            setChartType(DEFAULT_CHART_TYPE);
             setFromDate(buildDefaultFromDate());
             setToDate(new Date());
           }}

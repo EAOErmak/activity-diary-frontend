@@ -48,8 +48,8 @@ export default function AnalyticsFiltersV2({
   onReset,
 }: Props) {
   return (
-    <Card className="mb-6 border border-border">
-      <CardContent className="grid gap-4 pt-6 md:grid-cols-2 xl:grid-cols-6">
+    <Card className="mb-6">
+      <CardContent className="grid gap-4 pt-4 md:grid-cols-2 xl:grid-cols-[minmax(12rem,0.95fr)_minmax(12rem,0.95fr)_minmax(12rem,0.95fr)_minmax(9rem,0.8fr)_minmax(9rem,0.8fr)_auto] xl:items-end xl:[&>*]:min-w-0">
         <div className="space-y-2">
           <Label>Поиск тега</Label>
           <Input
@@ -112,9 +112,13 @@ export default function AnalyticsFiltersV2({
           <DatePicker date={toDate} setDate={onToDateChange} />
         </div>
 
-        <div className="flex items-end xl:col-span-2">
-          <Button variant="form" className="w-full" onClick={onReset}>
-            Сбросить фильтры
+        <div className="flex items-end md:col-span-2 xl:col-span-1">
+          <Button
+            variant="primary"
+            className="w-full xl:w-auto xl:min-w-[8.5rem]"
+            onClick={onReset}
+          >
+            Сбросить
           </Button>
         </div>
       </CardContent>
