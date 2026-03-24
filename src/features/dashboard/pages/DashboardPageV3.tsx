@@ -75,12 +75,8 @@ export default function DashboardPageV3() {
   return (
     <div className="min-h-screen bg-page p-6 text-foreground sm:p-10">
       <div className="mx-auto max-w-6xl space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Аналитика</h1>
-          <p className="max-w-2xl text-sm text-mutedForeground">
-            Начните вводить тег, выберите его из списка и постройте график через
-            `/api/analytics/charts`.
-          </p>
+        <div>
+          <h1 className="text-3xl font-bold">{"\u0410\u043d\u0430\u043b\u0438\u0442\u0438\u043a\u0430"}</h1>
         </div>
 
         <AnalyticsFiltersV3

@@ -49,8 +49,8 @@ export default function AnalyticsFiltersV3({
 }: Props) {
   return (
     <Card className="mb-6 shadow-sm">
-      <CardContent className="grid gap-4 pt-4 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.35fr)_minmax(12rem,1fr)_minmax(9rem,0.82fr)_minmax(9rem,0.82fr)_auto] xl:items-end xl:[&>*]:min-w-0">
-        <div className="min-w-0">
+      <CardContent className="grid gap-4 pt-3 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.35fr)_minmax(12rem,1fr)_minmax(9rem,0.82fr)_minmax(9rem,0.82fr)_auto] xl:items-end xl:[&>*]:min-w-0">
+        <div className="min-w-0 mb-1">
           <TagAutocompleteV2
             tags={tags}
             isLoading={isLoadingTags}
@@ -61,7 +61,7 @@ export default function AnalyticsFiltersV3({
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 mb-1">
           <Label>Тип графика</Label>
           <Select
             value={chartType}
@@ -80,17 +80,17 @@ export default function AnalyticsFiltersV3({
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 mb-1">
           <Label>Дата начала</Label>
           <DatePicker date={fromDate} setDate={onFromDateChange} showTime={false} />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 mb-1">
           <Label>Дата конца</Label>
           <DatePicker date={toDate} setDate={onToDateChange} showTime={false} />
         </div>
 
-        <div className="flex items-end md:col-span-2 xl:col-span-1">
+        <div className="flex items-end md:col-span-2 xl:col-span-1 mb-1">
           <Button
             variant="primary"
             className="w-full xl:w-auto xl:min-w-[8.5rem]"
