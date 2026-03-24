@@ -6,18 +6,46 @@ import { DiaryEntryFormValues } from "../DiaryEntryForm";
 type Props = {
   metricTypes: { id: number; label: string }[];
   units: { id: number; label: string }[];
+  copyFirstMetricOnAppend?: boolean;
 };
 
 export function DiaryMetricsSection({
   metricTypes,
   units,
+  copyFirstMetricOnAppend = false,
 }: Props) {
-  const { control } = useFormContext<DiaryEntryFormValues>();
+  const { control, getValues } = useFormContext<DiaryEntryFormValues>();
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "metrics",
   });
+
+  const buildMetricDraft = (): DiaryEntryFormValues["metrics"][number] => {
+    if (!copyFirstMetricOnAppend) {
+      return {
+        metricTypeId: null,
+        values: [],
+      };
+    }
+
+    const [firstMetric] = getValues("metrics");
+
+    if (!firstMetric) {
+      return {
+        metricTypeId: null,
+        values: [],
+      };
+    }
+
+    return {
+      metricTypeId: firstMetric.metricTypeId,
+      values: firstMetric.values.map((value) => ({
+        unitId: value.unitId,
+        value: value.value,
+      })),
+    };
+  };
 
   return (
     <div className="space-y-4">
@@ -35,12 +63,7 @@ export function DiaryMetricsSection({
       <Button
         type="button"
         variant="form"
-        onClick={() =>
-          append({
-            metricTypeId: null,
-            values: [],
-          })
-        }
+        onClick={() => append(buildMetricDraft())}
       >
         + Добавить метрику
       </Button>

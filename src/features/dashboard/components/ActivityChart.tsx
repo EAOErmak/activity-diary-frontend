@@ -30,7 +30,7 @@ export default function ActivityChart({ data }: { data: MultiChartResponse }) {
     const set = new Set<string>();
 
     validCharts.forEach((chart) => {
-      chart.points.forEach((p) => p?.x && set.add(p.x));
+      (chart.points ?? []).forEach((p) => p?.x && set.add(p.x));
     });
 
     return Array.from(set).sort();
@@ -72,7 +72,7 @@ export default function ActivityChart({ data }: { data: MultiChartResponse }) {
 
       series: validCharts.map((chart) => {
         const map = new Map(
-          chart.points
+          (chart.points ?? [])
             .filter((p) => p?.x !== undefined)
             .map((p) => [p.x, p.y])
         );

@@ -306,7 +306,11 @@ export default function EntryTemplateForm(props: Props) {
 
               <DiaryMoodSection />
 
-              <DiaryMetricsSection metricTypes={useDictionary("METRIC_NAME")} units={units} />
+              <DiaryMetricsSection
+                metricTypes={useDictionary("METRIC_NAME")}
+                units={units}
+                copyFirstMetricOnAppend={mode === "create"}
+              />
 
               <CardFooter className="px-0">
                 <Button type="submit" className="w-full" disabled={isSubmitting}>

@@ -1,6 +1,23 @@
 import api from "./http/axiosInstance";
-import type { ChartResponse } from "@/shared/types/analytics";
-import type { MultiChartResponse } from "@/shared/types/analytics";
+import type { ApiResponse } from "@/shared/types/api";
+import type {
+  ChartFilter,
+  ChartResponse,
+  MultiChartResponse,
+} from "@/shared/types/analytics";
+
+export async function getAnalyticsChart(
+  filter: ChartFilter
+): Promise<ChartResponse> {
+  const { data } = await api.get<ApiResponse<ChartResponse>>(
+    "/analytics/charts",
+    {
+      params: filter,
+    }
+  );
+
+  return data.data;
+}
 
 /* ========================================================
    TIME BY CATEGORY

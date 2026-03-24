@@ -3,5 +3,5 @@ export { DiaryDescriptionSection } from './DiaryDescriptionSection';
 export { DiaryTagsSection } from './DiaryTagsSection';
 export { DiaryMetricsSection } from './DiaryMetricsSection';
 export { DiaryMoodSection } from './DiaryMoodSection';
-export { DiaryStatusSection } from './DiaryStatusSection';
+export { DiaryStatusSection } from './DiaryStatusSectionV2';
 export { DiaryTimeSection } from './DiaryTimeSection';

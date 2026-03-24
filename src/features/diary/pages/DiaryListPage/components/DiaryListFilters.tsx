@@ -1,5 +1,5 @@
 ﻿import { useEffect } from "react";
-import type { DisplayStatus } from "@/features/diary/pages/DiaryListPage/helpers";
+import type { DisplayStatus } from "@/features/diary/pages/DiaryListPage/statusConfig";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -68,8 +68,8 @@ export function DiaryListFilters(props: Props) {
               <SelectItem value="ALL">Все</SelectItem>
               <SelectItem value="ACTIVE">В процессе</SelectItem>
               <SelectItem value="PLANNED">Запланировано</SelectItem>
-              <SelectItem value="WIN">Успех</SelectItem>
-              <SelectItem value="LOSE">Провал</SelectItem>
+              <SelectItem value="FINISHED">Завершено</SelectItem>
+              <SelectItem value="FAILED">Провал</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -4,7 +4,7 @@ import { DiaryListHeader } from "@/features/diary/pages/DiaryListPage/components
 import { DiaryListFilters } from "@/features/diary/pages/DiaryListPage/components/DiaryListFilters";
 import { CreateEntryDialog } from "@/features/diary/components/CreateEntryDialog";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
-import { DisplayStatus } from "@/features/diary/pages/DiaryListPage/helpers";
+import type { DisplayStatus } from "@/features/diary/pages/DiaryListPage/statusConfig";
 import { DiaryTable } from "@/features/diary/pages/DiaryListPage/components/DiaryTable";
 import type { DiaryEntryView } from "@/shared/types/diary";
 

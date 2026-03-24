@@ -6,7 +6,7 @@ import DiaryEntryForm, {
 } from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
 
 import { diaryApi } from "@/api/diaryApi";
-import type { DiaryEntry, DiaryEntryUpdate } from "@/shared/types/diary";
+import type { DiaryEntry, DiaryEntryUpdate, EntryStatus } from "@/shared/types/diary";
 
 import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -17,7 +17,7 @@ export default function DiaryEditPage() {
 
   const [values, setValues] = useState<DiaryEntryFormValues | null>(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<"WIN" | "LOSE" | "DELETED">("WIN");
+  const [status, setStatus] = useState<EntryStatus>("SCHEDULED");
 
   useEffect(() => {
     if (!id) return;
@@ -28,12 +28,12 @@ export default function DiaryEditPage() {
 
         setStatus(entry.status);
 
-        // Р—Р°РїРѕР»РЅСЏРµРј С„РѕСЂРјСѓ, С‚РѕР»СЊРєРѕ РµСЃР»Рё Р·Р°РїРёСЃСЊ РЅРµ DELETED
+        // Fill the form only when the entry is not deleted.
         if (entry.status !== "DELETED") {
           setValues({     
             description: entry.description ?? "",
             mood: entry.mood ?? 3,
-            status: entry.status, // WIN / LOSE
+            status: entry.status,
 
             whenStarted: entry.whenStarted ?? "",
             whenEnded: entry.whenEnded ?? "",
@@ -65,7 +65,6 @@ export default function DiaryEditPage() {
   if (loading)
     return <p className="text-white text-center p-10">Р—Р°РіСЂСѓР·РєР°...</p>;
 
-  // =============== DELETED ===============
   if (status === "DELETED") {
     return (
       <Card className="max-w-xl mx-auto bg-slate-900 text-white p-8 mt-10 rounded-2xl shadow-lg">

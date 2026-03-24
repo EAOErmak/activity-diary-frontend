@@ -81,7 +81,7 @@ export default function DiaryEntryForm(props: Props) {
         : {
             description: "",
             mood: 3,
-            status: "LOSE",
+            status: "SCHEDULED",
             whenStarted: "",
             whenEnded: "",
             metrics: [],
@@ -167,6 +167,7 @@ export default function DiaryEntryForm(props: Props) {
             <DiaryMetricsSection
               metricTypes={useDictionary("METRIC_NAME")}
               units={units}
+              copyFirstMetricOnAppend={mode === "create"}
             />
 
             <CardFooter className="px-0">

@@ -41,7 +41,7 @@ type Props = {
 type SidebarPanel = "templates" | "activeEntry";
 const SIDEBAR_TOP_GAP_PX = 87;
 const SIDEBAR_BOTTOM_GAP_PX = 16;
-const FINISHED_ENTRY_STATUSES = new Set(["WIN", "LOSE", "DELETED"]);
+const FINISHED_ENTRY_STATUSES = new Set(["FINISHED", "FAILED", "DELETED"]);
 const sidebarFixedStyle = {
   "--sidebar-top-gap": `${SIDEBAR_TOP_GAP_PX}px`,
   "--sidebar-bottom-gap": `${SIDEBAR_BOTTOM_GAP_PX}px`,

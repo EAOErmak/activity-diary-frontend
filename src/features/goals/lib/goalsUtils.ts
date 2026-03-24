@@ -87,8 +87,9 @@ export const getGoalKindBadgeClass = (kind: GoalKind): string => {
 };
 
 export const getDiaryEntrySquareClass = (status?: string | null): string => {
-  if (status === "WIN") return "border-emerald-400/70 bg-emerald-500/20 text-emerald-100";
-  if (status === "LOSE") return "border-rose-400/70 bg-rose-500/20 text-rose-100";
+  if (status === "FINISHED") return "border-emerald-400/70 bg-emerald-500/20 text-emerald-100";
+  if (status === "FAILED") return "border-rose-400/70 bg-rose-500/20 text-rose-100";
+  if (status === "SCHEDULED") return "border-amber-400/70 bg-amber-500/20 text-amber-100";
   return "border-border bg-surfaceMuted text-muted-foreground";
 };
 

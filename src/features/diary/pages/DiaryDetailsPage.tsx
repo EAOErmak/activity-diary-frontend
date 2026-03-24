@@ -7,21 +7,25 @@ import { Edit3, Calendar, Activity, Trash2, X } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 
 import type { DiaryEntry } from "@/shared/types/diary";
-import { getUiStatus, STATUS_STYLES } from "@/shared/lib/uiStatus";
+import { getUiStatus, STATUS_STYLES, type UiStatus } from "@/shared/lib/uiStatus";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
 
 /* ================================
    UI LABELS
 ================================ */
 
-const UI_STATUS_LABELS: Record<
-  "PLANNED" | "ACTIVE" | "WIN" | "LOSE",
-  string
-> = {
+export const UI_STATUS_LABELS_LEGACY: Record<string, string> = {
   PLANNED: "Запланировано",
   ACTIVE: "Активно",
   WIN: "Успех",
   LOSE: "Провал",
+};
+
+const UI_STATUS_LABELS: Record<UiStatus, string> = {
+  PLANNED: "Запланировано",
+  ACTIVE: "Активно",
+  FINISHED: "Завершено",
+  FAILED: "Провал",
 };
 
 /* ================================

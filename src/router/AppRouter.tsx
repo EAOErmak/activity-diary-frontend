@@ -15,7 +15,7 @@ import DiaryEditPage from "@/features/diary/pages/DiaryEditPage";
 import EntryTemplatesPage from "@/features/entry-templates/pages/EntryTemplatesPage";
 import GoalsPage from "@/features/goals/pages/GoalsPage";
 
-import DashboardPage from "@/features/dashboard/pages/DashboardPage";
+import DashboardPageV3 from "@/features/dashboard/pages/DashboardPageV3";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 
@@ -74,7 +74,7 @@ export default function AppRouter() {
           path="/dashboard"
           element={
             <RoleProtectedRoute allowedRoles={["ADMIN", "PREMIUM"]}>
-              <DashboardPage />
+              <DashboardPageV3 />
             </RoleProtectedRoute>
           }
         />

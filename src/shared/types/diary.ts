@@ -2,7 +2,7 @@
 // ENUMS
 // ==============================
 
-export type EntryStatus = "WIN" | "LOSE" | "DELETED";
+export type EntryStatus = "FINISHED" | "FAILED" | "SCHEDULED" | "DELETED";
 
 // ==============================
 // METRICS (NEW MODEL)

@@ -16,7 +16,7 @@ import {
   STATUS_STYLES,
   STATUS_LEFT_BAR,
 } from "@/shared/lib/uiStatus"
-import { STATUS_LABELS } from "../helpers"
+import { STATUS_LABELS } from "../statusConfig"
 
 export function DiaryTableRow({ entry, onEdit }: { entry: DiaryEntryView; onEdit: (id: number) => void }) {
   const nav = useNavigate()
