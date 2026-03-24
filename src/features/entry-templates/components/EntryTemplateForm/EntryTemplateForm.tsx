@@ -1,5 +1,7 @@
 ﻿import { useForm } from "react-hook-form";
 
+import { useEffect, useRef } from "react";
+
 import {
   Form,
   FormField,
@@ -18,14 +20,12 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
 
 import type {
   DiaryEntryTemplateCreate,
@@ -41,6 +41,7 @@ import { useDictionary } from "@/shared/hooks/useDictionary";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+const TIME_WHEEL_STEP_MINUTES = 1;
 
 function getCurrentTimeHHmm() {
   const now = new Date();
@@ -61,74 +62,112 @@ function buildTime(hour: string, minute: string) {
   return `${hour || "00"}:${minute || "00"}`;
 }
 
-type TimeDropdownControlProps = {
+function toMinutes(value?: string) {
+  const { hour, minute } = splitTime(value);
+  if (!hour || !minute) return null;
+  return Number(hour) * 60 + Number(minute);
+}
+
+function addMinutes(value: string, minutes: number) {
+  const totalMinutes = toMinutes(value);
+  if (totalMinutes == null) return value;
+
+  const dayMinutes = 24 * 60;
+  const normalized = ((totalMinutes + minutes) % dayMinutes + dayMinutes) % dayMinutes;
+  const hour = String(Math.floor(normalized / 60)).padStart(2, "0");
+  const minute = String(normalized % 60).padStart(2, "0");
+
+  return `${hour}:${minute}`;
+}
+
+type TimeSelectControlProps = {
   value: string;
   onChange: (next: string) => void;
 };
 
-type TimeColumnProps = {
-  label: string;
-  options: string[];
-  value: string;
-  onValueChange: (next: string) => void;
-};
-
-function TimeColumn({ label, options, value, onValueChange }: TimeColumnProps) {
-  return (
-    <div className="min-w-0">
-      <DropdownMenuLabel className="px-2 text-center">{label}</DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      <div className="no-scrollbar max-h-52 overflow-y-auto pr-1">
-        <DropdownMenuRadioGroup value={value} onValueChange={onValueChange}>
-          {options.map((item) => (
-            <DropdownMenuRadioItem
-              key={item}
-              value={item}
-              className="justify-center text-center font-mono tabular-nums !pl-3 !pr-3 [&>span]:hidden"
-              onSelect={(event) => event.preventDefault()}
-            >
-              {item}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </div>
-    </div>
-  );
-}
-
-function TimeDropdownControl({ value, onChange }: TimeDropdownControlProps) {
+function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const valueRef = useRef(value);
   const { hour, minute } = splitTime(value);
-  const displayValue = hour && minute ? `${hour}:${minute}` : "Выбрать время";
+  const selectedHour = hour || "00";
+  const selectedMinute = minute || "00";
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      const direction = Math.sign(event.deltaY);
+      if (direction === 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const currentValue = valueRef.current || "00:00";
+      const nextValue = addMinutes(
+        currentValue,
+        direction * TIME_WHEEL_STEP_MINUTES
+      );
+
+      valueRef.current = nextValue;
+      onChange(nextValue);
+    };
+
+    element.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      element.removeEventListener("wheel", handleWheel);
+    };
+  }, [onChange]);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="form"
-          className="w-full justify-between px-4 font-mono tabular-nums"
-        >
-          {displayValue}
-        </Button>
-      </DropdownMenuTrigger>
+    <div ref={containerRef} className="flex items-center gap-2">
+      <Select
+        value={selectedHour}
+        onValueChange={(nextHour) => {
+          const nextValue = buildTime(nextHour, selectedMinute);
+          valueRef.current = nextValue;
+          onChange(nextValue);
+        }}
+      >
+        <SelectTrigger className="w-full font-mono tabular-nums">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {HOURS.map((item) => (
+            <SelectItem key={item} value={item}>
+              {item}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <DropdownMenuContent align="start" className="w-[14rem]">
-        <div className="grid grid-cols-2 gap-2">
-          <TimeColumn
-            label="Часы"
-            options={HOURS}
-            value={hour}
-            onValueChange={(nextHour) => onChange(buildTime(nextHour, minute))}
-          />
-          <TimeColumn
-            label="Минуты"
-            options={MINUTES}
-            value={minute}
-            onValueChange={(nextMinute) => onChange(buildTime(hour, nextMinute))}
-          />
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      <span className="font-mono text-sm text-muted-foreground">:</span>
+
+      <Select
+        value={selectedMinute}
+        onValueChange={(nextMinute) => {
+          const nextValue = buildTime(selectedHour, nextMinute);
+          valueRef.current = nextValue;
+          onChange(nextValue);
+        }}
+      >
+        <SelectTrigger className="w-full font-mono tabular-nums">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {MINUTES.map((item) => (
+            <SelectItem key={item} value={item}>
+              {item}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 
@@ -195,6 +234,48 @@ export default function EntryTemplateForm(props: Props) {
   } = form;
 
   const units = useDictionary("METRIC_UNIT");
+
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name !== "timeStart") return;
+
+      const startValue = value.timeStart;
+      if (!startValue) return;
+
+      const startMinutes = toMinutes(startValue);
+      if (startMinutes == null) return;
+
+      const endMinutes = toMinutes(value.timeEnd);
+      if (endMinutes == null || endMinutes <= startMinutes) {
+        form.setValue("timeEnd", addMinutes(startValue, 1), {
+          shouldDirty: true,
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name !== "timeEnd") return;
+
+      const endValue = value.timeEnd;
+      if (!endValue) return;
+
+      const endMinutes = toMinutes(endValue);
+      if (endMinutes == null) return;
+
+      const startMinutes = toMinutes(value.timeStart);
+      if (startMinutes == null || startMinutes >= endMinutes) {
+        form.setValue("timeStart", addMinutes(endValue, -1), {
+          shouldDirty: true,
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
@@ -282,7 +363,7 @@ export default function EntryTemplateForm(props: Props) {
                     <FormItem>
                       <FormLabel>Время начала</FormLabel>
                       <FormControl>
-                        <TimeDropdownControl value={field.value || ""} onChange={field.onChange} />
+                        <TimeSelectControl value={field.value || ""} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -296,7 +377,7 @@ export default function EntryTemplateForm(props: Props) {
                     <FormItem>
                       <FormLabel>Время окончания</FormLabel>
                       <FormControl>
-                        <TimeDropdownControl value={field.value || ""} onChange={field.onChange} />
+                        <TimeSelectControl value={field.value || ""} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

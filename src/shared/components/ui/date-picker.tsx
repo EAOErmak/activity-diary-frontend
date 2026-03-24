@@ -26,40 +26,285 @@ type Props = {
   showTime?: boolean;
 };
 
+const WHEEL_TIME_STEP_MINUTES = 1;
+
+function shiftDateMinutes(date: Date | undefined, minutes: number) {
+  const next = date ? new Date(date) : new Date();
+  next.setSeconds(0, 0);
+  next.setMinutes(next.getMinutes() + minutes);
+  return next;
+}
+
+function formatTimeUnit(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+const HOURS = Array.from({ length: 24 }, (_, index) => formatTimeUnit(index));
+const MINUTES = Array.from({ length: 60 }, (_, index) =>
+  formatTimeUnit(index)
+);
+
+function buildDateWithTime(
+  baseDate: Date | undefined,
+  time: string,
+  showTime: boolean
+) {
+  const nextDate = baseDate ? new Date(baseDate) : new Date();
+
+  if (!showTime) {
+    nextDate.setHours(0);
+    nextDate.setMinutes(0);
+    nextDate.setSeconds(0, 0);
+    return nextDate;
+  }
+
+  const [hours, minutes] = time.split(":").map(Number);
+  nextDate.setHours(hours);
+  nextDate.setMinutes(minutes);
+  nextDate.setSeconds(0, 0);
+  return nextDate;
+}
+
+function applyShiftByPart(
+  date: Date | undefined,
+  part: "hours" | "minutes",
+  amount: number
+) {
+  if (part === "hours") {
+    return shiftDateMinutes(date, amount * 60);
+  }
+
+  return shiftDateMinutes(date, amount);
+}
+
+function isSameCalendarDay(left?: Date, right?: Date) {
+  if (!left && !right) return true;
+  if (!left || !right) return false;
+
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function isSameDateTime(left?: Date, right?: Date) {
+  if (!left && !right) return true;
+  if (!left || !right) return false;
+
+  return left.getTime() === right.getTime();
+}
+
+type DatePickerCalendarProps = {
+  selected?: Date;
+  onSelect: (date: Date | undefined) => void;
+};
+
+const DatePickerCalendar = React.memo(
+  function DatePickerCalendar({ selected, onSelect }: DatePickerCalendarProps) {
+    return <Calendar mode="single" selected={selected} onSelect={onSelect} />;
+  },
+  (prevProps, nextProps) => isSameCalendarDay(prevProps.selected, nextProps.selected)
+);
+
 export function DatePicker({ date, setDate, showTime = true }: Props) {
+  const [displayDate, setDisplayDate] = React.useState(date);
   const [time, setTime] = React.useState(
     date ? format(date, "HH:mm") : "00:00"
   );
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const hoursWheelRef = React.useRef<HTMLDivElement | null>(null);
+  const minutesWheelRef = React.useRef<HTMLDivElement | null>(null);
+  const dateRef = React.useRef(displayDate);
+  const timeRef = React.useRef(time);
+  const triggerWheelFrameRef = React.useRef<number | null>(null);
+  const triggerWheelMinutesRef = React.useRef(0);
+  const timeWheelFrameRef = React.useRef<number | null>(null);
+  const pendingTimePartWheelRef = React.useRef({
+    part: "minutes" as "hours" | "minutes",
+    amount: 0,
+  });
 
   React.useEffect(() => {
-    if (!date) return;
-    setTime(format(date, "HH:mm"));
+    if (isSameDateTime(date, dateRef.current)) return;
+
+    dateRef.current = date;
+    setDisplayDate(date);
+
+    const nextTime = date ? format(date, "HH:mm") : "00:00";
+    if (nextTime !== timeRef.current) {
+      timeRef.current = nextTime;
+      setTime(nextTime);
+    }
   }, [date]);
 
+  React.useEffect(() => {
+    timeRef.current = time;
+  }, [time]);
+
+  React.useEffect(() => {
+    return () => {
+      if (triggerWheelFrameRef.current != null) {
+        cancelAnimationFrame(triggerWheelFrameRef.current);
+      }
+
+      if (timeWheelFrameRef.current != null) {
+        cancelAnimationFrame(timeWheelFrameRef.current);
+      }
+    };
+  }, []);
+
+  const commitDate = React.useCallback(
+    (nextDate: Date | undefined, nextTime?: string) => {
+      dateRef.current = nextDate;
+      setDisplayDate(nextDate);
+
+      const resolvedTime =
+        nextTime ?? (nextDate ? format(nextDate, "HH:mm") : "00:00");
+
+      if (resolvedTime !== timeRef.current) {
+        timeRef.current = resolvedTime;
+        setTime(resolvedTime);
+      }
+
+      React.startTransition(() => {
+        setDate(nextDate);
+      });
+    },
+    [setDate]
+  );
+
   const updateTime = (newTime: string) => {
-    const [hours, minutes] = newTime.split(":").map(Number);
-    const newDate = date ? new Date(date) : new Date();
-
-    newDate.setHours(hours);
-    newDate.setMinutes(minutes);
-
-    setTime(newTime);
-    setDate(newDate);
+    const nextDate = buildDateWithTime(dateRef.current, newTime, showTime);
+    commitDate(nextDate, newTime);
   };
+
+  const handleTriggerWheel = React.useCallback((event: WheelEvent) => {
+    if (!showTime) return;
+
+    const direction = Math.sign(event.deltaY);
+    if (direction === 0) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    triggerWheelMinutesRef.current += direction * WHEEL_TIME_STEP_MINUTES;
+
+    if (triggerWheelFrameRef.current != null) return;
+
+    triggerWheelFrameRef.current = requestAnimationFrame(() => {
+      triggerWheelFrameRef.current = null;
+
+      const pendingMinutes = triggerWheelMinutesRef.current;
+      triggerWheelMinutesRef.current = 0;
+
+      if (pendingMinutes === 0) return;
+
+      const nextDate = shiftDateMinutes(dateRef.current, pendingMinutes);
+      commitDate(nextDate);
+    });
+  }, [commitDate, showTime]);
+
+  const handleTimePartWheel = React.useCallback(
+    (part: "hours" | "minutes") => (event: WheelEvent) => {
+      const direction = Math.sign(event.deltaY);
+      if (direction === 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (pendingTimePartWheelRef.current.part !== part) {
+        pendingTimePartWheelRef.current = {
+          part,
+          amount: direction,
+        };
+      } else {
+        pendingTimePartWheelRef.current.amount += direction;
+      }
+
+      if (timeWheelFrameRef.current != null) return;
+
+      timeWheelFrameRef.current = requestAnimationFrame(() => {
+        timeWheelFrameRef.current = null;
+
+        const { part: pendingPart, amount } = pendingTimePartWheelRef.current;
+        pendingTimePartWheelRef.current = {
+          part: pendingPart,
+          amount: 0,
+        };
+
+        if (amount === 0) return;
+
+        const nextDate = applyShiftByPart(dateRef.current, pendingPart, amount);
+        const nextTime = format(nextDate, "HH:mm");
+        commitDate(nextDate, nextTime);
+      });
+    },
+    [commitDate]
+  );
+
+  React.useEffect(() => {
+    const triggerElement = triggerRef.current;
+    const hoursElement = hoursWheelRef.current;
+    const minutesElement = minutesWheelRef.current;
+
+    const handleHoursWheel = handleTimePartWheel("hours");
+    const handleMinutesWheel = handleTimePartWheel("minutes");
+
+    triggerElement?.addEventListener("wheel", handleTriggerWheel, {
+      passive: false,
+    });
+    hoursElement?.addEventListener("wheel", handleHoursWheel, {
+      passive: false,
+    });
+    minutesElement?.addEventListener("wheel", handleMinutesWheel, {
+      passive: false,
+    });
+
+    return () => {
+      triggerElement?.removeEventListener("wheel", handleTriggerWheel);
+      hoursElement?.removeEventListener("wheel", handleHoursWheel);
+      minutesElement?.removeEventListener("wheel", handleMinutesWheel);
+    };
+  }, [handleTimePartWheel, handleTriggerWheel]);
+
+  const handleCalendarSelect = React.useCallback(
+    (nextSelectedDate: Date | undefined) => {
+      if (!nextSelectedDate) return;
+
+      const [hours, minutes] = timeRef.current.split(":").map(Number);
+      const nextDate = new Date(nextSelectedDate);
+
+      if (showTime) {
+        nextDate.setHours(hours);
+        nextDate.setMinutes(minutes);
+      } else {
+        nextDate.setHours(0);
+        nextDate.setMinutes(0);
+      }
+
+      commitDate(nextDate);
+    },
+    [commitDate, showTime]
+  );
+
+  const [hours, minutes] = time.split(":");
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          ref={triggerRef}
+          type="button"
           variant="form"
           className={cn(
             "w-full justify-start",
-            !date && "text-muted-foreground"
+            !displayDate && "text-muted-foreground"
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-          {date ? (
-            format(date, showTime ? "dd.MM.yyyy HH:mm" : "dd.MM.yyyy")
+          {displayDate ? (
+            format(displayDate, showTime ? "dd.MM.yyyy HH:mm" : "dd.MM.yyyy")
           ) : (
             <span>{showTime ? "Выбери дату и время" : "Выбери дату"}</span>
           )}
@@ -70,22 +315,9 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
         align="start"
          className="w-auto rounded-2xl bg-popover p-4 text-popover-foreground shadow-md"
       >
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={(d) => {
-            if (!d) return;
-            const [h, m] = time.split(":").map(Number);
-            const newDate = new Date(d);
-            if (showTime) {
-              newDate.setHours(h);
-              newDate.setMinutes(m);
-            } else {
-              newDate.setHours(0);
-              newDate.setMinutes(0);
-            }
-            setDate(newDate);
-          }}
+        <DatePickerCalendar
+          selected={displayDate}
+          onSelect={handleCalendarSelect}
         />
 
         {showTime && (
@@ -94,45 +326,41 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
 
             {/* Hours */}
             <Select
-              value={time.split(":")[0]}
-              onValueChange={(h) =>
-                updateTime(`${h}:${time.split(":")[1]}`)
-              }
+              value={hours}
+              onValueChange={(nextHours) => updateTime(`${nextHours}:${minutes}`)}
             >
-              <SelectTrigger className="w-[90px]">
-                <SelectValue />
-              </SelectTrigger>
+              <div ref={hoursWheelRef}>
+                <SelectTrigger className="w-[90px]">
+                  <SelectValue />
+                </SelectTrigger>
+              </div>
               <SelectContent>
-                {Array.from({ length: 24 }).map((_, i) => {
-                  const v = String(i).padStart(2, "0");
-                  return (
-                    <SelectItem key={v} value={v}>
-                      {v}
-                    </SelectItem>
-                  );
-                })}
+                {HOURS.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
             {/* Minutes */}
             <Select
-              value={time.split(":")[1]}
-              onValueChange={(m) =>
-                updateTime(`${time.split(":")[0]}:${m}`)
+              value={minutes}
+              onValueChange={(nextMinutes) =>
+                updateTime(`${hours}:${nextMinutes}`)
               }
             >
-              <SelectTrigger className="w-[90px]">
-                <SelectValue />
-              </SelectTrigger>
+              <div ref={minutesWheelRef}>
+                <SelectTrigger className="w-[90px]">
+                  <SelectValue />
+                </SelectTrigger>
+              </div>
               <SelectContent>
-                {Array.from({ length: 60 }).map((_, i) => {
-                  const v = String(i).padStart(2, "0");
-                  return (
-                    <SelectItem key={v} value={v}>
-                      {v}
-                    </SelectItem>
-                  );
-                })}
+                {MINUTES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
