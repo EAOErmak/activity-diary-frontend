@@ -1,6 +1,7 @@
 import type { Tag } from "@/shared/types/tag";
 import {
   CHART_TYPE_LABELS,
+  TRAINING_CHART_TYPES,
   type ChartType,
 } from "@/shared/types/analytics";
 import { Button } from "@/shared/components/ui/button";
@@ -93,9 +94,9 @@ export default function AnalyticsFiltersV2({
               <SelectValue placeholder="Выберите тип графика" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(CHART_TYPE_LABELS).map(([value, label]) => (
+              {TRAINING_CHART_TYPES.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {label}
+                  {CHART_TYPE_LABELS[value]}
                 </SelectItem>
               ))}
             </SelectContent>

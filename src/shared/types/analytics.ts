@@ -10,6 +10,12 @@ export const CHART_TYPES = [
 
 export type ChartType = (typeof CHART_TYPES)[number];
 
+export const TRAINING_CHART_TYPES = [
+  "TRAINING_COMPUTED",
+  "TRAINING_METRICS",
+  "TRAINING_RAW",
+] as const satisfies readonly ChartType[];
+
 export const DEFAULT_CHART_TYPE: ChartType = "TRAINING_COMPUTED";
 
 const LEGACY_CHART_TYPE_MAP = {
