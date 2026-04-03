@@ -1,6 +1,16 @@
 import { Fragment } from "react";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
+import { Progress } from "@/shared/components/ui/progress";
+import { ScrollArea } from "@/shared/components/ui/scroll-area";
+import { Separator } from "@/shared/components/ui/separator";
 import { cn } from "@/shared/lib/utils";
 import type { GoalCalendarStats } from "@/features/goals/lib/goalsTypes";
 import {
@@ -70,30 +80,64 @@ export function GoalCalendarCard({
   return (
     <Card className={cn("w-full min-w-0 flex flex-col", className)}>
       <CardHeader className="shrink-0 space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle>Goal Calendar</CardTitle>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <CardTitle>Goal Calendar</CardTitle>
+              <Badge variant="outline" className="rounded-full px-3 py-1">
+                Year {calendarYear}
+              </Badge>
+            </div>
+            <CardDescription>
+              Year heatmap for daily goals and a compact week strip underneath.
+            </CardDescription>
+          </div>
+
           <div className="flex items-center gap-2">
             <Button type="button" variant="form" size="sm" onClick={onPrevYear}>
               Prev
             </Button>
-            <div className="min-w-[5rem] text-center text-sm font-semibold text-foreground">{calendarYear}</div>
+            <div className="min-w-[5rem] text-center text-sm font-semibold text-foreground">
+              {calendarYear}
+            </div>
             <Button type="button" variant="form" size="sm" onClick={onNextYear}>
               Next
             </Button>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-input p-3">
-            <div className="text-2xl font-semibold">{stats.finishedDays}</div>
-            <div className="text-sm text-muted-foreground">Finished days</div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-border/70 bg-input p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-medium">Finished days</div>
+              <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+                {stats.finishedDays}
+              </Badge>
+            </div>
+            <div className="mt-3 text-2xl font-semibold">{stats.finishedDays}</div>
+            <Progress
+              value={Math.min(100, Math.round((stats.finishedDays / 365) * 100))}
+              className="mt-3"
+            />
           </div>
-          <div className="rounded-xl bg-input p-3">
-            <div className="text-2xl font-semibold">{stats.avgCompletion}%</div>
-            <div className="text-sm text-muted-foreground">Completed</div>
+          <div className="rounded-2xl border border-border/70 bg-input p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-medium">Completed</div>
+              <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+                {stats.avgCompletion}%
+              </Badge>
+            </div>
+            <div className="mt-3 text-2xl font-semibold">{stats.avgCompletion}%</div>
+            <Progress value={stats.avgCompletion} className="mt-3" />
           </div>
-          <div className="rounded-xl bg-input p-3">
-            <div className="text-2xl font-semibold">{stats.weeklyStreak}</div>
-            <div className="text-sm text-muted-foreground">Week streak</div>
+          <div className="rounded-2xl border border-border/70 bg-input p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-medium">Week streak</div>
+              <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+                {stats.weeklyStreak}
+              </Badge>
+            </div>
+            <div className="mt-3 text-2xl font-semibold">{stats.weeklyStreak}</div>
+            <Progress value={Math.min(100, stats.weeklyStreak * 10)} className="mt-3" />
           </div>
         </div>
       </CardHeader>
@@ -107,8 +151,8 @@ export function GoalCalendarCard({
           </div>
         ) : null}
 
-        <div className="overflow-x-auto pb-1">
-          <div className="w-max" style={{ minWidth: `${28 + weeks.length * 28}px` }}>
+        <ScrollArea className="w-full whitespace-nowrap pb-1">
+          <div className="w-max pr-4" style={{ minWidth: `${28 + weeks.length * 28}px` }}>
             <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: `28px repeat(${weeks.length}, 24px)` }}>
               <div />
               {monthLabels.map((label, index) => (
@@ -176,12 +220,19 @@ export function GoalCalendarCard({
               ))}
             </div>
           </div>
-        </div>
+        </ScrollArea>
 
-        <div className="border-t border-border pt-3 space-y-2">
-          <div className="text-xs font-semibold text-foreground">Week Calendar</div>
-          <div className="overflow-x-auto pb-1">
-            <div className="w-max" style={{ minWidth: `${weeks.length * 28}px` }}>
+        <Separator />
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold text-foreground">Week Calendar</div>
+            <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+              {weeks.length} weeks
+            </Badge>
+          </div>
+          <ScrollArea className="w-full whitespace-nowrap pb-1">
+            <div className="w-max pr-4" style={{ minWidth: `${weeks.length * 28}px` }}>
               <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: `repeat(${weeks.length}, 24px)` }}>
                 {monthLabels.map((label, index) => (
                   <div key={`week-month-${index}`} className="h-4 text-center text-[11px] text-muted-foreground">
@@ -230,13 +281,16 @@ export function GoalCalendarCard({
                 })}
               </div>
             </div>
-          </div>
+          </ScrollArea>
         </div>
 
-        <div className="border-t border-border pt-3 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
-          <span>No goal</span>
+        <Separator />
+
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <Badge variant="outline" className="rounded-full">
+            No goal
+          </Badge>
           <span className="h-4 w-4 rounded-md border border-border/70 bg-surfaceMuted" />
-          <span className="mx-1">|</span>
           <div className="flex items-center gap-1">
             {weekLegendLevels.map((level) => (
               <span

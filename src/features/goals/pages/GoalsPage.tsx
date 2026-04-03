@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Calendar, Layers, NotebookPen, Target } from "lucide-react";
 import { goalApi } from "@/api/goalApi";
 import { DailyViewCard } from "@/features/goals/components/DailyViewCard";
-import { ConfirmEntryGoalDialog } from "@/features/goals/components/ConfirmEntryGoalDialog";
+import { ConfirmEntryGoalDialogV2 } from "@/features/goals/components/ConfirmEntryGoalDialogV2";
 import { GoalCalendarCard } from "@/features/goals/components/GoalCalendarCard";
 import { GoalsDragPreview } from "@/features/goals/components/GoalsDragPreview";
 import { ReplaceGoalDialog } from "@/features/goals/components/ReplaceGoalDialog";
@@ -20,11 +20,15 @@ import { WeekViewCard } from "@/features/goals/components/WeekViewCard";
 import { useGoalCalendarGrid } from "@/features/goals/hooks/useGoalCalendarGrid";
 import { useGoalsSummaries } from "@/features/goals/hooks/useGoalsSummaries";
 import { useGoalsTemplates } from "@/features/goals/hooks/useGoalsTemplates";
+import { Badge } from "@/shared/components/ui/badge";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
+  CardTitle,
 } from "@/shared/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import type {
   DragTemplatePayload,
   ReplaceGoalDialogState,
@@ -738,198 +742,225 @@ export default function GoalsPage() {
             isFixedDesktopWorkspace && "xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:space-y-0"
           )}
         >
-          <Card
-            className={cn(
-              "overflow-hidden border-border/70 bg-background/80 shadow-sm",
-              isFixedDesktopWorkspace && "xl:mb-6 xl:shrink-0"
-            )}
+          <Tabs
+            value={activeView}
+            onValueChange={(value) => {
+              if (isGoalsWorkspaceView(value)) {
+                handleViewChange(value);
+              }
+            }}
+            className={cn(isFixedDesktopWorkspace && "xl:flex xl:h-full xl:min-h-0 xl:flex-col")}
           >
-            <CardHeader className="pb-4">
-              <div className="inline-flex w-fit self-start items-center gap-2 rounded-full border border-border/60 bg-background px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-foreground shadow-sm">
-                <Target className="h-5 w-5" />
-                Goals Workspace
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {lastActionText ? (
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-foreground">
-                  {lastActionText}
-                </div>
-              ) : null}
-
-              <div className="grid gap-3 lg:grid-cols-3">
-                {viewOptions.map((option) => {
-                  const Icon = option.icon;
-                  const isActive = option.id === activeView;
-
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      aria-pressed={isActive}
-                      onClick={() => {
-                        handleViewChange(option.id);
-                      }}
-                      className={cn(
-                        "group relative overflow-hidden rounded-[24px] border p-4 text-left transition-all",
-                        isActive
-                          ? "border-foreground/10 bg-foreground text-background shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
-                          : "border-border/70 bg-background hover:border-border hover:bg-surface/60"
-                      )}
+            <Card
+              className={cn(
+                "overflow-hidden border-border/70 bg-background/80 shadow-sm",
+                isFixedDesktopWorkspace && "xl:mb-6 xl:shrink-0"
+              )}
+            >
+              <CardHeader className="gap-4 pb-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-3">
+                    <Badge
+                      variant="outline"
+                      className="inline-flex w-fit items-center gap-2 rounded-full border-border/60 bg-background px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
                     >
-                      <div
+                      <Target className="h-4 w-4" />
+                      Goals Workspace
+                    </Badge>
+
+                    <div className="space-y-1">
+                      <CardTitle className="text-2xl">Goals planning board</CardTitle>
+                      <CardDescription className="max-w-2xl">
+                        Keep the current layout, but switch between yearly, weekly and daily
+                        planning with shadcn-style controls.
+                      </CardDescription>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                      Year {calendarYear}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                      {stats.finishedDays} finished
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                      {stats.avgCompletion}% avg
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                      {stats.weeklyStreak} streak
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                {lastActionText ? (
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-foreground">
+                    {lastActionText}
+                  </div>
+                ) : null}
+
+                <TabsList className="grid h-auto w-full grid-cols-1 gap-3 rounded-[28px] bg-surface/40 p-2 lg:grid-cols-3">
+                  {viewOptions.map((option) => {
+                    const Icon = option.icon;
+                    const isActive = option.id === activeView;
+
+                    return (
+                      <TabsTrigger
+                        key={option.id}
+                        value={option.id}
                         className={cn(
-                          "absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity",
-                          option.accentClass,
-                          isActive && "opacity-100"
+                          "group relative h-auto min-h-[112px] items-start overflow-hidden rounded-[24px] border border-border/70 bg-background p-4 text-left shadow-sm hover:border-border hover:bg-surface/60",
+                          "data-[state=active]:border-foreground/10 data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
                         )}
-                      />
+                      >
+                        <div
+                          className={cn(
+                            "absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity group-data-[state=active]:opacity-100",
+                            option.accentClass
+                          )}
+                        />
 
-                      <div className="relative space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div
+                        <div className="relative flex w-full flex-col gap-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div
+                                className={cn(
+                                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                                  isActive
+                                    ? "border-white/15 bg-white/10 text-white"
+                                    : "border-border bg-surface text-foreground"
+                                )}
+                              >
+                                <Icon className="h-5 w-5" />
+                              </div>
+
+                              <div className="truncate text-base font-semibold">{option.title}</div>
+                            </div>
+
+                            <Badge
+                              variant="outline"
                               className={cn(
-                                "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                                "shrink-0 rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.18em]",
                                 isActive
-                                  ? "border-white/15 bg-white/10 text-white"
-                                  : "border-border bg-surface text-foreground"
+                                  ? "border-white/15 bg-white/10 text-white/85"
+                                  : "border-border/70 bg-surface text-muted-foreground"
                               )}
                             >
-                              <Icon className="h-5 w-5" />
-                            </div>
-
-                            <div
-                              className={cn(
-                                "truncate text-base font-semibold",
-                                isActive ? "text-white" : "text-foreground"
-                              )}
-                            >
-                              {option.title}
-                            </div>
+                              {option.contextLabel}
+                            </Badge>
                           </div>
 
                           <div
                             className={cn(
-                              "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]",
-                              isActive
-                                ? "bg-white/10 text-white/80"
-                                : "bg-surface text-mutedForeground"
+                              "text-sm",
+                              isActive ? "text-white/70" : "text-muted-foreground"
                             )}
                           >
-                            {option.contextLabel}
+                            {option.description}
                           </div>
                         </div>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </CardContent>
+            </Card>
 
-                        <div
-                          className={cn(
-                            "text-sm",
-                            isActive ? "text-white/70" : "text-mutedForeground"
-                          )}
-                        >
-                          {option.description}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+            {activeView === "calendar" ? (
+              <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
+                <GoalCalendarCard
+                  className={cn(isFixedDesktopWorkspace && "xl:h-full")}
+                  calendarYear={calendarYear}
+                  onPrevYear={() => shiftCalendarYear(-1)}
+                  onNextYear={() => shiftCalendarYear(1)}
+                  stats={stats}
+                  lastActionText=""
+                  weeks={weeks}
+                  monthLabels={monthLabels}
+                  yearStart={yearStart}
+                  yearEnd={yearEnd}
+                  dayScores={dayScores}
+                  weekScores={weekScores}
+                  previewDateKeys={previewDateKeys}
+                  draggingTemplate={Boolean(draggingTemplate)}
+                  creatingDate={creatingDate}
+                  isEraserOn={isEraserOn}
+                  selectedDayKey={dailyDateKey}
+                  weekPreviewStartKey={weekPreviewStartKey}
+                  onHoverDate={setHoverDate}
+                  onDeleteDayGoal={(dateKey) => {
+                    void handleDeleteDayGoalOnDate(dateKey);
+                  }}
+                  onDeleteWeekGoal={(dateKey) => {
+                    void handleDeleteWeekGoalOnDate(dateKey);
+                  }}
+                  onSelectDay={setDailyDateWithSync}
+                  onSelectWeek={setWeekPreviewWithSync}
+                />
               </div>
-            </CardContent>
-          </Card>
+            ) : null}
 
-          {activeView === "calendar" ? (
-            <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
-              <GoalCalendarCard
-                className={cn(isFixedDesktopWorkspace && "xl:h-full")}
-                calendarYear={calendarYear}
-                onPrevYear={() => shiftCalendarYear(-1)}
-                onNextYear={() => shiftCalendarYear(1)}
-                stats={stats}
-                lastActionText=""
-                weeks={weeks}
-                monthLabels={monthLabels}
-                yearStart={yearStart}
-                yearEnd={yearEnd}
-                dayScores={dayScores}
-                weekScores={weekScores}
-                previewDateKeys={previewDateKeys}
-                draggingTemplate={Boolean(draggingTemplate)}
-                creatingDate={creatingDate}
-                isEraserOn={isEraserOn}
-                selectedDayKey={dailyDateKey}
-                weekPreviewStartKey={weekPreviewStartKey}
-                onHoverDate={setHoverDate}
-                onDeleteDayGoal={(dateKey) => {
-                  void handleDeleteDayGoalOnDate(dateKey);
-                }}
-                onDeleteWeekGoal={(dateKey) => {
-                  void handleDeleteWeekGoalOnDate(dateKey);
-                }}
-                onSelectDay={setDailyDateWithSync}
-                onSelectWeek={setWeekPreviewWithSync}
-              />
-            </div>
-          ) : null}
+            {activeView === "week" ? (
+              <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
+                <WeekViewCard
+                  className={cn(isFixedDesktopWorkspace && "xl:h-full")}
+                  monthLabel={weekPreviewMonthLabel}
+                  stats={weekPreviewStats}
+                  days={weekPreviewDays}
+                  dailyDateKey={dailyDateKey}
+                  previewDateKeys={previewDateKeys}
+                  draggingTemplate={Boolean(draggingTemplate)}
+                  creatingDate={creatingDate}
+                  isEraserOn={isEraserOn}
+                  onPrevWeek={() => shiftWeekPreview(-7)}
+                  onNextWeek={() => shiftWeekPreview(7)}
+                  onHoverDate={setHoverDate}
+                  onSelectDailyDate={setDailyDateWithSync}
+                  onConfirmDayGoal={(dayGoalId, dateKey) => {
+                    void handleConfirmDayGoal(dayGoalId, dateKey);
+                  }}
+                  onDeleteDayGoal={(dateKey) => {
+                    void handleDeleteDayGoalOnDate(dateKey);
+                  }}
+                />
+              </div>
+            ) : null}
 
-          {activeView === "week" ? (
-            <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
-              <WeekViewCard
-                className={cn(isFixedDesktopWorkspace && "xl:h-full")}
-                monthLabel={weekPreviewMonthLabel}
-                stats={weekPreviewStats}
-                days={weekPreviewDays}
+            {activeView === "daily" ? (
+              <DailyViewCard
+                dailyDateLabel={dailyDateLabel}
                 dailyDateKey={dailyDateKey}
-                previewDateKeys={previewDateKeys}
+                currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
+                dailyEntries={dailyEntries}
+                isLoadingDailyEntries={isLoadingDailyEntries}
+                isDailyPreviewTarget={isDailyPreviewTarget}
+                canDropOnDailyDate={canDropOnDailyDate}
                 draggingTemplate={Boolean(draggingTemplate)}
                 creatingDate={creatingDate}
                 isEraserOn={isEraserOn}
-                onPrevWeek={() => shiftWeekPreview(-7)}
-                onNextWeek={() => shiftWeekPreview(7)}
+                onPrevDay={() => shiftDailyDate(-1)}
+                onNextDay={() => shiftDailyDate(1)}
                 onHoverDate={setHoverDate}
-                onSelectDailyDate={setDailyDateWithSync}
-                onConfirmDayGoal={(dayGoalId, dateKey) => {
-                  void handleConfirmDayGoal(dayGoalId, dateKey);
-                }}
                 onDeleteDayGoal={(dateKey) => {
                   void handleDeleteDayGoalOnDate(dateKey);
                 }}
+                onDeleteEntryGoal={(entryGoalId, entryName) => {
+                  void handleDeleteEntryGoal(entryGoalId, entryName);
+                }}
+                onConfirmDayGoal={(dayGoalId) => {
+                  void handleConfirmDayGoal(dayGoalId, dailyDateKey);
+                }}
+                onConfirmEntryGoal={(entry, entryName) => {
+                  void handleConfirmEntryGoal(entry, entryName);
+                }}
+                onConfirmEntryGoalSimple={(entry, entryName) => {
+                  void handleConfirmEntryGoalSimple(entry, entryName);
+                }}
               />
-            </div>
-          ) : null}
-
-          {activeView === "daily" ? (
-            <DailyViewCard
-              dailyDateLabel={dailyDateLabel}
-              dailyDateKey={dailyDateKey}
-              currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
-              dailyEntries={dailyEntries}
-              isLoadingDailyEntries={isLoadingDailyEntries}
-              isDailyPreviewTarget={isDailyPreviewTarget}
-              canDropOnDailyDate={canDropOnDailyDate}
-              draggingTemplate={Boolean(draggingTemplate)}
-              creatingDate={creatingDate}
-              isEraserOn={isEraserOn}
-              onPrevDay={() => shiftDailyDate(-1)}
-              onNextDay={() => shiftDailyDate(1)}
-              onHoverDate={setHoverDate}
-              onDeleteDayGoal={(dateKey) => {
-                void handleDeleteDayGoalOnDate(dateKey);
-              }}
-              onDeleteEntryGoal={(entryGoalId, entryName) => {
-                void handleDeleteEntryGoal(entryGoalId, entryName);
-              }}
-              onConfirmDayGoal={(dayGoalId) => {
-                void handleConfirmDayGoal(dayGoalId, dailyDateKey);
-              }}
-              onConfirmEntryGoal={(entry, entryName) => {
-                void handleConfirmEntryGoal(entry, entryName);
-              }}
-              onConfirmEntryGoalSimple={(entry, entryName) => {
-                void handleConfirmEntryGoalSimple(entry, entryName);
-              }}
-            />
-          ) : null}
+            ) : null}
+          </Tabs>
         </div>
 
         <TemplatesSidebar
@@ -965,7 +996,7 @@ export default function GoalsPage() {
         }}
       />
 
-      <ConfirmEntryGoalDialog
+      <ConfirmEntryGoalDialogV2
         open={Boolean(entryConfirmDialog)}
         goalId={entryConfirmDialog?.goalId ?? null}
         entryName={entryConfirmDialog?.entryName ?? ""}

@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef } from "react";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
+import { ScrollArea } from "@/shared/components/ui/scroll-area";
+import { Separator } from "@/shared/components/ui/separator";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
 import { formatDailyTime, getDiaryEntrySquareClass } from "@/features/goals/lib/goalsUtils";
 
@@ -73,8 +83,19 @@ export function DailyViewCard({
   return (
     <Card className="w-full min-w-0">
       <CardHeader className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle>Daily View</CardTitle>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <CardTitle>Daily View</CardTitle>
+              <Badge variant="outline" className="rounded-full px-3 py-1">
+                Selected day
+              </Badge>
+            </div>
+            <CardDescription>
+              Confirm or remove goals for the selected day without changing the current layout.
+            </CardDescription>
+          </div>
+
           <div className="flex items-center gap-1">
             <Button type="button" variant="form" size="sm" onClick={onPrevDay}>
               Prev
@@ -89,7 +110,21 @@ export function DailyViewCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="text-xs text-muted-foreground">Entries: {dailyEntries.length}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="rounded-full px-3 py-1">
+            Entries: {dailyEntries.length}
+          </Badge>
+          {currentDayGoalId ? (
+            <Badge variant="outline" className="rounded-full px-3 py-1">
+              Day goal attached
+            </Badge>
+          ) : null}
+          {isEraserOn ? (
+            <Badge className="rounded-full bg-rose-500/15 px-3 py-1 text-rose-600 hover:bg-rose-500/15">
+              Erase mode
+            </Badge>
+          ) : null}
+        </div>
 
         <div
           data-goal-date={dailyDateKey}
@@ -136,7 +171,10 @@ export function DailyViewCard({
           <div className="relative min-h-[120px]">
             {isLoadingDailyEntries && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-surface/70">
-                <div className="text-sm text-muted-foreground">Loading entries...</div>
+                <div className="w-full max-w-sm space-y-3 px-4">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-24 w-full rounded-xl" />
+                </div>
               </div>
             )}
 
@@ -145,67 +183,85 @@ export function DailyViewCard({
             )}
 
             {dailyEntries.length > 0 && (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3">
-                {dailyEntries.map((entry, index) => {
-                  const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
-                  const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
-                  const entryTitle = entry.status
-                    ? `${entryName} - ${startedLabel} - ${entry.status}`
-                    : `${entryName} - ${startedLabel}`;
+              <ScrollArea className="max-h-[420px] w-full">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3 pr-4">
+                  {dailyEntries.map((entry, index) => {
+                    const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
+                    const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
+                    const entryTitle = entry.status
+                      ? `${entryName} - ${startedLabel} - ${entry.status}`
+                      : `${entryName} - ${startedLabel}`;
 
-                  return (
-                    <div
-                      key={entry.id}
-                      title={entryTitle}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (entryLongPressTriggeredRef.current) {
+                    return (
+                      <div
+                        key={entry.id}
+                        title={entryTitle}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (entryLongPressTriggeredRef.current) {
+                            entryLongPressTriggeredRef.current = false;
+                            return;
+                          }
+                          if (isEraserOn) {
+                            onDeleteEntryGoal(entry.id, entryName);
+                            return;
+                          }
+                          onConfirmEntryGoal(entry, entryName);
+                        }}
+                        onPointerDown={(event) => {
+                          event.stopPropagation();
+                          if (isEraserOn) return;
                           entryLongPressTriggeredRef.current = false;
-                          return;
-                        }
-                        if (isEraserOn) {
-                          onDeleteEntryGoal(entry.id, entryName);
-                          return;
-                        }
-                        onConfirmEntryGoal(entry, entryName);
-                      }}
-                      onPointerDown={(event) => {
-                        event.stopPropagation();
-                        if (isEraserOn) return;
-                        entryLongPressTriggeredRef.current = false;
-                        clearEntryLongPressTimer();
-                        entryLongPressTimerRef.current = setTimeout(() => {
-                          entryLongPressTriggeredRef.current = true;
-                          onConfirmEntryGoalSimple(entry, entryName);
-                        }, LONG_PRESS_MS);
-                      }}
-                      onPointerUp={(event) => {
-                        event.stopPropagation();
-                        clearEntryLongPressTimer();
-                      }}
-                      onPointerLeave={(event) => {
-                        event.stopPropagation();
-                        clearEntryLongPressTimer();
-                      }}
-                      onPointerCancel={(event) => {
-                        event.stopPropagation();
-                        clearEntryLongPressTimer();
-                      }}
-                      onContextMenu={(event) => {
-                        if (isEraserOn) event.preventDefault();
-                      }}
-                      className={[
-                        "h-[120px] w-[120px] rounded-xl border p-2 flex items-center justify-center",
-                        "text-sm font-semibold leading-tight break-words text-center",
-                        isEraserOn ? "cursor-pointer" : "cursor-default",
-                        getDiaryEntrySquareClass(entry.status),
-                      ].join(" ")}
-                    >
-                      {entryName}
-                    </div>
-                  );
-                })}
-              </div>
+                          clearEntryLongPressTimer();
+                          entryLongPressTimerRef.current = setTimeout(() => {
+                            entryLongPressTriggeredRef.current = true;
+                            onConfirmEntryGoalSimple(entry, entryName);
+                          }, LONG_PRESS_MS);
+                        }}
+                        onPointerUp={(event) => {
+                          event.stopPropagation();
+                          clearEntryLongPressTimer();
+                        }}
+                        onPointerLeave={(event) => {
+                          event.stopPropagation();
+                          clearEntryLongPressTimer();
+                        }}
+                        onPointerCancel={(event) => {
+                          event.stopPropagation();
+                          clearEntryLongPressTimer();
+                        }}
+                        onContextMenu={(event) => {
+                          if (isEraserOn) event.preventDefault();
+                        }}
+                        className={[
+                          "h-[120px] w-[120px] rounded-xl border p-2 flex flex-col justify-between",
+                          "text-sm font-semibold leading-tight break-words",
+                          isEraserOn ? "cursor-pointer" : "cursor-default",
+                          getDiaryEntrySquareClass(entry.status),
+                        ].join(" ")}
+                      >
+                        <div className="flex items-start justify-between gap-1">
+                          <Badge
+                            variant="outline"
+                            className="max-w-[72px] truncate rounded-full border-white/15 bg-black/10 px-1.5 py-0 text-[9px] uppercase text-current backdrop-blur-sm"
+                          >
+                            {entry.status ?? "Pending"}
+                          </Badge>
+                          <span className="text-[10px] font-medium opacity-80">
+                            {startedLabel}
+                          </span>
+                        </div>
+
+                        <Separator className="bg-white/20" />
+
+                        <div className="flex flex-1 items-center justify-center text-center">
+                          {entryName}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             )}
           </div>
         </div>

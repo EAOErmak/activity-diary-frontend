@@ -6,10 +6,30 @@ import {
 } from "react";
 import { goalApi } from "@/api/goalApi";
 import { Clock3, Eraser, GripVertical, RefreshCw, Sparkles } from "lucide-react";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { Progress } from "@/shared/components/ui/progress";
+import { ScrollArea } from "@/shared/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+import { Separator } from "@/shared/components/ui/separator";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Toggle } from "@/shared/components/ui/toggle";
 import { cn } from "@/shared/lib/utils";
 import type {
   DragTemplatePayload,
@@ -111,6 +131,24 @@ const getTemplateHint = (kind: TemplateItem["kind"]): string => {
   return "Fill a whole week";
 };
 
+const getEntryStatusClass = (entry: DiaryEntryGoalSummary | null): string => {
+  if (!entry) return "border-border bg-surface text-muted-foreground";
+  return isPendingEntryGoal(entry)
+    ? "border-amber-400/40 bg-amber-500/10 text-amber-600"
+    : "border-emerald-400/40 bg-emerald-500/10 text-emerald-600";
+};
+
+const getEntryName = (
+  entry: DiaryEntryGoalSummary | null,
+  detail?: DiaryEntryGoalDetail | null
+): string => {
+  if (detail?.name) return detail.name;
+  if (entry?.name) return entry.name;
+  if (entry?.firstTag) return entry.firstTag;
+  if (entry?.id) return `Entry #${entry.id}`;
+  return "--";
+};
+
 export function TemplatesSidebar({
   eraserMode,
   isLoadingTemplates,
@@ -188,100 +226,130 @@ export function TemplatesSidebar({
   }, [panel, selectedEntry?.id]);
 
   const selectedEntryStatusLabel = selectedEntry?.status ?? (selectedEntry ? "PENDING" : "--");
-  const selectedEntryStatusClass = selectedEntry
-    ? isPendingEntryGoal(selectedEntry)
-      ? "border-amber-400/40 bg-amber-500/10 text-amber-600"
-      : "border-emerald-400/40 bg-emerald-500/10 text-emerald-600"
-    : "border-border bg-surface text-muted-foreground";
+  const selectedEntryStatusClass = getEntryStatusClass(selectedEntry);
+  const selectedEntryName = getEntryName(selectedEntry, selectedEntryDetail);
+  const selectedEntryCompleteness = Math.round(
+    selectedEntryDetail?.completeness ?? selectedEntry?.completeness ?? 0
+  );
 
   return (
     <div className="w-full md:w-[17em] md:shrink-0 md:self-stretch">
-      <Card
-        className={cn(
-          "w-full flex flex-col overflow-hidden border border-border/70 bg-background/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur",
-          "md:sticky md:[overflow-anchor:none]",
-          "md:top-[var(--sidebar-top-gap)]",
-          "md:h-[calc(100vh-var(--sidebar-top-gap)-var(--sidebar-bottom-gap))]",
-          "md:max-h-[calc(100vh-var(--sidebar-top-gap)-var(--sidebar-bottom-gap))]"
-        )}
-        style={sidebarFixedStyle}
+      <Tabs
+        value={panel}
+        onValueChange={(value) => {
+          if (value === "templates" || value === "activeEntry") {
+            setPanel(value);
+          }
+        }}
+        className="w-full"
       >
-        <CardHeader className="space-y-4 border-b border-border/60 bg-gradient-to-b from-background to-surface/35 pb-4">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-surface/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground">
-            <Sparkles className="h-4 w-4" />
-            Goals Panel
-          </div>
+        <Card
+          className={cn(
+            "w-full flex flex-col overflow-hidden border border-border/70 bg-background/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur",
+            "md:sticky md:[overflow-anchor:none]",
+            "md:top-[var(--sidebar-top-gap)]",
+            "md:h-[calc(100vh-var(--sidebar-top-gap)-var(--sidebar-bottom-gap))]",
+            "md:max-h-[calc(100vh-var(--sidebar-top-gap)-var(--sidebar-bottom-gap))]"
+          )}
+          style={sidebarFixedStyle}
+        >
+          <CardHeader className="space-y-4 border-b border-border/60 bg-gradient-to-b from-background to-surface/35 pb-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-3">
+                <Badge
+                  variant="outline"
+                  className="inline-flex w-fit items-center gap-2 rounded-full border-border/60 bg-surface/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.22em]"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Goals Panel
+                </Badge>
 
-          <div className="rounded-2xl border border-border/70 bg-background/80 p-2 shadow-sm">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPanel("templates")}
-                className={cn(
-                  "h-10 flex-1 whitespace-nowrap rounded-full border px-3 text-sm font-semibold transition-all",
-                  panel === "templates"
-                    ? "border-ring bg-input text-foreground ring-2 ring-ring shadow-sm"
-                    : "border-border bg-transparent text-muted-foreground hover:bg-surface hover:text-foreground"
-                )}
-              >
-                Templates
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanel("activeEntry")}
-                className={cn(
-                  "h-10 flex-1 whitespace-nowrap rounded-full border px-3 text-sm font-semibold transition-all",
-                  panel === "activeEntry"
-                    ? "border-ring bg-input text-foreground ring-2 ring-ring shadow-sm"
-                    : "border-border bg-transparent text-muted-foreground hover:bg-surface hover:text-foreground"
-                )}
-              >
-                Entry
-              </button>
-              <button
-                type="button"
+                <div className="space-y-1">
+                  <CardTitle className="text-lg">Templates and active entry</CardTitle>
+                  <CardDescription>
+                    Keep the same sidebar placement, but use shadcn-style controls for filters,
+                    tabs and scrolling.
+                  </CardDescription>
+                </div>
+              </div>
+
+              <Toggle
+                pressed={isEraserOn}
+                variant="outline"
+                size="default"
                 aria-label="Toggle erase mode"
-                aria-pressed={isEraserOn}
-                onClick={() => onEraserModeChange(isEraserOn ? "eraseOff" : "eraseOn")}
+                onPressedChange={(pressed) => onEraserModeChange(pressed ? "eraseOn" : "eraseOff")}
                 className={cn(
-                  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all",
-                  isEraserOn
-                    ? "border-rose-400/50 bg-rose-500/10 text-rose-600 ring-2 ring-rose-300/40"
-                    : "border-border bg-transparent text-muted-foreground hover:bg-surface hover:text-foreground"
+                  "h-10 w-10 shrink-0 rounded-full p-0",
+                  isEraserOn &&
+                    "border-rose-400/50 bg-rose-500/10 text-rose-600 hover:bg-rose-500/15 hover:text-rose-600"
                 )}
               >
                 <Eraser className="h-4 w-4" />
-              </button>
+              </Toggle>
             </div>
-          </div>
-        </CardHeader>
 
-        <CardContent className="flex-1 min-h-0 overflow-hidden p-4 pt-4">
-          {panel === "templates" && (
-            <div className="flex h-full min-h-0 flex-col gap-4">
-              <div className="rounded-2xl border border-border/70 bg-surface/50 p-3 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Template Filters
+            <div className="flex items-center gap-2">
+              <TabsList className="grid h-auto flex-1 grid-cols-2 rounded-2xl bg-background/80 p-1">
+                <TabsTrigger value="templates" className="rounded-xl">
+                  Templates
+                </TabsTrigger>
+                <TabsTrigger value="activeEntry" className="rounded-xl">
+                  Entry
+                </TabsTrigger>
+              </TabsList>
+
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-full px-3 py-1",
+                  isEraserOn
+                    ? "border-rose-400/40 bg-rose-500/10 text-rose-600"
+                    : "border-border/70 bg-background text-muted-foreground"
+                )}
+              >
+                {isEraserOn ? "Erase" : "Edit"}
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 pt-4">
+          <TabsContent value="templates" className="mt-0 flex h-full min-h-0 flex-1 flex-col gap-4">
+            <Card className="rounded-2xl border border-border/70 bg-surface/50 shadow-none">
+              <CardContent className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Template Filters
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Filter the template list without changing the current sidebar layout.
+                    </p>
                   </div>
-                  <div className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground">
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
                     {filteredTemplates.length}
-                  </div>
+                  </Badge>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="goal-filter-type">Type Filter</Label>
-                  <select
-                    id="goal-filter-type"
-                    className="h-12 w-full rounded-full border border-border/70 bg-background px-5 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  <Select
                     value={filterKind}
-                    onChange={(event) => onFilterKindChange(event.target.value as TemplateFilterKind)}
+                    onValueChange={(value) => onFilterKindChange(value as TemplateFilterKind)}
                   >
-                    <option value="all">All templates</option>
-                    <option value="entry">Entry</option>
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                  </select>
+                    <SelectTrigger
+                      id="goal-filter-type"
+                      className="border border-border/70 bg-background"
+                    >
+                      <SelectValue placeholder="All templates" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All templates</SelectItem>
+                      <SelectItem value="entry">Entry</SelectItem>
+                      <SelectItem value="day">Day</SelectItem>
+                      <SelectItem value="week">Week</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -295,26 +363,59 @@ export function TemplatesSidebar({
                   />
                 </div>
 
-                <Button
-                  type="button"
-                  variant="form"
-                  size="sm"
-                  className="w-full justify-between"
-                  disabled={isLoadingTemplates}
-                  onClick={onRefreshTemplates}
-                >
-                  {isLoadingTemplates ? "Refreshing..." : "Refresh Templates"}
-                  <RefreshCw className={cn("h-4 w-4", isLoadingTemplates && "animate-spin")} />
-                </Button>
-              </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="form"
+                    size="sm"
+                    className="flex-1 justify-between"
+                    disabled={isLoadingTemplates}
+                    onClick={onRefreshTemplates}
+                  >
+                    {isLoadingTemplates ? "Refreshing..." : "Refresh Templates"}
+                    <RefreshCw className={cn("h-4 w-4", isLoadingTemplates && "animate-spin")} />
+                  </Button>
 
-              <div className="flex-1 min-h-0 rounded-2xl border border-border/70 bg-surface/35 p-2">
-                <div className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain no-scrollbar pr-1">
-                  {isLoadingTemplates && (
-                    <div className="rounded-2xl border border-border/70 bg-background/80 px-3 py-4 text-sm text-muted-foreground">
-                      Loading templates...
-                    </div>
-                  )}
+                  {draggingTemplate ? (
+                    <Badge
+                      variant="outline"
+                      className="max-w-[8rem] truncate rounded-full px-3 py-1"
+                    >
+                      {draggingTemplate.name}
+                    </Badge>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="flex-1 min-h-0 rounded-2xl border border-border/70 bg-surface/35 shadow-none">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <CardTitle className="text-sm">Template library</CardTitle>
+                    <CardDescription>
+                      Drag a template onto the calendar, week or daily slot.
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                    {filteredTemplates.length}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="flex-1 min-h-0 p-0">
+                <ScrollArea className="h-full px-2 pb-2">
+                  <div className="flex flex-col gap-2 px-2">
+                  {isLoadingTemplates &&
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <div
+                        key={`template-skeleton-${index}`}
+                        className="rounded-2xl border border-border/70 bg-background/80 p-3"
+                      >
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="mt-3 h-3 w-1/2" />
+                      </div>
+                    ))}
 
                   {!isLoadingTemplates && filteredTemplates.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 px-3 py-4 text-sm text-muted-foreground">
@@ -345,35 +446,36 @@ export function TemplatesSidebar({
                                   {template.name}
                                 </div>
                               </div>
-                              <span
+                              <Badge
+                                variant="outline"
                                 className={cn(
-                                  "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase",
+                                  "shrink-0 rounded-full border-0 px-2 py-1 text-[10px] uppercase",
                                   getGoalKindBadgeClass(template.kind)
                                 )}
                               >
                                 {getGoalKindLabel(template.kind)}
-                              </span>
+                              </Badge>
                             </div>
 
-                            <div className="text-xs text-muted-foreground">
-                              {getTemplateHint(template.kind)}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-xs text-muted-foreground">
+                                {getTemplateHint(template.kind)}
+                              </div>
+                              <GripVertical className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
                             </div>
-                          </div>
-
-                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-surface text-muted-foreground transition-colors group-hover:text-foreground">
-                            <GripVertical className="h-4 w-4" />
                           </div>
                         </div>
                       </div>
                     ))}
-                </div>
-              </div>
-            </div>
-          )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          {panel === "activeEntry" && (
-            <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-surface/50 p-3">
-              <div className="shrink-0 space-y-3">
+          <TabsContent value="activeEntry" className="mt-0 flex h-full min-h-0 flex-1 flex-col gap-4">
+            <Card className="rounded-2xl border border-border/70 bg-surface/50 shadow-none">
+              <CardContent className="space-y-3 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -383,32 +485,35 @@ export function TemplatesSidebar({
                       {entryDateLabel}
                     </div>
                   </div>
-                  <div className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground">
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
                     {entryGoals.length}
-                  </div>
+                  </Badge>
                 </div>
 
                 {entryGoals.length > 0 && selectedEntry && (
                   <>
+                    <Separator />
+
                     <div className="rounded-2xl border border-border/70 bg-background/80 p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold text-foreground">
-                            {selectedEntry.name ?? selectedEntry.firstTag ?? `Entry #${selectedEntry.id}`}
+                            {getEntryName(selectedEntry)}
                           </div>
                           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                             <Clock3 className="h-3.5 w-3.5" />
                             {toTimeLabel(selectedEntry.whenStarted)}
                           </div>
                         </div>
-                        <span
+                        <Badge
+                          variant="outline"
                           className={cn(
-                            "shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase",
+                            "shrink-0 rounded-full px-2 py-1 text-[10px] uppercase",
                             selectedEntryStatusClass
                           )}
                         >
                           {selectedEntryStatusLabel}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
 
@@ -445,139 +550,190 @@ export function TemplatesSidebar({
                     </div>
                   </>
                 )}
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="mt-4 flex-1 min-h-0 overflow-y-auto no-scrollbar pr-1 space-y-3">
-                {entryGoals.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 px-3 py-4 text-sm text-muted-foreground">
-                    No entry goals for selected day.
-                  </div>
-                )}
+            <Card className="flex-1 min-h-0 rounded-2xl border border-border/70 bg-surface/50 shadow-none">
+              <CardHeader className="pb-3">
+                <div className="space-y-1">
+                  <CardTitle className="text-sm">Entry details</CardTitle>
+                  <CardDescription>
+                    Review timing, metrics and progress for the selected entry goal.
+                  </CardDescription>
+                </div>
+              </CardHeader>
 
-                {entryGoals.length > 0 && selectedEntry && (
-                  <>
-                    {isLoadingSelectedEntryDetail && (
-                      <div className="rounded-2xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground">
-                        Loading entry details...
+              <CardContent className="flex-1 min-h-0 p-0">
+                <ScrollArea className="h-full px-2 pb-2">
+                  <div className="space-y-3 px-2">
+                    {entryGoals.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 px-3 py-4 text-sm text-muted-foreground">
+                        No entry goals for selected day.
                       </div>
                     )}
 
-                    {!isLoadingSelectedEntryDetail && selectedEntryDetailError && (
-                      <div className="rounded-2xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground">
-                        {selectedEntryDetailError}
-                      </div>
-                    )}
-
-                    {!isLoadingSelectedEntryDetail && !selectedEntryDetailError && selectedEntryDetail && (
-                      <div className="rounded-2xl border border-border/70 bg-background/80 p-3 space-y-3">
-                        <div className="space-y-1">
-                          <div className="text-sm font-semibold text-foreground">
-                            {selectedEntryDetail.name ??
-                              selectedEntry.name ??
-                              selectedEntry.firstTag ??
-                              `Entry #${selectedEntry.id}`}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {toTimeLabel(selectedEntryDetail.whenStarted)} -{" "}
-                            {toTimeLabel(selectedEntryDetail.whenEnded)}
-                          </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                              Position
-                            </div>
-                            <div className="mt-1 text-sm text-foreground">
-                              {selectedEntryDetail.position ?? "--"}
-                            </div>
-                          </div>
-
-                          <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                              Duration
-                            </div>
-                            <div className="mt-1 text-sm text-foreground">
-                              {selectedEntryDetail.expectedDurationMin ?? "--"} min
-                            </div>
-                          </div>
-
-                          <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                              Mood / Completeness
-                            </div>
-                            <div className="mt-1 text-sm text-foreground">
-                              {selectedEntryDetail.mood ?? "--"} /{" "}
-                              {Math.round(selectedEntryDetail.completeness ?? 0)}%
-                            </div>
-                          </div>
-
-                          <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                              Linked Entry
-                            </div>
-                            <div className="mt-1 text-sm text-foreground">
-                              {selectedEntryDetail.currentEntryId ?? "--"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                            Metric Goals
-                          </div>
-
-                          {(selectedEntryDetail.metricGoals?.length ?? 0) === 0 && (
-                            <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2 text-sm text-muted-foreground">
-                              No metric goals attached.
-                            </div>
-                          )}
-
-                          {(selectedEntryDetail.metricGoals?.length ?? 0) > 0 && (
-                            <div className="space-y-2">
-                              {(selectedEntryDetail.metricGoals ?? []).map((metricGoal, metricGoalIndex) => {
-                                const metricTypeId =
-                                  metricGoal.metricTypeId ?? metricGoal.metricType?.id ?? "--";
-                                const valuesLabel = (metricGoal.values ?? [])
-                                  .map((value) => {
-                                    const numericValue = value.expectedValue ?? value.value ?? "--";
-                                    const unitId = value.unitId ?? value.unit?.id ?? "--";
-                                    return `${numericValue} (unit ${unitId})`;
-                                  })
-                                  .join(", ");
-
-                                return (
-                                  <div
-                                    key={`metric-goal-${metricGoalIndex}`}
-                                    className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2 text-xs text-muted-foreground"
-                                  >
-                                    Metric type {metricTypeId}: {valuesLabel || "--"}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-
-                        {selectedEntryDetail.description && (
-                          <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                              Description
-                            </div>
-                            <div className="mt-1 text-sm text-foreground break-words">
-                              {selectedEntryDetail.description}
-                            </div>
+                    {entryGoals.length > 0 && selectedEntry && (
+                      <>
+                        {isLoadingSelectedEntryDetail && (
+                          <div className="space-y-3 rounded-2xl border border-border/70 bg-background/80 p-3">
+                            <Skeleton className="h-5 w-2/3" />
+                            <Skeleton className="h-3 w-1/3" />
+                            <Skeleton className="h-2.5 w-full" />
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-16 w-full" />
                           </div>
                         )}
-                      </div>
+
+                        {!isLoadingSelectedEntryDetail && selectedEntryDetailError && (
+                          <div className="rounded-2xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground">
+                            {selectedEntryDetailError}
+                          </div>
+                        )}
+
+                        {!isLoadingSelectedEntryDetail &&
+                          !selectedEntryDetailError &&
+                          selectedEntryDetail && (
+                            <div className="rounded-2xl border border-border/70 bg-background/80 p-3 space-y-3">
+                              <div className="space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-foreground">
+                                      {selectedEntryName}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {toTimeLabel(selectedEntryDetail.whenStarted)} -{" "}
+                                      {toTimeLabel(selectedEntryDetail.whenEnded)}
+                                    </div>
+                                  </div>
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "rounded-full px-2 py-1 text-[10px] uppercase",
+                                      selectedEntryStatusClass
+                                    )}
+                                  >
+                                    {selectedEntryStatusLabel}
+                                  </Badge>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                                    <span>Completeness</span>
+                                    <span>{selectedEntryCompleteness}%</span>
+                                  </div>
+                                  <Progress value={selectedEntryCompleteness} />
+                                </div>
+                              </div>
+
+                              <Separator />
+
+                              <div className="grid gap-2">
+                                <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
+                                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                    Position
+                                  </div>
+                                  <div className="mt-1 text-sm text-foreground">
+                                    {selectedEntryDetail.position ?? "--"}
+                                  </div>
+                                </div>
+
+                                <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
+                                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                    Duration
+                                  </div>
+                                  <div className="mt-1 text-sm text-foreground">
+                                    {selectedEntryDetail.expectedDurationMin ?? "--"} min
+                                  </div>
+                                </div>
+
+                                <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
+                                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                    Mood
+                                  </div>
+                                  <div className="mt-1 text-sm text-foreground">
+                                    {selectedEntryDetail.mood ?? "--"}
+                                  </div>
+                                </div>
+
+                                <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
+                                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                    Linked Entry
+                                  </div>
+                                  <div className="mt-1 text-sm text-foreground">
+                                    {selectedEntryDetail.currentEntryId ?? "--"}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                    Metric Goals
+                                  </div>
+                                  <Badge variant="outline" className="rounded-full px-2 py-0.5">
+                                    {selectedEntryDetail.metricGoals?.length ?? 0}
+                                  </Badge>
+                                </div>
+
+                                {(selectedEntryDetail.metricGoals?.length ?? 0) === 0 && (
+                                  <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2 text-sm text-muted-foreground">
+                                    No metric goals attached.
+                                  </div>
+                                )}
+
+                                {(selectedEntryDetail.metricGoals?.length ?? 0) > 0 && (
+                                  <div className="space-y-2">
+                                    {(selectedEntryDetail.metricGoals ?? []).map(
+                                      (metricGoal, metricGoalIndex) => {
+                                        const metricTypeId =
+                                          metricGoal.metricTypeId ??
+                                          metricGoal.metricType?.id ??
+                                          "--";
+                                        const valuesLabel = (metricGoal.values ?? [])
+                                          .map((value) => {
+                                            const numericValue =
+                                              value.expectedValue ?? value.value ?? "--";
+                                            const unitId = value.unitId ?? value.unit?.id ?? "--";
+                                            return `${numericValue} (unit ${unitId})`;
+                                          })
+                                          .join(", ");
+
+                                        return (
+                                          <div
+                                            key={`metric-goal-${metricGoalIndex}`}
+                                            className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2 text-xs text-muted-foreground"
+                                          >
+                                            Metric type {metricTypeId}: {valuesLabel || "--"}
+                                          </div>
+                                        );
+                                      }
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {selectedEntryDetail.description && (
+                                <div className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2">
+                                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                    Description
+                                  </div>
+                                  <div className="mt-1 break-words text-sm text-foreground">
+                                    {selectedEntryDetail.description}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                      </>
                     )}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </CardContent>
       </Card>
+      </Tabs>
     </div>
   );
 }
