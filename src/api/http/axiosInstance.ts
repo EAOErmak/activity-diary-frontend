@@ -1,10 +1,21 @@
 import axios, {
   AxiosError,
+  AxiosHeaders,
   AxiosRequestConfig,
   AxiosResponse,
+  InternalAxiosRequestConfig,
 } from "axios";
 import { toast } from "sonner";
 import { useAuthStore } from "@/shared/store/authStore";
+import { isTokenExpired } from "@/shared/lib/jwt";
+import type { ApiResponse } from "@/shared/types/api";
+import type { AuthResponse } from "@/shared/types/auth";
+
+export const REFRESH_BUFFER_MS = 5_000;
+
+type RetriableRequestConfig = AxiosRequestConfig & {
+  _retry?: boolean;
+};
 
 // ======================================================
 // BASE API (С interceptor'ами)
@@ -28,56 +39,172 @@ const refreshApi = axios.create({
   },
 });
 
+let refreshPromise: Promise<string> | null = null;
+
+function isAuthRequest(url?: string) {
+  return (
+    url?.includes("/auth/login") ||
+    url?.includes("/auth/register") ||
+    url?.includes("/auth/verification") ||
+    url?.includes("/auth/refresh")
+  );
+}
+
+function applyAccessToken(
+  config: AxiosRequestConfig | InternalAxiosRequestConfig,
+  accessToken: string
+) {
+  config.headers = config.headers ?? {};
+
+  if (config.headers instanceof AxiosHeaders) {
+    config.headers.set("Authorization", `Bearer ${accessToken}`);
+    return;
+  }
+
+  config.headers.Authorization = `Bearer ${accessToken}`;
+}
+
+function extractErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    return (
+      (error.response?.data as { message?: string } | undefined)
+        ?.message ?? error.message
+    );
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Ошибка";
+}
+
+function showErrorToast(error: unknown) {
+  const message = extractErrorMessage(error);
+
+  if (message) {
+    toast.error(message);
+  }
+}
+
+async function requestTokenRefresh() {
+  const { refreshToken, setTokens, isLoggingOut } =
+    useAuthStore.getState();
+
+  if (isLoggingOut) {
+    throw new Error("Logout in progress");
+  }
+
+  if (!refreshToken) {
+    throw new Error("Refresh token is missing");
+  }
+
+  const response = await refreshApi.post<ApiResponse<AuthResponse>>(
+    "/auth/refresh",
+    { refreshToken }
+  );
+
+  const authData = response.data?.data;
+
+  if (!authData?.accessToken || !authData?.refreshToken) {
+    throw new Error("Refresh response does not contain tokens");
+  }
+
+  setTokens(authData.accessToken, authData.refreshToken);
+
+  return authData.accessToken;
+}
+
+export async function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = requestTokenRefresh()
+      .catch((error) => {
+        const { isLoggingOut, logout } = useAuthStore.getState();
+
+        if (!isLoggingOut) {
+          logout();
+        }
+
+        throw error;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
+export async function ensureValidAccessToken(
+  forceRefresh = false
+): Promise<string | null> {
+  const {
+    accessToken,
+    refreshToken,
+    logout,
+    isLoggingOut,
+  } = useAuthStore.getState();
+
+  if (isLoggingOut) {
+    return null;
+  }
+
+  if (!accessToken && !refreshToken) {
+    return null;
+  }
+
+  if (
+    forceRefresh ||
+    !accessToken ||
+    isTokenExpired(accessToken, REFRESH_BUFFER_MS)
+  ) {
+    if (!refreshToken) {
+      if (!isLoggingOut) {
+        logout();
+      }
+
+      return null;
+    }
+
+    return refreshAccessToken();
+  }
+
+  return accessToken;
+}
+
 // ======================================================
 // REQUEST INTERCEPTOR — ACCESS TOKEN
 // ======================================================
 
-api.interceptors.request.use((config) => {
-  const { accessToken } = useAuthStore.getState();
+api.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    if (isAuthRequest(config.url)) {
+      return config;
+    }
 
-  const isAuthRequest =
-    config.url?.includes("/auth/login") ||
-    config.url?.includes("/auth/register") ||
-    config.url?.includes("/auth/verification") ||
-    config.url?.includes("/auth/refresh");
+    const accessToken = await ensureValidAccessToken();
 
-  if (accessToken && !isAuthRequest) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${accessToken}`;
+    if (accessToken) {
+      applyAccessToken(config, accessToken);
+    }
+
+    return config;
   }
-
-  return config;
-});
+);
 
 // ======================================================
 // RESPONSE INTERCEPTOR — REFRESH LOGIC
 // ======================================================
 
-let isRefreshing = false;
-
-type FailedRequest = {
-  resolve: (token: string) => void;
-  reject: (error: any) => void;
-};
-
-let failedQueue: FailedRequest[] = [];
-
-function processQueue(error: any, token: string | null) {
-  failedQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error);
-    } else if (token) {
-      resolve(token);
-    }
-  });
-
-  failedQueue = [];
-}
-
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    const data: any = response.data;
-    if (data && data.success === false) {
+    const data = response.data as
+      | {
+          success?: boolean;
+          message?: string | null;
+        }
+      | undefined;
+    if (data?.success === false) {
       toast.error(data.message ?? "Ошибка");
       return Promise.reject(
         new Error(data.message ?? "Ошибка")
@@ -87,92 +214,44 @@ api.interceptors.response.use(
   },
 
   async (error: AxiosError) => {
-    const message =
-      (error.response?.data as any)?.message ?? error.message;
-    if (message) {
-      toast.error(message);
-    }
-    const originalRequest = error.config as AxiosRequestConfig & {
-      _retry?: boolean;
-    };
+    const originalRequest = error.config as
+      | RetriableRequestConfig
+      | undefined;
 
     // ❌ Не обрабатываем refresh запрос
-    if (originalRequest?.url?.includes("/auth/refresh")) {
+    if (!originalRequest) {
+      showErrorToast(error);
+      return Promise.reject(error);
+    }
+
+    if (isAuthRequest(originalRequest.url)) {
+      showErrorToast(error);
       return Promise.reject(error);
     }
 
     if (error.response?.status !== 401 || originalRequest._retry) {
+      showErrorToast(error);
       return Promise.reject(error);
     }
 
-    const {
-      refreshToken,
-      setTokens,
-      logout,
-      isLoggingOut,
-    } = useAuthStore.getState();
+    originalRequest._retry = true;
 
-    if (isLoggingOut) {
-      return Promise.reject(error);
-    }
-
-    if (!refreshToken) {
-      logout();
-      return Promise.reject(error);
-    }
-
-    // ==================================================
     // QUEUE — если refresh уже идёт
     // ==================================================
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({
-          resolve: (token: string) => {
-            originalRequest.headers = originalRequest.headers ?? {};
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(api(originalRequest));
-          },
-          reject,
-        });
-      });
-    }
 
     // ==================================================
     // START REFRESH
     // ==================================================
 
-    originalRequest._retry = true;
-    isRefreshing = true;
-
     try {
-      const res = await refreshApi.post("/auth/refresh", {
-        refreshToken,
-      });
-
-      const data = res.data?.data;
-
-      const newAccess = data.accessToken;
-      const newRefresh = data.refreshToken;
-
-      setTokens(newAccess, newRefresh);
-
-      api.defaults.headers.common.Authorization =
-        `Bearer ${newAccess}`;
-
-      processQueue(null, newAccess);
-
-      originalRequest.headers = originalRequest.headers ?? {};
-      originalRequest.headers.Authorization =
-        `Bearer ${newAccess}`;
+      const accessToken = await refreshAccessToken();
+      applyAccessToken(originalRequest, accessToken);
 
       return api(originalRequest);
     } catch (refreshError) {
-      processQueue(refreshError, null);
-      logout();
+      showErrorToast(refreshError);
       return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
     }
   }
 );
