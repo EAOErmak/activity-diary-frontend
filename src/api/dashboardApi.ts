@@ -1,6 +1,5 @@
 import api from "./http/axiosInstance";
 import type { ApiResponse } from "@/shared/types/api";
-import type { AdminDashboardStats } from "@/shared/types/analytics";
 import type { ChartResponse } from "@/shared/types/analytics";
 
 
@@ -60,13 +59,6 @@ export const getSequenceChartBySubCategory = async (
   const r = await api.get<ApiResponse<ChartResponse>>(
     "/analytics/sequence/sub-category",
     { params: { subCategoryId, from, to } }
-  );
-  return r.data.data;
-};
-
-export const getAdminDashboardStats = async (): Promise<AdminDashboardStats> => {
-  const r = await api.get<ApiResponse<AdminDashboardStats>>(
-    "/admin/dashboard/stats"
   );
   return r.data.data;
 };

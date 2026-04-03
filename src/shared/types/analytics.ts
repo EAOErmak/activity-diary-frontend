@@ -67,13 +67,3 @@ export type ChartFilter = {
 export type MultiChartResponse = {
   charts: ChartResponse[];
 };
-
-export type AdminDashboardStats = {
-  totalUsers: number;
-  activeToday: number;
-  blockedUsers: number;
-  newUsersLast7Days: number;
-  totalEntries: number;
-  entriesToday: number;
-  entriesLast7Days: number;
-};

@@ -16,18 +16,29 @@ import {
   LogOut,
 } from "lucide-react";
 
-import userImg from "@/assets/AD_white.svg";
-import adminImg from "@/assets/ADP_white.svg";
+import userImgBlack from "@/assets/AD_black.svg";
+import userImgWhite from "@/assets/AD_white.svg";
+import adminImgBlack from "@/assets/ADP_black.svg";
+import adminImgWhite from "@/assets/ADP_white.svg";
 import { useAuthStore } from "@/shared/store/authStore";
+import { useTheme } from "@/theme-provider";
 
 type Props = {
   onNavigate?: () => void;
 };
 
 export default function UserNavigation({ onNavigate }: Props) {
-  const { role, username, isAuthenticated, logout } = useAuthStore();
+  const { role, isAuthenticated, logout } = useAuthStore();
+  const { theme } = useTheme();
   const nav = useNavigate();
-  const headerImage = role === "ADMIN" ? adminImg : userImg;
+  const headerImage =
+    role === "ADMIN"
+      ? theme === "dark"
+        ? adminImgWhite
+        : adminImgBlack
+      : theme === "dark"
+      ? userImgWhite
+      : userImgBlack;
   const isPremium = role === "PREMIUM" || role === "ADMIN";
 
   const navItems = [
@@ -78,30 +89,30 @@ export default function UserNavigation({ onNavigate }: Props) {
   return (
     <div className="flex h-full flex-col">
       {/* HEADER */}
-      <SheetHeader className="relative overflow-visible px-5 pb-5 pt-6">
+      <SheetHeader className="relative overflow-visible px-5 pb-5 pt-1">
         <div className="absolute inset-0 bg-gradient-to-br from-surfaceMuted via-surface to-surface" />
-        <div className="relative">
-          <div className="flex items-center gap-3">
+        <div className="relative space-y-3.5">
+          <SheetTitle className="sr-only">Навигация</SheetTitle>
+          <div className="relative -translate-y-2 mb-[-0.75rem] w-fit rounded-[1.75rem] border border-border/70 bg-surface/90 p-3 shadow-sm backdrop-blur-sm">
             <img
               src={headerImage}
-              className="h-14 w-14 rounded-xl object-contain shrink-0 ring-2 ring-border/60 p-1 bg-surface"
-              alt="Avatar"
+              className="h-20 w-auto max-w-[15rem] object-contain"
+              alt="Логотип Activity Diary"
             />
-            <div className="min-w-0">
-              <SheetTitle className="text-xl">Навигация</SheetTitle>
-              <div className="mt-1 text-sm text-mutedForeground truncate">
-                {username || "Гость"}
-              </div>
-            </div>
           </div>
-          <SheetDescription className="mt-3 text-sm text-mutedForeground">
-            Быстрый доступ к разделам
-          </SheetDescription>
+          <div className="space-y-2">
+            <div className="h-px bg-border/70" aria-hidden="true" />
+            <SheetDescription className="text-left text-[0.72rem] font-medium uppercase tracking-[0.24em] text-mutedForeground/90">
+              Быстрый доступ к разделам
+            </SheetDescription>
+            <div className="h-px bg-border/70" aria-hidden="true" />
+          </div>
         </div>
       </SheetHeader>
 
       {/* LINKS */}
-      <nav className="flex flex-col gap-1 px-3 pb-5">
+      <nav className="flex-1 px-3">
+        <div className="flex flex-col gap-1">
         {navItems
           .filter((i) => i.show)
           .map((item) => {
@@ -161,22 +172,19 @@ export default function UserNavigation({ onNavigate }: Props) {
                 nav("/", { replace: true });
                 onNavigate?.();
               }}
-              className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-base transition-colors text-event-loseText hover:bg-surfaceMuted"
+              className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-base transition-colors text-event-loseText hover:bg-surfaceMuted"
             >
               <LogOut className="h-5 w-5 shrink-0" />
               Выйти
             </button>
           </>
         )}
+        </div>
       </nav>
+
+      <div className="mt-auto px-3 pb-5">
+        <div className="mb-2 h-px bg-border/70" />
+      </div>
     </div>
   );
 }
-
-
-
-
-
-
-
-

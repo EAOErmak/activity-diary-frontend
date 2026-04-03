@@ -21,18 +21,17 @@ import NotFoundPage from "@/pages/NotFoundPage";
 
 import CalendarPage from "@/features/calendar/pages/CalendarPage";
 
-import AdminDictionaryPage from "@/features/admin/dictionary/pages/AdminDictionaryPage";
-import AdminUsersPage from "@/features/admin/users/pages/AdminUsersPage";
-import AdminTagsPage from "@/features/admin/tags/pages/AdminTagsPage";
-import AdminDashboardPage from "@/features/admin/dashboard/pages/AdminDashboardPage";
-import AdminLayout from "@/features/admin/layout/AdminLayout";
+import AdminDictionaryPage from "@/features/admin/dictionary/pages/AdminDictionaryShadcnPage";
+import AdminUsersPage from "@/features/admin/users/pages/AdminUsersShadcnPage";
+import AdminTagsPage from "@/features/admin/tags/pages/AdminTagsShadcnPage";
+import AdminOverviewPage from "@/features/admin/dashboard/pages/AdminOverviewShadcnPage";
+import AdminLayout from "@/features/admin/layout/AdminPanelLayout";
 
 // 🆕 MODAL
 import { DiaryDetailsDialog } from "@/features/diary/pages/DiaryListPage/components/DiaryDetailsDialog";
 import ProfilePage from "@/features/profile/pages/ProfilePage";
 import ProfileEditPage from "@/features/profile/pages/ProfileEditPage";
-import { AdminUserCreateForm } from "@/features/admin/users/components/AdminUserCreateForm";
-import AdminUserCreatePage from "@/features/admin/users/pages/AdminUserCreatePage";
+import AdminUserCreatePage from "@/features/admin/users/pages/AdminUserCreateShadcnPage";
 import RoleProtectedRoute from "@/shared/components/layout/RoleProtectedRoute";
 
 export default function AppRouter() {
@@ -92,7 +91,7 @@ export default function AppRouter() {
             </AdminProtectedRoute>
           }
         >
-          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin" element={<AdminOverviewPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/tags" element={<AdminTagsPage />} />
           <Route path="/admin/users/create" element={<AdminUserCreatePage />} />
