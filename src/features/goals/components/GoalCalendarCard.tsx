@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { cn } from "@/shared/lib/utils";
 import type { GoalCalendarStats } from "@/features/goals/lib/goalsTypes";
 import {
   WEEKDAY_LABELS,
@@ -14,6 +15,7 @@ import {
 } from "@/features/goals/lib/goalsUtils";
 
 type Props = {
+  className?: string;
   calendarYear: number;
   onPrevYear: () => void;
   onNextYear: () => void;
@@ -39,6 +41,7 @@ type Props = {
 };
 
 export function GoalCalendarCard({
+  className,
   calendarYear,
   onPrevYear,
   onNextYear,
@@ -65,8 +68,8 @@ export function GoalCalendarCard({
   const weekLegendLevels = [0, 17, 33, 50, 67, 83, 100];
 
   return (
-    <Card className="w-full min-w-0">
-      <CardHeader className="space-y-4">
+    <Card className={cn("w-full min-w-0 flex flex-col", className)}>
+      <CardHeader className="shrink-0 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <CardTitle>Goal Calendar</CardTitle>
           <div className="flex items-center gap-2">
@@ -94,19 +97,15 @@ export function GoalCalendarCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="min-h-[44px]">
+      <CardContent className="flex flex-1 min-h-0 flex-col space-y-4 overflow-hidden">
+        {lastActionText ? (
           <div
-            title={lastActionText || undefined}
-            className={[
-              "rounded-xl border border-border bg-surface p-3 text-sm",
-              "whitespace-nowrap overflow-hidden text-ellipsis",
-              lastActionText ? "opacity-100" : "opacity-0 pointer-events-none",
-            ].join(" ")}
+            title={lastActionText}
+            className="rounded-xl border border-border bg-surface p-3 text-sm whitespace-nowrap overflow-hidden text-ellipsis"
           >
-            {lastActionText || "\u00A0"}
+            {lastActionText}
           </div>
-        </div>
+        ) : null}
 
         <div className="overflow-x-auto pb-1">
           <div className="w-max" style={{ minWidth: `${28 + weeks.length * 28}px` }}>
@@ -238,7 +237,6 @@ export function GoalCalendarCard({
           <span>No goal</span>
           <span className="h-4 w-4 rounded-md border border-border/70 bg-surfaceMuted" />
           <span className="mx-1">|</span>
-          <span>0%</span>
           <div className="flex items-center gap-1">
             {weekLegendLevels.map((level) => (
               <span
@@ -248,7 +246,6 @@ export function GoalCalendarCard({
               />
             ))}
           </div>
-          <span>100%</span>
         </div>
       </CardContent>
     </Card>

@@ -158,7 +158,7 @@ export function ConfirmEntryGoalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="w-[500px] max-w-[min(42rem,calc(100vw-2rem))] overflow-hidden p-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Подтверждение записи по цели</DialogTitle>
           <DialogDescription>
@@ -166,7 +166,7 @@ export function ConfirmEntryGoalDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Card className="w-full flex-1 min-h-0 overflow-hidden">
+        <Card className="w-full max-h-[90vh] overflow-y-auto no-scrollbar">
           <CardHeader>
             <CardTitle>Подтверждение записи</CardTitle>
             <div className="text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ export function ConfirmEntryGoalDialog({
             </div>
           </CardHeader>
 
-          <CardContent className="min-h-0 flex-1 overflow-y-auto">
+          <CardContent>
             {isLoadingDetail && (
               <div className="text-sm text-muted-foreground">Загрузка данных цели...</div>
             )}

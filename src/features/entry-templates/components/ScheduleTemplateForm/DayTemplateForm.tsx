@@ -99,16 +99,16 @@ export default function DayTemplateForm({
   const watchedItems = form.watch("items");
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-      <Card className="max-w-2xl mx-auto mt-6 w-full min-w-0">
-        <CardHeader>
+    <div className="flex-1 min-h-0 overflow-y-auto px-1 no-scrollbar">
+      <Card className="mx-auto mt-4 w-full max-w-[29rem] min-w-0 border border-border/70 bg-background/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+        <CardHeader className="pb-4">
           <CardTitle>{title}</CardTitle>
           <CardDescription>
             Выберите шаблоны записей, которые войдут в шаблон дня.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="min-w-0">
+        <CardContent className="min-w-0 pt-0">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(async (values) => {
@@ -146,9 +146,9 @@ export default function DayTemplateForm({
 
                 return onSubmit({ name, selectedItems });
               })}
-              className="space-y-6"
+              className="space-y-5"
             >
-              <div className="space-y-4 rounded-xl border border-transparent bg-input p-4 transition-colors hover:border-border/60 focus-within:border-border/60">
+              <div className="space-y-4 rounded-2xl border border-transparent bg-input p-3.5 transition-colors hover:border-border/60 focus-within:border-border/60 sm:p-4">
                 <FormField
                   control={control}
                   name="name"
@@ -168,7 +168,7 @@ export default function DayTemplateForm({
                 />
               </div>
 
-              <div className="space-y-3 rounded-xl border border-transparent bg-input p-4 transition-colors hover:border-border/60 focus-within:border-border/60">
+              <div className="space-y-3 rounded-2xl border border-transparent bg-input p-3.5 transition-colors hover:border-border/60 focus-within:border-border/60 sm:p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="text-sm font-medium">Записи дня</div>
@@ -205,19 +205,19 @@ export default function DayTemplateForm({
                 {fields.map((field, index) => (
                   <div
                     key={field.id}
-                    className={`rounded-lg border bg-[hsl(var(--input-hover))] p-3 transition-colors ${
+                    className={`rounded-xl border bg-[hsl(var(--input-hover))] p-3 transition-colors ${
                       watchedItems?.[index]?.templateId !== null &&
                       watchedItems?.[index]?.templateId !== undefined
                         ? "border-border/60"
                         : "border-transparent hover:border-border/60 focus-within:border-border/60"
                     }`}
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
                       <FormField
                         control={control}
                         name={`items.${index}.templateId`}
                         render={({ field: selectField }) => (
-                          <FormItem className="flex-1">
+                          <FormItem className="flex-1 sm:max-w-[18rem]">
                             <FormControl>
                               <Select
                                 value={
@@ -261,7 +261,7 @@ export default function DayTemplateForm({
                         type="button"
                         size="sm"
                         variant="form"
-                        className="border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus-visible:border-border/60"
+                        className="border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus-visible:border-border/60 sm:shrink-0"
                         onClick={() => remove(index)}
                       >
                         Удалить
@@ -275,8 +275,12 @@ export default function DayTemplateForm({
                 )}
               </div>
 
-              <CardFooter className="px-0">
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <CardFooter className="justify-end px-0 pt-2">
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto sm:min-w-[12rem]"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Сохранение..." : submitLabel}
                 </Button>
               </CardFooter>

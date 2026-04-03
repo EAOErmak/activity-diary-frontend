@@ -129,325 +129,334 @@ export default function EntryTemplatesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-page text-foreground p-6 sm:p-10 space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Шаблоны</h1>
-          <p className="text-sm text-muted-foreground">
-            Выберите тип шаблонов, которые хотите создавать
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            if (templateKind === "entry") {
-              setEntryOpen(true);
-              return;
-            }
-            if (templateKind === "weekday") {
-              setDayOpen(true);
-              return;
-            }
-            setWeekOpen(true);
-          }}
-        >
-          {templateKind === "entry"
-            ? "Создать шаблон записи"
-            : templateKind === "weekday"
-            ? "Создать шаблон дня"
-            : "Создать шаблон недели"}
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Тип шаблона</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => setTemplateKind("entry")}
-              className={`rounded-xl p-4 text-left bg-input text-foreground transition-colors hover:bg-[hsl(var(--input-hover))] focus:outline-none focus:ring-2 focus:ring-ring ${
-                templateKind === "entry"
-                  ? "border border-primary"
-                  : "border border-transparent"
-              }`}
-            >
-              <div className="text-base font-semibold">Шаблоны записей</div>
-              <div className="text-sm text-muted-foreground">
-                Быстро создавать повторяющиеся записи
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTemplateKind("weekday")}
-              className={`rounded-xl p-4 text-left bg-input text-foreground transition-colors hover:bg-[hsl(var(--input-hover))] focus:outline-none focus:ring-2 focus:ring-ring ${
-                templateKind === "weekday"
-                  ? "border border-primary"
-                  : "border border-transparent"
-              }`}
-            >
-              <div className="text-base font-semibold">Шаблоны дней</div>
-              <div className="text-sm text-muted-foreground">
-                Планирование повторяющихся дней
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTemplateKind("week")}
-              className={`rounded-xl p-4 text-left bg-input text-foreground transition-colors hover:bg-[hsl(var(--input-hover))] focus:outline-none focus:ring-2 focus:ring-ring ${
-                templateKind === "week"
-                  ? "border border-primary"
-                  : "border border-transparent"
-              }`}
-            >
-              <div className="text-base font-semibold">Шаблоны недели</div>
-              <div className="text-sm text-muted-foreground">
-                Сценарии и планы на неделю
-              </div>
-            </button>
+    <div className="min-h-screen bg-page text-foreground">
+      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-6 px-6 py-6 sm:px-8 lg:px-10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-xl space-y-1">
+            <h1 className="text-2xl font-semibold">Шаблоны</h1>
+            <p className="text-sm text-muted-foreground">
+              Выберите тип шаблонов, которые хотите создавать
+            </p>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (templateKind === "entry") {
+                setEntryOpen(true);
+                return;
+              }
+              if (templateKind === "weekday") {
+                setDayOpen(true);
+                return;
+              }
+              setWeekOpen(true);
+            }}
+          >
             {templateKind === "entry"
-              ? "Ваши шаблоны записей"
+              ? "Создать шаблон записи"
               : templateKind === "weekday"
-              ? "Ваши шаблоны дня"
-              : "Ваши шаблоны недели"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {templateKind === "entry" && (
-            <>
-              {entryLoading && (
-                <div className="text-sm text-muted-foreground">Загрузка...</div>
-              )}
-              {!entryLoading && entryTemplates.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Здесь появятся созданные шаблоны.
-                </div>
-              )}
-              {!entryLoading && entryTemplates.length > 0 && (
-                <div className="space-y-3">
-                  {entryTemplates.map((tpl) => {
-                    const previewDescription = tpl.description
-                      ?.replace(/#([\p{L}\p{N}_-]{2,})/gu, "")
-                      .replace(/\s{2,}/g, " ")
-                      .trim();
+              ? "Создать шаблон дня"
+              : "Создать шаблон недели"}
+          </Button>
+        </div>
 
-                    return (
-                    <div
-                      key={tpl.id}
-                      className="rounded-xl bg-input p-4 space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="text-lg font-semibold truncate">{tpl.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Настроение: {tpl.mood ?? "—"}
+        <Card className="border-border/70 bg-background/95 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle>Тип шаблона</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setTemplateKind("entry")}
+                className={`w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring sm:w-[15.5rem] ${
+                  templateKind === "entry"
+                    ? "border-primary bg-[hsl(var(--input-hover))]"
+                    : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
+                }`}
+              >
+                <div className="text-sm font-semibold sm:text-base">Шаблоны записей</div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Быстро создавать повторяющиеся записи
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplateKind("weekday")}
+                className={`w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring sm:w-[15.5rem] ${
+                  templateKind === "weekday"
+                    ? "border-primary bg-[hsl(var(--input-hover))]"
+                    : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
+                }`}
+              >
+                <div className="text-sm font-semibold sm:text-base">Шаблоны дней</div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Планирование повторяющихся дней
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplateKind("week")}
+                className={`w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring sm:w-[15.5rem] ${
+                  templateKind === "week"
+                    ? "border-primary bg-[hsl(var(--input-hover))]"
+                    : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
+                }`}
+              >
+                <div className="text-sm font-semibold sm:text-base">Шаблоны недели</div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Сценарии и планы на неделю
+                </div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-background/95 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle>
+              {templateKind === "entry"
+                ? "Ваши шаблоны записей"
+                : templateKind === "weekday"
+                ? "Ваши шаблоны дня"
+                : "Ваши шаблоны недели"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {templateKind === "entry" && (
+              <>
+                {entryLoading && (
+                  <div className="text-sm text-muted-foreground">Загрузка...</div>
+                )}
+                {!entryLoading && entryTemplates.length === 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Здесь появятся созданные шаблоны.
+                  </div>
+                )}
+                {!entryLoading && entryTemplates.length > 0 && (
+                  <div className="grid gap-3">
+                    {entryTemplates.map((tpl) => {
+                      const previewDescription = tpl.description
+                        ?.replace(/#([\p{L}\p{N}_-]{2,})/gu, "")
+                        .replace(/\s{2,}/g, " ")
+                        .trim();
+
+                      return (
+                        <div
+                          key={tpl.id}
+                          className="flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-input/80 p-4"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="text-lg font-semibold truncate">{tpl.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                Настроение: {tpl.mood ?? "—"}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 sm:justify-end">
+                              <Button
+                                size="sm"
+                                variant="surface"
+                                className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
+                                onClick={() => openEntryTemplateEdit(tpl.id)}
+                              >
+                                Редактировать
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="surface"
+                                className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
+                                onClick={() => removeEntryTemplate(tpl.id)}
+                              >
+                                Удалить
+                              </Button>
+                            </div>
+                          </div>
+
+                          {previewDescription && (
+                            <div className="text-sm text-muted-foreground">
+                              {previewDescription}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {templateKind === "weekday" && (
+              <>
+                {dayLoading && (
+                  <div className="text-sm text-muted-foreground">Загрузка...</div>
+                )}
+                {!dayLoading && dayTemplates.length === 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Здесь появятся шаблоны дня.
+                  </div>
+                )}
+                {!dayLoading && dayTemplates.length > 0 && (
+                  <div className="grid gap-3">
+                    {dayTemplates.map((tpl) => (
+                      <div
+                        key={tpl.id}
+                        className="flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-input/80 p-4"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="text-lg font-semibold truncate">{tpl.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Записей в шаблоне: {tpl.items.length}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:justify-end">
+                            <Button
+                              size="sm"
+                              variant="surface"
+                              className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
+                              onClick={() => openDayTemplateEdit(tpl)}
+                            >
+                              Редактировать
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="surface"
+                              className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
+                              onClick={() => removeDayTemplate(tpl.id)}
+                            >
+                              Удалить
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="surface"
-                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
-                            onClick={() => openEntryTemplateEdit(tpl.id)}
-                          >
-                            Редактировать
-                          </Button>
-                          <Button
-                            variant="surface"
-                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
-                            onClick={() => removeEntryTemplate(tpl.id)}
-                          >
-                            Удалить
-                          </Button>
-                        </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
 
-                      {previewDescription && (
-                        <div className="text-sm text-muted-foreground">
-                          {previewDescription}
-                        </div>
-                      )}
-                    </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
-
-          {templateKind === "weekday" && (
-            <>
-              {dayLoading && (
-                <div className="text-sm text-muted-foreground">Загрузка...</div>
-              )}
-              {!dayLoading && dayTemplates.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Здесь появятся шаблоны дня.
-                </div>
-              )}
-              {!dayLoading && dayTemplates.length > 0 && (
-                <div className="space-y-3">
-                  {dayTemplates.map((tpl) => (
-                    <div
-                      key={tpl.id}
-                      className="rounded-xl bg-input p-4 space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="text-lg font-semibold truncate">{tpl.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Записей в шаблоне: {tpl.items.length}
+            {templateKind === "week" && (
+              <>
+                {weekLoading && (
+                  <div className="text-sm text-muted-foreground">Загрузка...</div>
+                )}
+                {!weekLoading && weekTemplates.length === 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Здесь появятся шаблоны недели.
+                  </div>
+                )}
+                {!weekLoading && weekTemplates.length > 0 && (
+                  <div className="grid gap-3">
+                    {weekTemplates.map((tpl) => (
+                      <div
+                        key={tpl.id}
+                        className="flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-input/80 p-4"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="text-lg font-semibold truncate">{tpl.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Дней в шаблоне: {tpl.items.length}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:justify-end">
+                            <Button
+                              size="sm"
+                              variant="surface"
+                              className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
+                              onClick={() => openWeekTemplateEdit(tpl)}
+                            >
+                              Редактировать
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="surface"
+                              className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
+                              onClick={() => removeWeekTemplate(tpl.id)}
+                            >
+                              Удалить
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="surface"
-                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
-                            onClick={() => openDayTemplateEdit(tpl)}
-                          >
-                            Редактировать
-                          </Button>
-                          <Button
-                            variant="surface"
-                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
-                            onClick={() => removeDayTemplate(tpl.id)}
-                          >
-                            Удалить
-                          </Button>
-                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-          {templateKind === "week" && (
-            <>
-              {weekLoading && (
-                <div className="text-sm text-muted-foreground">Загрузка...</div>
-              )}
-              {!weekLoading && weekTemplates.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Здесь появятся шаблоны недели.
-                </div>
-              )}
-              {!weekLoading && weekTemplates.length > 0 && (
-                <div className="space-y-3">
-                  {weekTemplates.map((tpl) => (
-                    <div
-                      key={tpl.id}
-                      className="rounded-xl bg-input p-4 space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="text-lg font-semibold truncate">{tpl.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Дней в шаблоне: {tpl.items.length}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="surface"
-                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
-                            onClick={() => openWeekTemplateEdit(tpl)}
-                          >
-                            Редактировать
-                          </Button>
-                          <Button
-                            variant="surface"
-                            className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
-                            onClick={() => removeWeekTemplate(tpl.id)}
-                          >
-                            Удалить
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <CreateEntryTemplateDialog
-        open={entryOpen}
-        onOpenChange={setEntryOpen}
-        onCreated={loadEntryTemplates}
-      />
-
-      <CreateDayTemplateDialog
-        open={dayOpen}
-        onOpenChange={setDayOpen}
-        entryTemplates={entryTemplates.map((tpl) => ({
-          id: tpl.id,
-          name: tpl.name,
-        }))}
-        onCreated={loadDayTemplates}
-      />
-
-      <CreateWeekTemplateDialog
-        open={weekOpen}
-        onOpenChange={setWeekOpen}
-        dayTemplates={dayTemplates.map((tpl) => ({
-          id: tpl.id,
-          name: tpl.name,
-        }))}
-        onCreated={loadWeekTemplates}
-      />
-
-      <EditDayTemplateDialog
-        open={editDayOpen}
-        onOpenChange={(next) => {
-          setEditDayOpen(next);
-          if (!next) setEditingDayTemplate(null);
-        }}
-        template={editingDayTemplate}
-        entryTemplates={entryTemplates.map((tpl) => ({
-          id: tpl.id,
-          name: tpl.name,
-        }))}
-        onUpdated={async () => {
-          await Promise.all([loadDayTemplates(), loadWeekTemplates()]);
-        }}
-      />
-
-      <EditWeekTemplateDialog
-        open={editWeekOpen}
-        onOpenChange={(next) => {
-          setEditWeekOpen(next);
-          if (!next) setEditingWeekTemplate(null);
-        }}
-        template={editingWeekTemplate}
-        dayTemplates={dayTemplates.map((tpl) => ({
-          id: tpl.id,
-          name: tpl.name,
-        }))}
-        onUpdated={loadWeekTemplates}
-      />
-
-      {editOpen && editId !== null && editValues && (
-        <EditEntryTemplateDialog
-          templateId={editId}
-          open={editOpen}
-          onOpenChange={(next) => {
-            setEditOpen(next);
-            if (!next) setEditId(null);
-          }}
-          initialValues={editValues}
-          onUpdated={loadEntryTemplates}
+        <CreateEntryTemplateDialog
+          open={entryOpen}
+          onOpenChange={setEntryOpen}
+          onCreated={loadEntryTemplates}
         />
-      )}
+
+        <CreateDayTemplateDialog
+          open={dayOpen}
+          onOpenChange={setDayOpen}
+          entryTemplates={entryTemplates.map((tpl) => ({
+            id: tpl.id,
+            name: tpl.name,
+          }))}
+          onCreated={loadDayTemplates}
+        />
+
+        <CreateWeekTemplateDialog
+          open={weekOpen}
+          onOpenChange={setWeekOpen}
+          dayTemplates={dayTemplates.map((tpl) => ({
+            id: tpl.id,
+            name: tpl.name,
+          }))}
+          onCreated={loadWeekTemplates}
+        />
+
+        <EditDayTemplateDialog
+          open={editDayOpen}
+          onOpenChange={(next) => {
+            setEditDayOpen(next);
+            if (!next) setEditingDayTemplate(null);
+          }}
+          template={editingDayTemplate}
+          entryTemplates={entryTemplates.map((tpl) => ({
+            id: tpl.id,
+            name: tpl.name,
+          }))}
+          onUpdated={async () => {
+            await Promise.all([loadDayTemplates(), loadWeekTemplates()]);
+          }}
+        />
+
+        <EditWeekTemplateDialog
+          open={editWeekOpen}
+          onOpenChange={(next) => {
+            setEditWeekOpen(next);
+            if (!next) setEditingWeekTemplate(null);
+          }}
+          template={editingWeekTemplate}
+          dayTemplates={dayTemplates.map((tpl) => ({
+            id: tpl.id,
+            name: tpl.name,
+          }))}
+          onUpdated={loadWeekTemplates}
+        />
+
+        {editOpen && editId !== null && editValues && (
+          <EditEntryTemplateDialog
+            templateId={editId}
+            open={editOpen}
+            onOpenChange={(next) => {
+              setEditOpen(next);
+              if (!next) setEditId(null);
+            }}
+            initialValues={editValues}
+            onUpdated={loadEntryTemplates}
+          />
+        )}
+      </div>
     </div>
   );
 }

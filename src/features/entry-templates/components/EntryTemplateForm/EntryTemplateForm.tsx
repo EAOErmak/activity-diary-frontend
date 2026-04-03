@@ -151,7 +151,7 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
   }, [onChange]);
 
   return (
-    <div ref={containerRef} className="flex items-center gap-2">
+    <div ref={containerRef} className="flex items-center gap-2.5">
       <Select
         value={selectedHour}
         onValueChange={(nextHour) => {
@@ -160,7 +160,7 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
           onChange(nextValue);
         }}
       >
-        <div ref={hourRef}>
+        <div ref={hourRef} className="w-[5.5rem]">
           <SelectTrigger className="w-full font-mono tabular-nums">
             <SelectValue />
           </SelectTrigger>
@@ -184,7 +184,7 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
           onChange(nextValue);
         }}
       >
-        <div ref={minuteRef}>
+        <div ref={minuteRef} className="w-[5.5rem]">
           <SelectTrigger className="w-full font-mono tabular-nums">
             <SelectValue />
           </SelectTrigger>
@@ -327,13 +327,13 @@ export default function EntryTemplateForm(props: Props) {
   }, [form]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-      <Card className="max-w-2xl mx-auto mt-6 w-full min-w-0">
-        <CardHeader>
+    <div className="flex-1 min-h-0 overflow-y-auto px-1 no-scrollbar">
+      <Card className="mx-auto mt-4 w-full max-w-[29rem] min-w-0 border border-border/70 bg-background/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+        <CardHeader className="pb-4">
           <CardTitle>{title}</CardTitle>
         </CardHeader>
 
-        <CardContent className="min-w-0">
+        <CardContent className="min-w-0 pt-0">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(async (values) => {
@@ -382,7 +382,7 @@ export default function EntryTemplateForm(props: Props) {
                   metrics,
                 });
               })}
-              className="space-y-6"
+              className="space-y-5"
             >
               <FormField
                 control={form.control}
@@ -442,8 +442,12 @@ export default function EntryTemplateForm(props: Props) {
                 copyFirstMetricOnAppend={mode === "create"}
               />
 
-              <CardFooter className="px-0">
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <CardFooter className="justify-end px-0 pt-2">
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto sm:min-w-[12rem]"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Сохранение..." : submitLabel}
                 </Button>
               </CardFooter>

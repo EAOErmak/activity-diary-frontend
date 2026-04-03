@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { cn } from "@/shared/lib/utils";
 import type { WeekPreviewDay, WeekPreviewStats } from "@/features/goals/lib/goalsTypes";
 import { getCompletionColor, normalizeScore } from "@/features/goals/lib/goalsUtils";
 
 const LONG_PRESS_MS = 600;
 
 type Props = {
+  className?: string;
   monthLabel: string;
   stats: WeekPreviewStats;
   days: WeekPreviewDay[];
@@ -24,6 +26,7 @@ type Props = {
 };
 
 export function WeekViewCard({
+  className,
   monthLabel,
   stats,
   days,
@@ -41,6 +44,12 @@ export function WeekViewCard({
 }: Props) {
   const dayLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dayLongPressTriggeredRef = useRef(false);
+  const selectedDay = days.find((day) => day.dateKey === dailyDateKey) ?? null;
+  const daysInScope = days.filter((day) => day.isInYear);
+  const daysWithGoals = daysInScope.filter((day) => day.hasScore).length;
+  const activeDaysLabel = selectedDay
+    ? `${selectedDay.label} ${selectedDay.date.getDate()}`
+    : "No day selected";
 
   const clearDayLongPressTimer = useCallback(() => {
     if (!dayLongPressTimerRef.current) return;
@@ -55,8 +64,8 @@ export function WeekViewCard({
   }, [clearDayLongPressTimer]);
 
   return (
-    <Card className="w-full min-w-0">
-      <CardHeader className="space-y-3">
+    <Card className={cn("w-full min-w-0 flex flex-col", className)}>
+      <CardHeader className="shrink-0 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle>Week View</CardTitle>
           <div className="flex items-center gap-1">
@@ -72,23 +81,40 @@ export function WeekViewCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-input p-3">
-            <div className="text-2xl font-semibold">{stats.finished}</div>
-            <div className="text-sm text-muted-foreground">Days Finished</div>
-          </div>
-          <div className="rounded-xl bg-input p-3">
-            <div className="text-2xl font-semibold">{stats.average}%</div>
-            <div className="text-sm text-muted-foreground">Average</div>
-          </div>
-          <div className="rounded-xl bg-input p-3">
-            <div className="text-2xl font-semibold">{stats.total}</div>
-            <div className="text-sm text-muted-foreground">Total</div>
-          </div>
-        </div>
+      <CardContent className="flex flex-1 min-h-0 flex-col space-y-4 overflow-hidden">
+        <div className="grid flex-1 min-h-0 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 lg:auto-rows-fr">
+            <div className="rounded-2xl border border-border bg-input p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Focus
+              </div>
+              <div className="mt-3 text-2xl font-semibold text-foreground">
+                {activeDaysLabel}
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                Click a day to open its daily view.
+              </div>
+            </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="rounded-2xl border border-border bg-input p-4">
+              <div className="text-2xl font-semibold">{stats.finished}</div>
+              <div className="mt-1 text-sm text-muted-foreground">Finished days</div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-input p-4">
+              <div className="text-2xl font-semibold">{stats.average}%</div>
+              <div className="mt-1 text-sm text-muted-foreground">Average completion</div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-input p-4">
+              <div className="text-2xl font-semibold">
+                {daysWithGoals}/{daysInScope.length || 7}
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">Days with goals</div>
+            </div>
+          </div>
+
+          <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {days.map((day) => {
             const dayNumber = day.date.getDate();
             const roundedScore = Math.round(day.score);
@@ -143,7 +169,7 @@ export function WeekViewCard({
                   if (draggingTemplate) onHoverDate(day.dateKey);
                 }}
                 className={[
-                  "rounded-xl bg-input p-3 text-center space-y-2 border transition-all",
+                  "flex min-h-[170px] flex-col justify-between rounded-2xl bg-input p-4 text-center border transition-all",
                   day.isInYear ? "cursor-pointer" : "cursor-default",
                   day.isInYear ? "border-border" : "border-border/40",
                   isPreviewTarget
@@ -155,27 +181,35 @@ export function WeekViewCard({
                   creatingDate === day.dateKey ? "animate-pulse" : "",
                 ].join(" ")}
               >
-                <div className="text-sm text-muted-foreground">{day.label}</div>
+                <div className="space-y-3">
+                  <div className="text-sm text-muted-foreground">{day.label}</div>
 
-                <div className="flex justify-center">
-                  <div className="h-14 w-14 rounded-full p-[3px]" style={{ background: ringBackground }}>
-                    <div
-                      className={[
-                        "h-full w-full rounded-full flex items-center justify-center font-semibold",
-                        day.isInYear ? "bg-surface text-foreground" : "bg-surfaceMuted text-muted-foreground",
-                      ].join(" ")}
-                    >
-                      {dayNumber}
+                  <div className="flex justify-center">
+                    <div className="h-16 w-16 rounded-full p-[3px]" style={{ background: ringBackground }}>
+                      <div
+                        className={[
+                          "h-full w-full rounded-full flex items-center justify-center font-semibold",
+                          day.isInYear ? "bg-surface text-foreground" : "bg-surfaceMuted text-muted-foreground",
+                        ].join(" ")}
+                      >
+                        {dayNumber}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-sm font-semibold text-foreground">
-                  {day.isInYear && day.hasScore ? `${roundedScore}%` : "-"}
+                <div className="space-y-1">
+                  <div className="text-lg font-semibold text-foreground">
+                    {day.isInYear && day.hasScore ? `${roundedScore}%` : "-"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {day.dayGoalId ? "Hold to confirm" : "No goal"}
+                  </div>
                 </div>
               </div>
             );
           })}
+          </div>
         </div>
       </CardContent>
     </Card>

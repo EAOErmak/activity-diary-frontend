@@ -6,6 +6,9 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { Calendar, Layers, NotebookPen, Target } from "lucide-react";
 import { goalApi } from "@/api/goalApi";
 import { DailyViewCard } from "@/features/goals/components/DailyViewCard";
 import { ConfirmEntryGoalDialog } from "@/features/goals/components/ConfirmEntryGoalDialog";
@@ -17,6 +20,11 @@ import { WeekViewCard } from "@/features/goals/components/WeekViewCard";
 import { useGoalCalendarGrid } from "@/features/goals/hooks/useGoalCalendarGrid";
 import { useGoalsSummaries } from "@/features/goals/hooks/useGoalsSummaries";
 import { useGoalsTemplates } from "@/features/goals/hooks/useGoalsTemplates";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/shared/components/ui/card";
 import type {
   DragTemplatePayload,
   ReplaceGoalDialogState,
@@ -39,6 +47,7 @@ import {
   toDisplayDate,
   toIsoDate,
 } from "@/features/goals/lib/goalsUtils";
+import { cn } from "@/shared/lib/utils";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
 import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
 import { useAuthStore } from "@/shared/store/authStore";
@@ -53,7 +62,13 @@ type EntryConfirmDialogState = {
   entryName: string;
 };
 
+type GoalsWorkspaceView = "calendar" | "week" | "daily";
+
+const isGoalsWorkspaceView = (value: string | null): value is GoalsWorkspaceView =>
+  value === "calendar" || value === "week" || value === "daily";
+
 export default function GoalsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filterKind, setFilterKind] = useState<TemplateFilterKind>("all");
   const [filterName, setFilterName] = useState("");
   const [draggingTemplate, setDraggingTemplate] = useState<DragTemplatePayload | null>(null);
@@ -70,6 +85,11 @@ export default function GoalsPage() {
   );
   const [isSubmittingEntryConfirm, setIsSubmittingEntryConfirm] = useState(false);
   const userId = useAuthStore((state) => state.userId);
+  const viewParam = searchParams.get("view");
+  const activeView: GoalsWorkspaceView = isGoalsWorkspaceView(viewParam)
+    ? viewParam
+    : "calendar";
+  const isEraserOn = eraserMode === "eraseOn";
 
   const hoverDateRef = useRef<string | null>(null);
   useEffect(() => {
@@ -119,6 +139,15 @@ export default function GoalsPage() {
       return byType && byName;
     });
   }, [filterKind, filterName, templateItems]);
+
+  const handleViewChange = useCallback(
+    (nextView: GoalsWorkspaceView) => {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("view", nextView);
+      setSearchParams(nextParams, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
 
   const previewDateKeys = useMemo(() => {
     if (!hoverDate || !draggingTemplate) return new Set<string>();
@@ -264,6 +293,59 @@ export default function GoalsPage() {
       weeklyStreak,
     };
   }, [dayScores, weeks]);
+
+  const viewOptions = useMemo(
+    () => [
+      {
+        id: "calendar" as const,
+        title: "Goal Calendar",
+        description: "Year overview",
+        contextLabel: String(calendarYear),
+        accentClass: "from-sky-500/30 via-cyan-500/10 to-transparent",
+        icon: Calendar,
+      },
+      {
+        id: "week" as const,
+        title: "Week View",
+        description: "Current week",
+        contextLabel: weekPreviewMonthLabel,
+        accentClass: "from-amber-500/30 via-orange-500/10 to-transparent",
+        icon: Layers,
+      },
+      {
+        id: "daily" as const,
+        title: "Daily View",
+        description: "Selected day",
+        contextLabel: dailyDateLabel,
+        accentClass: "from-emerald-500/30 via-lime-500/10 to-transparent",
+        icon: NotebookPen,
+      },
+    ],
+    [calendarYear, dailyDateLabel, weekPreviewMonthLabel]
+  );
+
+  const isFixedDesktopWorkspace = activeView === "calendar" || activeView === "week";
+
+  useEffect(() => {
+    if (!isFixedDesktopWorkspace) return;
+
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverscroll = document.body.style.overscrollBehavior;
+    const prevHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    document.documentElement.style.overscrollBehavior = "none";
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overscrollBehavior = prevBodyOverscroll;
+      document.documentElement.style.overscrollBehavior = prevHtmlOverscroll;
+    };
+  }, [isFixedDesktopWorkspace]);
 
   const handleConfirmReplaceGoal = useCallback(async () => {
     if (!replaceDialog) return;
@@ -468,7 +550,8 @@ export default function GoalsPage() {
             ...prev,
             [dateKey]: Math.max(prev[dateKey] ?? 0, completeness),
           }));
-          setLastActionText(
+          setLastActionText("");
+          toast.success(
             `Goal "${template.name}" (${getGoalKindLabel(template.kind)}) added for ${toDisplayDate(
               dateKey
             )}`
@@ -497,7 +580,8 @@ export default function GoalsPage() {
             ...prev,
             [created.targetDate]: Math.max(prev[created.targetDate] ?? 0, completeness),
           }));
-          setLastActionText(
+          setLastActionText("");
+          toast.success(
             `Goal "${template.name}" (${getGoalKindLabel(
               template.kind
             )}) added for ${toDisplayDate(created.targetDate)}`
@@ -526,7 +610,8 @@ export default function GoalsPage() {
           targetDate: dateKey,
         });
         setDayScores((prev) => mergeWeekScores(prev, created));
-        setLastActionText(
+        setLastActionText("");
+        toast.success(
           `Goal "${template.name}" (${getGoalKindLabel(template.kind)}) added for week from ${toDisplayDate(
             dateKey
           )}`
@@ -606,7 +691,6 @@ export default function GoalsPage() {
 
   const isDailyPreviewTarget = previewDateKeys.has(dailyDateKey);
   const canDropOnDailyDate = isDateInRange(dailyDate, yearStart, yearEnd);
-  const isEraserOn = eraserMode === "eraseOn";
   const weekPreviewStartKey = useMemo(
     () => toIsoDate(startOfWeekMonday(weekPreviewStart)),
     [weekPreviewStart]
@@ -629,93 +713,223 @@ export default function GoalsPage() {
   }, [replaceDialog]);
 
   return (
-    <div className="w-full min-h-screen bg-page text-foreground p-4 sm:p-6 lg:p-8 pb-20 sm:pb-24 lg:pb-4">
+    <div
+      className={cn(
+        "w-full bg-page text-foreground p-4 sm:p-6 lg:p-8",
+        isFixedDesktopWorkspace
+          ? "min-h-screen pb-20 sm:pb-24 xl:h-[calc(100vh-56px)] xl:min-h-0 xl:overflow-hidden xl:pb-4"
+          : "min-h-screen pb-20 sm:pb-24 lg:pb-4"
+      )}
+    >
       {draggingTemplate && dragPointer && (
         <GoalsDragPreview x={dragPointer.x} y={dragPointer.y} canDrop={canDropAtPointer} />
       )}
 
-      <div className="w-full flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <div className="w-full min-w-0 md:flex-1 space-y-6">
-          <GoalCalendarCard
-            calendarYear={calendarYear}
-            onPrevYear={() => shiftCalendarYear(-1)}
-            onNextYear={() => shiftCalendarYear(1)}
-            stats={stats}
-            lastActionText={lastActionText}
-            weeks={weeks}
-            monthLabels={monthLabels}
-            yearStart={yearStart}
-            yearEnd={yearEnd}
-            dayScores={dayScores}
-            weekScores={weekScores}
-            previewDateKeys={previewDateKeys}
-            draggingTemplate={Boolean(draggingTemplate)}
-            creatingDate={creatingDate}
-            isEraserOn={isEraserOn}
-            selectedDayKey={dailyDateKey}
-            weekPreviewStartKey={weekPreviewStartKey}
-            onHoverDate={setHoverDate}
-            onDeleteDayGoal={(dateKey) => {
-              void handleDeleteDayGoalOnDate(dateKey);
-            }}
-            onDeleteWeekGoal={(dateKey) => {
-              void handleDeleteWeekGoalOnDate(dateKey);
-            }}
-            onSelectDay={setDailyDateWithSync}
-            onSelectWeek={setWeekPreviewWithSync}
-          />
+      <div
+        className={cn(
+          "w-full grid gap-6 xl:grid-cols-[minmax(0,1fr)_17em] xl:items-start",
+          isFixedDesktopWorkspace &&
+            "xl:h-[calc(100vh-87px-16px)] xl:max-h-[calc(100vh-87px-16px)] xl:overflow-hidden"
+        )}
+      >
+        <div
+          className={cn(
+            "w-full min-w-0 space-y-6",
+            isFixedDesktopWorkspace && "xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:space-y-0"
+          )}
+        >
+          <Card
+            className={cn(
+              "overflow-hidden border-border/70 bg-background/80 shadow-sm",
+              isFixedDesktopWorkspace && "xl:mb-6 xl:shrink-0"
+            )}
+          >
+            <CardHeader className="pb-4">
+              <div className="inline-flex w-fit self-start items-center gap-2 rounded-full border border-border/60 bg-background px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-foreground shadow-sm">
+                <Target className="h-5 w-5" />
+                Goals Workspace
+              </div>
+            </CardHeader>
 
-          <WeekViewCard
-            monthLabel={weekPreviewMonthLabel}
-            stats={weekPreviewStats}
-            days={weekPreviewDays}
-            dailyDateKey={dailyDateKey}
-            previewDateKeys={previewDateKeys}
-            draggingTemplate={Boolean(draggingTemplate)}
-            creatingDate={creatingDate}
-            isEraserOn={isEraserOn}
-            onPrevWeek={() => shiftWeekPreview(-7)}
-            onNextWeek={() => shiftWeekPreview(7)}
-            onHoverDate={setHoverDate}
-            onSelectDailyDate={setDailyDateWithSync}
-            onConfirmDayGoal={(dayGoalId, dateKey) => {
-              void handleConfirmDayGoal(dayGoalId, dateKey);
-            }}
-            onDeleteDayGoal={(dateKey) => {
-              void handleDeleteDayGoalOnDate(dateKey);
-            }}
-          />
+            <CardContent className="space-y-4">
+              {lastActionText ? (
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-foreground">
+                  {lastActionText}
+                </div>
+              ) : null}
 
-          <DailyViewCard
-            dailyDateLabel={dailyDateLabel}
-            dailyDateKey={dailyDateKey}
-            currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
-            dailyEntries={dailyEntries}
-            isLoadingDailyEntries={isLoadingDailyEntries}
-            isDailyPreviewTarget={isDailyPreviewTarget}
-            canDropOnDailyDate={canDropOnDailyDate}
-            draggingTemplate={Boolean(draggingTemplate)}
-            creatingDate={creatingDate}
-            isEraserOn={isEraserOn}
-            onPrevDay={() => shiftDailyDate(-1)}
-            onNextDay={() => shiftDailyDate(1)}
-            onHoverDate={setHoverDate}
-            onDeleteDayGoal={(dateKey) => {
-              void handleDeleteDayGoalOnDate(dateKey);
-            }}
-            onDeleteEntryGoal={(entryGoalId, entryName) => {
-              void handleDeleteEntryGoal(entryGoalId, entryName);
-            }}
-            onConfirmDayGoal={(dayGoalId) => {
-              void handleConfirmDayGoal(dayGoalId, dailyDateKey);
-            }}
-            onConfirmEntryGoal={(entry, entryName) => {
-              void handleConfirmEntryGoal(entry, entryName);
-            }}
-            onConfirmEntryGoalSimple={(entry, entryName) => {
-              void handleConfirmEntryGoalSimple(entry, entryName);
-            }}
-          />
+              <div className="grid gap-3 lg:grid-cols-3">
+                {viewOptions.map((option) => {
+                  const Icon = option.icon;
+                  const isActive = option.id === activeView;
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => {
+                        handleViewChange(option.id);
+                      }}
+                      className={cn(
+                        "group relative overflow-hidden rounded-[24px] border p-4 text-left transition-all",
+                        isActive
+                          ? "border-foreground/10 bg-foreground text-background shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+                          : "border-border/70 bg-background hover:border-border hover:bg-surface/60"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity",
+                          option.accentClass,
+                          isActive && "opacity-100"
+                        )}
+                      />
+
+                      <div className="relative space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div
+                              className={cn(
+                                "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                                isActive
+                                  ? "border-white/15 bg-white/10 text-white"
+                                  : "border-border bg-surface text-foreground"
+                              )}
+                            >
+                              <Icon className="h-5 w-5" />
+                            </div>
+
+                            <div
+                              className={cn(
+                                "truncate text-base font-semibold",
+                                isActive ? "text-white" : "text-foreground"
+                              )}
+                            >
+                              {option.title}
+                            </div>
+                          </div>
+
+                          <div
+                            className={cn(
+                              "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]",
+                              isActive
+                                ? "bg-white/10 text-white/80"
+                                : "bg-surface text-mutedForeground"
+                            )}
+                          >
+                            {option.contextLabel}
+                          </div>
+                        </div>
+
+                        <div
+                          className={cn(
+                            "text-sm",
+                            isActive ? "text-white/70" : "text-mutedForeground"
+                          )}
+                        >
+                          {option.description}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {activeView === "calendar" ? (
+            <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
+              <GoalCalendarCard
+                className={cn(isFixedDesktopWorkspace && "xl:h-full")}
+                calendarYear={calendarYear}
+                onPrevYear={() => shiftCalendarYear(-1)}
+                onNextYear={() => shiftCalendarYear(1)}
+                stats={stats}
+                lastActionText=""
+                weeks={weeks}
+                monthLabels={monthLabels}
+                yearStart={yearStart}
+                yearEnd={yearEnd}
+                dayScores={dayScores}
+                weekScores={weekScores}
+                previewDateKeys={previewDateKeys}
+                draggingTemplate={Boolean(draggingTemplate)}
+                creatingDate={creatingDate}
+                isEraserOn={isEraserOn}
+                selectedDayKey={dailyDateKey}
+                weekPreviewStartKey={weekPreviewStartKey}
+                onHoverDate={setHoverDate}
+                onDeleteDayGoal={(dateKey) => {
+                  void handleDeleteDayGoalOnDate(dateKey);
+                }}
+                onDeleteWeekGoal={(dateKey) => {
+                  void handleDeleteWeekGoalOnDate(dateKey);
+                }}
+                onSelectDay={setDailyDateWithSync}
+                onSelectWeek={setWeekPreviewWithSync}
+              />
+            </div>
+          ) : null}
+
+          {activeView === "week" ? (
+            <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
+              <WeekViewCard
+                className={cn(isFixedDesktopWorkspace && "xl:h-full")}
+                monthLabel={weekPreviewMonthLabel}
+                stats={weekPreviewStats}
+                days={weekPreviewDays}
+                dailyDateKey={dailyDateKey}
+                previewDateKeys={previewDateKeys}
+                draggingTemplate={Boolean(draggingTemplate)}
+                creatingDate={creatingDate}
+                isEraserOn={isEraserOn}
+                onPrevWeek={() => shiftWeekPreview(-7)}
+                onNextWeek={() => shiftWeekPreview(7)}
+                onHoverDate={setHoverDate}
+                onSelectDailyDate={setDailyDateWithSync}
+                onConfirmDayGoal={(dayGoalId, dateKey) => {
+                  void handleConfirmDayGoal(dayGoalId, dateKey);
+                }}
+                onDeleteDayGoal={(dateKey) => {
+                  void handleDeleteDayGoalOnDate(dateKey);
+                }}
+              />
+            </div>
+          ) : null}
+
+          {activeView === "daily" ? (
+            <DailyViewCard
+              dailyDateLabel={dailyDateLabel}
+              dailyDateKey={dailyDateKey}
+              currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
+              dailyEntries={dailyEntries}
+              isLoadingDailyEntries={isLoadingDailyEntries}
+              isDailyPreviewTarget={isDailyPreviewTarget}
+              canDropOnDailyDate={canDropOnDailyDate}
+              draggingTemplate={Boolean(draggingTemplate)}
+              creatingDate={creatingDate}
+              isEraserOn={isEraserOn}
+              onPrevDay={() => shiftDailyDate(-1)}
+              onNextDay={() => shiftDailyDate(1)}
+              onHoverDate={setHoverDate}
+              onDeleteDayGoal={(dateKey) => {
+                void handleDeleteDayGoalOnDate(dateKey);
+              }}
+              onDeleteEntryGoal={(entryGoalId, entryName) => {
+                void handleDeleteEntryGoal(entryGoalId, entryName);
+              }}
+              onConfirmDayGoal={(dayGoalId) => {
+                void handleConfirmDayGoal(dayGoalId, dailyDateKey);
+              }}
+              onConfirmEntryGoal={(entry, entryName) => {
+                void handleConfirmEntryGoal(entry, entryName);
+              }}
+              onConfirmEntryGoalSimple={(entry, entryName) => {
+                void handleConfirmEntryGoalSimple(entry, entryName);
+              }}
+            />
+          ) : null}
         </div>
 
         <TemplatesSidebar

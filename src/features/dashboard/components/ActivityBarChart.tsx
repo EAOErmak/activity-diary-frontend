@@ -68,13 +68,6 @@ type FlattenedPoint = {
   isSpacer: boolean;
 };
 
-type SeriesGroup = {
-  label: string;
-  pointCount: number;
-  startKey: string;
-  endKey: string;
-};
-
 const getSeriesLabel = (index: number, total: number) =>
   total === 1 ? "Primary series" : `Series ${index + 1}`;
 
@@ -103,7 +96,7 @@ const getSourceSeries = (data: ChartResponse): ChartSeries[] => {
 };
 
 export default function ActivityBarChart({ data, tagName }: Props) {
-  const { chartPoints, pointByKey, seriesGroups } = useMemo(() => {
+  const { chartPoints, pointByKey } = useMemo(() => {
     const sourceSeries = getSourceSeries(data);
     const paletteSize = sourceSeries.reduce((maxSize, series) => {
       const visiblePointsCount = (series.points ?? []).filter((point) =>
@@ -155,17 +148,9 @@ export default function ActivityBarChart({ data, tagName }: Props) {
         });
       }
     });
-    const groups: SeriesGroup[] = normalizedGroups.map((group) => ({
-      label: group.label,
-      pointCount: group.points.length,
-      startKey: group.points[0].key,
-      endKey: group.points[group.points.length - 1].key,
-    }));
-
     return {
       chartPoints: flattenedPoints,
       pointByKey: new Map(flattenedPoints.map((point) => [point.key, point])),
-      seriesGroups: groups,
     };
   }, [data]);
 
@@ -207,25 +192,10 @@ export default function ActivityBarChart({ data, tagName }: Props) {
     <Card>
       <CardHeader>
         <CardTitle>{data.title ?? CHART_TYPE_LABELS[data.chartType]}</CardTitle>
-        <CardDescription>
-          {tagName ? `${tagName} • ` : ""}
-          {seriesGroups.length} series • {chartPoints.length} points
-        </CardDescription>
+        {tagName ? <CardDescription>{tagName}</CardDescription> : null}
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {seriesGroups.length > 1 && (
-          <div className="flex flex-wrap gap-2">
-            {seriesGroups.map((group) => (
-              <div
-                key={group.label}
-                className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs text-mutedForeground"
-              >
-                {group.label} • {group.pointCount} points
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="pb-2">
           <ChartContainer

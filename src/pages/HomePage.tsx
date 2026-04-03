@@ -4,11 +4,10 @@ import { useAuthStore } from "@/shared/store/authStore";
 import { Button } from "@/shared/components/ui/button";
 
 export default function HomePage() {
-  const nav = useNavigate();
   const { isAuthenticated, username } = useAuthStore();
   const navigate = useNavigate();
   function handleStart() {
-    navigate(isAuthenticated ? "/diary" : "/register");
+    navigate(isAuthenticated ? "/diary" : "/login");
   }
 
   return (
