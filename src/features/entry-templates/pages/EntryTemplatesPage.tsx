@@ -165,11 +165,11 @@ export default function EntryTemplatesPage() {
             <CardTitle>Тип шаблона</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-3 md:grid-cols-3">
               <button
                 type="button"
                 onClick={() => setTemplateKind("entry")}
-                className={`w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring sm:w-[15.5rem] ${
+                className={`h-full w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                   templateKind === "entry"
                     ? "border-primary bg-[hsl(var(--input-hover))]"
                     : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
@@ -183,7 +183,7 @@ export default function EntryTemplatesPage() {
               <button
                 type="button"
                 onClick={() => setTemplateKind("weekday")}
-                className={`w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring sm:w-[15.5rem] ${
+                className={`h-full w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                   templateKind === "weekday"
                     ? "border-primary bg-[hsl(var(--input-hover))]"
                     : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
@@ -197,7 +197,7 @@ export default function EntryTemplatesPage() {
               <button
                 type="button"
                 onClick={() => setTemplateKind("week")}
-                className={`w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring sm:w-[15.5rem] ${
+                className={`h-full w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                   templateKind === "week"
                     ? "border-primary bg-[hsl(var(--input-hover))]"
                     : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
