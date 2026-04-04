@@ -21,7 +21,7 @@ import {
   type ChartConfig,
 } from "@/shared/components/ui/chart";
 import {
-  CHART_TYPE_LABELS,
+  getChartTypeLabel,
   type ChartPoint,
   type ChartResponse,
   type ChartSeries,
@@ -191,7 +191,7 @@ export default function ActivityBarChart({ data, tagName }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{data.title ?? CHART_TYPE_LABELS[data.chartType]}</CardTitle>
+        <CardTitle>{data.title ?? getChartTypeLabel(data.chartType)}</CardTitle>
         {tagName ? <CardDescription>{tagName}</CardDescription> : null}
       </CardHeader>
 
@@ -282,7 +282,7 @@ export default function ActivityBarChart({ data, tagName }: Props) {
         return (
           <Card key={`chart-series-${series.index}`} className="border border-border">
             <CardHeader>
-              <CardTitle>{CHART_TYPE_LABELS[data.chartType]}</CardTitle>
+              <CardTitle>{getChartTypeLabel(data.chartType)}</CardTitle>
               <CardDescription>
                 {tagName ? `${tagName} • ` : ""}
                 {seriesTitle} • {series.data.length} точек

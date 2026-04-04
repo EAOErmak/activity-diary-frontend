@@ -1,7 +1,6 @@
 import type { Tag } from "@/shared/types/tag";
 import {
-  CHART_TYPE_LABELS,
-  TRAINING_CHART_TYPES,
+  getChartTypeLabel,
   type ChartType,
 } from "@/shared/types/analytics";
 import { Button } from "@/shared/components/ui/button";
@@ -24,8 +23,11 @@ type Props = {
   selectedTagId: number | null;
   onTagQueryChange: (value: string) => void;
   onSelectedTagIdChange: (value: number | null) => void;
-  chartType: ChartType;
-  onChartTypeChange: (value: ChartType) => void;
+  chartType: ChartType | null;
+  availableChartTypes: ChartType[];
+  isLoadingChartTypes: boolean;
+  chartTypesErrorMessage?: string | null;
+  onChartTypeChange: (value: ChartType | null) => void;
   fromDate?: Date;
   toDate?: Date;
   onFromDateChange: (value: Date | undefined) => void;
@@ -41,6 +43,9 @@ export default function AnalyticsFiltersV3({
   onTagQueryChange,
   onSelectedTagIdChange,
   chartType,
+  availableChartTypes,
+  isLoadingChartTypes,
+  chartTypesErrorMessage,
   onChartTypeChange,
   fromDate,
   toDate,
@@ -48,6 +53,17 @@ export default function AnalyticsFiltersV3({
   onToDateChange,
   onReset,
 }: Props) {
+  const chartTypePlaceholder =
+    selectedTagId == null
+      ? "Сначала выберите тег"
+      : isLoadingChartTypes
+        ? "Загрузка типов графика..."
+        : chartTypesErrorMessage
+          ? "Не удалось загрузить типы графика"
+        : availableChartTypes.length === 0
+          ? "Нет доступных графиков"
+          : "Выберите тип графика";
+
   return (
     <Card className="mb-6 shadow-sm">
       <CardContent className="grid gap-4 pt-3 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.35fr)_minmax(12rem,1fr)_minmax(9rem,0.82fr)_minmax(9rem,0.82fr)_auto] xl:items-end xl:[&>*]:min-w-0">
@@ -65,20 +81,45 @@ export default function AnalyticsFiltersV3({
         <div className="space-y-2 mb-1">
           <Label>Тип графика</Label>
           <Select
-            value={chartType}
-            onValueChange={(value) => onChartTypeChange(value as ChartType)}
+            value={chartType ?? ""}
+            onValueChange={(value) => onChartTypeChange(value || null)}
+            disabled={
+              selectedTagId == null ||
+              Boolean(chartTypesErrorMessage) ||
+              isLoadingChartTypes ||
+              availableChartTypes.length === 0
+            }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Выберите тип графика" />
+              <SelectValue placeholder={chartTypePlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {TRAINING_CHART_TYPES.map((value) => (
+              {availableChartTypes.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {CHART_TYPE_LABELS[value]}
+                  {getChartTypeLabel(value)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {chartTypesErrorMessage && (
+            <p className="text-sm text-destructive">{chartTypesErrorMessage}</p>
+          )}
+          {!chartTypesErrorMessage &&
+            selectedTagId != null &&
+            !isLoadingChartTypes &&
+            availableChartTypes.length === 0 && (
+              <p className="text-sm text-mutedForeground">
+                Для этого тега нет доступных графиков.
+              </p>
+            )}
+          {false && !chartTypesErrorMessage &&
+            selectedTagId != null &&
+            !isLoadingChartTypes &&
+            availableChartTypes.length === 0 && (
+              <p className="text-sm text-mutedForeground">
+                Р”Р»СЏ СЌС‚РѕРіРѕ С‚РµРіР° РЅРµС‚ РґРѕСЃС‚СѓРїРЅС‹С… РіСЂР°С„РёРєРѕРІ.
+              </p>
+            )}
         </div>
 
         <div className="space-y-2 mb-1">

@@ -1,13 +1,12 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getAnalyticsChart } from "@/api/analyticsApi";
+import { getAnalyticsChart, getAnalyticsChartTypes } from "@/api/analyticsApi";
 import { getAllTags } from "@/api/tagApi";
 import ActivityBarChart from "@/features/dashboard/components/ActivityBarChart";
 import AnalyticsFiltersV2 from "@/features/dashboard/components/AnalyticsFiltersV2";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import {
-  CHART_TYPE_LABELS,
-  DEFAULT_CHART_TYPE,
+  getChartTypeLabel,
   type ChartResponse,
   type ChartType,
 } from "@/shared/types/analytics";
@@ -21,7 +20,7 @@ const buildDefaultFromDate = () => {
 export default function DashboardPageV2() {
   const [tagQuery, setTagQuery] = useState("");
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
-  const [chartType, setChartType] = useState<ChartType>(DEFAULT_CHART_TYPE);
+  const [chartType, setChartType] = useState<ChartType | null>(null);
   const [fromDate, setFromDate] = useState<Date | undefined>(
     buildDefaultFromDate()
   );
@@ -54,9 +53,33 @@ export default function DashboardPageV2() {
     [selectedTagId, tags]
   );
 
+  const {
+    data: availableChartTypes = [],
+    isLoading: isLoadingChartTypes,
+    isError: isChartTypesError,
+    error: chartTypesError,
+  } = useQuery<ChartType[], Error>({
+    queryKey: ["analytics-chart-types", selectedTagId],
+    queryFn: () => getAnalyticsChartTypes(selectedTagId!),
+    enabled: selectedTagId !== null,
+  });
+
   const isDateRangeInvalid = Boolean(
     fromDate && toDate && fromDate.getTime() > toDate.getTime()
   );
+
+  useEffect(() => {
+    if (selectedTagId == null) {
+      if (chartType !== null) {
+        setChartType(null);
+      }
+      return;
+    }
+
+    if (chartType != null && !availableChartTypes.includes(chartType)) {
+      setChartType(null);
+    }
+  }, [availableChartTypes, chartType, selectedTagId]);
 
   const {
     data,
@@ -66,9 +89,9 @@ export default function DashboardPageV2() {
   } = useQuery<ChartResponse, Error>({
     queryKey: [
       "analytics-chart",
-      {
-        tagId: selectedTagId,
-        chartType,
+        {
+          tagId: selectedTagId,
+          chartType,
         dateFrom: fromDate?.toISOString(),
         dateTo: toDate?.toISOString(),
       },
@@ -76,11 +99,11 @@ export default function DashboardPageV2() {
     queryFn: async () =>
       getAnalyticsChart({
         tagId: selectedTagId!,
-        chartType,
+        chartType: chartType!,
         ...(fromDate ? { dateFrom: fromDate.toISOString() } : {}),
         ...(toDate ? { dateTo: toDate.toISOString() } : {}),
       }),
-    enabled: selectedTagId !== null && !isDateRangeInvalid,
+    enabled: selectedTagId !== null && chartType !== null && !isDateRangeInvalid,
   });
 
   return (
@@ -100,8 +123,18 @@ export default function DashboardPageV2() {
           tagQuery={tagQuery}
           onTagQueryChange={setTagQuery}
           selectedTagId={selectedTagId}
-          onSelectedTagIdChange={setSelectedTagId}
+          onSelectedTagIdChange={(value) => {
+            setChartType(null);
+            setSelectedTagId(value);
+          }}
           chartType={chartType}
+          availableChartTypes={availableChartTypes}
+          isLoadingChartTypes={isLoadingChartTypes}
+          chartTypesErrorMessage={
+            isChartTypesError
+              ? chartTypesError?.message ?? "Не удалось загрузить типы графика."
+              : null
+          }
           onChartTypeChange={setChartType}
           fromDate={fromDate}
           toDate={toDate}
@@ -109,7 +142,8 @@ export default function DashboardPageV2() {
           onToDateChange={setToDate}
           onReset={() => {
             setTagQuery("");
-            setChartType(DEFAULT_CHART_TYPE);
+            setSelectedTagId(null);
+            setChartType(null);
             setFromDate(buildDefaultFromDate());
             setToDate(new Date());
           }}
@@ -139,14 +173,45 @@ export default function DashboardPageV2() {
           </Card>
         )}
 
-        {selectedTag && (
+        {selectedTagId !== null && isLoadingChartTypes && (
+          <Card className="mb-6">
+            <CardContent className="pt-6 text-sm text-mutedForeground">
+              Загрузка доступных типов графика...
+            </CardContent>
+          </Card>
+        )}
+
+        {selectedTag && chartType !== null && (
           <div className="mb-6 text-sm text-mutedForeground">
-            Текущий график: {CHART_TYPE_LABELS[chartType]} для тега{" "}
+            Текущий график: {getChartTypeLabel(chartType)} для тега{" "}
             <span className="font-medium text-foreground">{selectedTag.name}</span>
           </div>
         )}
 
-        {isLoading && (
+        {selectedTagId !== null &&
+          !isChartTypesError &&
+          !isLoadingChartTypes &&
+          availableChartTypes.length === 0 && (
+            <Card className="mb-6">
+              <CardContent className="pt-6 text-sm text-mutedForeground">
+                Для этого тега нет доступных графиков.
+              </CardContent>
+            </Card>
+          )}
+
+        {selectedTagId !== null &&
+          !isChartTypesError &&
+          !isLoadingChartTypes &&
+          availableChartTypes.length > 0 &&
+          chartType === null && (
+            <Card className="mb-6">
+              <CardContent className="pt-6 text-sm text-mutedForeground">
+                Выберите тип графика, чтобы загрузить аналитику.
+              </CardContent>
+            </Card>
+          )}
+
+        {isLoading && chartType !== null && (
           <Card>
             <CardContent className="pt-6 text-sm text-mutedForeground">
               Загрузка графика...
@@ -154,7 +219,7 @@ export default function DashboardPageV2() {
           </Card>
         )}
 
-        {isError && (
+        {isError && chartType !== null && (
           <Card>
             <CardContent className="pt-6 text-sm text-destructive">
               {error?.message ?? "Не удалось загрузить аналитику."}
@@ -162,7 +227,7 @@ export default function DashboardPageV2() {
           </Card>
         )}
 
-        {!isLoading && !isError && data && (
+        {!isLoading && !isError && chartType !== null && data && (
           <ActivityBarChart data={data} tagName={selectedTag?.name} />
         )}
       </div>

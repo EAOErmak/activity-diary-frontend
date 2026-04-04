@@ -1,34 +1,16 @@
-export const CHART_TYPES = [
-  "CALORIES_PER_DAY",
-  "PFC_PER_DAY",
-  "CALORIES_PER_EATING",
-  "PFC_PER_EATING",
-  "TRAINING_COMPUTED",
-  "TRAINING_METRICS",
-  "TRAINING_RAW",
-] as const;
-
-export type ChartType = (typeof CHART_TYPES)[number];
-
-export const TRAINING_CHART_TYPES = [
-  "TRAINING_COMPUTED",
-  "TRAINING_METRICS",
-  "TRAINING_RAW",
-] as const satisfies readonly ChartType[];
-
-export const DEFAULT_CHART_TYPE: ChartType = "TRAINING_COMPUTED";
+export type ChartType = string;
 
 const LEGACY_CHART_TYPE_MAP = {
   TRAINING_PROGRESS: "TRAINING_COMPUTED",
   TRAINING_PROGRESS_DETAILED: "TRAINING_RAW",
-} as const satisfies Record<string, ChartType>;
+} as const satisfies Record<string, string>;
 
 export const normalizeChartType = (chartType: string): ChartType =>
   LEGACY_CHART_TYPE_MAP[
     chartType as keyof typeof LEGACY_CHART_TYPE_MAP
   ] ?? (chartType as ChartType);
 
-export const CHART_TYPE_LABELS: Record<ChartType, string> = {
+export const CHART_TYPE_LABELS: Record<string, string> = {
   CALORIES_PER_DAY: "Калории по дням",
   PFC_PER_DAY: "БЖУ по дням",
   CALORIES_PER_EATING: "Калории по приемам пищи",
@@ -37,6 +19,9 @@ export const CHART_TYPE_LABELS: Record<ChartType, string> = {
   TRAINING_METRICS: "Прогресс по метрикам",
   TRAINING_RAW: "Детальный прогресс тренировок",
 };
+
+export const getChartTypeLabel = (chartType: string): string =>
+  CHART_TYPE_LABELS[normalizeChartType(chartType)] ?? chartType;
 
 export type ChartPoint = {
   label: string;

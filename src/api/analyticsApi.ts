@@ -1,26 +1,70 @@
+import axios from "axios";
 import api from "./http/axiosInstance";
 import type { ApiResponse } from "@/shared/types/api";
 import type {
   ChartFilter,
   ChartResponse,
+  ChartType,
   MultiChartResponse,
 } from "@/shared/types/analytics";
 import { normalizeChartType } from "@/shared/types/analytics";
 
+function toAnalyticsApiError(
+  error: unknown,
+  fallbackMessage: string
+): Error {
+  if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
+    const apiMessage = error.response?.data?.message?.trim();
+
+    if (apiMessage) {
+      error.message = apiMessage;
+      return error;
+    }
+
+    if (error.message) {
+      return error;
+    }
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(fallbackMessage);
+}
+
+export async function getAnalyticsChartTypes(
+  tagId: number
+): Promise<ChartType[]> {
+  try {
+    const { data } = await api.get<ApiResponse<string[]>>(
+      `/analytics/tags/${tagId}/chart-types`
+    );
+
+    return data.data.map(normalizeChartType);
+  } catch (error) {
+    throw toAnalyticsApiError(error, "Не удалось загрузить типы графиков.");
+  }
+}
+
 export async function getAnalyticsChart(
   filter: ChartFilter
 ): Promise<ChartResponse> {
-  const { data } = await api.get<ApiResponse<ChartResponse>>(
-    "/analytics/charts",
-    {
-      params: {
-        ...filter,
-        chartType: normalizeChartType(filter.chartType),
-      },
-    }
-  );
+  try {
+    const { data } = await api.get<ApiResponse<ChartResponse>>(
+      "/analytics/charts",
+      {
+        params: {
+          ...filter,
+          chartType: normalizeChartType(filter.chartType),
+        },
+      }
+    );
 
-  return data.data;
+    return data.data;
+  } catch (error) {
+    throw toAnalyticsApiError(error, "Не удалось загрузить аналитику.");
+  }
 }
 
 /* ========================================================
