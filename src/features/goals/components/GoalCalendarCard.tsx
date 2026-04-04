@@ -1,15 +1,13 @@
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
 import { Progress } from "@/shared/components/ui/progress";
-import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Separator } from "@/shared/components/ui/separator";
 import { cn } from "@/shared/lib/utils";
 import type { GoalCalendarStats } from "@/features/goals/lib/goalsTypes";
@@ -30,7 +28,6 @@ type Props = {
   onPrevYear: () => void;
   onNextYear: () => void;
   stats: GoalCalendarStats;
-  lastActionText: string;
   weeks: Date[];
   monthLabels: string[];
   yearStart: Date;
@@ -56,7 +53,6 @@ export function GoalCalendarCard({
   onPrevYear,
   onNextYear,
   stats,
-  lastActionText,
   weeks,
   monthLabels,
   yearStart,
@@ -76,21 +72,42 @@ export function GoalCalendarCard({
   onSelectWeek,
 }: Props) {
   const weekLegendLevels = [0, 17, 33, 50, 67, 83, 100];
+  const calendarGridTemplate = `1.25rem repeat(${weeks.length}, minmax(0, 1fr))`;
+  const weekGridTemplate = `repeat(${weeks.length}, minmax(0, 1fr))`;
+  const pressedDayKeyRef = useRef<string | null>(null);
+  const pressedWeekKeyRef = useRef<string | null>(null);
+
+  const handleDayActivate = (date: Date, dateKey: string, isInCurrentYear: boolean) => {
+    if (!isInCurrentYear) return;
+    if (draggingTemplate) return;
+    if (isEraserOn) {
+      onDeleteDayGoal(dateKey);
+      return;
+    }
+    onSelectDay(date);
+  };
+
+  const handleWeekActivate = (weekStart: Date, weekKey: string, isInCurrentYear: boolean) => {
+    if (!isInCurrentYear) return;
+    if (draggingTemplate) return;
+    if (isEraserOn) {
+      onDeleteWeekGoal(weekKey);
+      return;
+    }
+    onSelectWeek(new Date(weekStart));
+  };
 
   return (
     <Card className={cn("w-full min-w-0 flex flex-col", className)}>
       <CardHeader className="shrink-0 space-y-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
+          <div>
             <div className="flex items-center gap-2">
               <CardTitle>Goal Calendar</CardTitle>
               <Badge variant="outline" className="rounded-full px-3 py-1">
                 Year {calendarYear}
               </Badge>
             </div>
-            <CardDescription>
-              Year heatmap for daily goals and a compact week strip underneath.
-            </CardDescription>
           </div>
 
           <div className="flex items-center gap-2">
@@ -142,85 +159,95 @@ export function GoalCalendarCard({
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 min-h-0 flex-col space-y-4 overflow-hidden">
-        {lastActionText ? (
-          <div
-            title={lastActionText}
-            className="rounded-xl border border-border bg-surface p-3 text-sm whitespace-nowrap overflow-hidden text-ellipsis"
-          >
-            {lastActionText}
+        <div className="w-full">
+          <div className="mb-2 grid gap-1" style={{ gridTemplateColumns: calendarGridTemplate }}>
+            <div />
+            {monthLabels.map((label, index) => (
+              <div
+                key={`month-${index}`}
+                className="overflow-visible text-left text-[10px] font-medium text-muted-foreground"
+              >
+                <span className="whitespace-nowrap">{label}</span>
+              </div>
+            ))}
           </div>
-        ) : null}
 
-        <ScrollArea className="w-full whitespace-nowrap pb-1">
-          <div className="w-max pr-4" style={{ minWidth: `${28 + weeks.length * 28}px` }}>
-            <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: `28px repeat(${weeks.length}, 24px)` }}>
-              <div />
-              {monthLabels.map((label, index) => (
-                <div key={`month-${index}`} className="h-4 text-center text-[11px] text-muted-foreground">
-                  {label}
+          <div className="grid gap-1" style={{ gridTemplateColumns: calendarGridTemplate }}>
+            {WEEKDAY_LABELS.map((weekdayLabel, rowIndex) => (
+              <Fragment key={`${weekdayLabel}-${rowIndex}`}>
+                <div className="flex aspect-square items-center justify-center text-[10px] font-medium text-muted-foreground">
+                  {weekdayLabel}
                 </div>
-              ))}
-            </div>
 
-            <div className="grid gap-1" style={{ gridTemplateColumns: `28px repeat(${weeks.length}, 24px)` }}>
-              {WEEKDAY_LABELS.map((weekdayLabel, rowIndex) => (
-                <Fragment key={`${weekdayLabel}-${rowIndex}`}>
-                  <div className="h-6 flex items-center justify-center text-xs text-muted-foreground">
-                    {weekdayLabel}
-                  </div>
+                {weeks.map((weekStart) => {
+                  const date = addDays(weekStart, rowIndex);
+                  const dateKey = toIsoDate(date);
+                  const isInCurrentYear = isDateInRange(date, yearStart, yearEnd);
+                  const hasScore = dateKey in dayScores;
+                  const score = hasScore ? dayScores[dateKey] ?? 0 : 0;
+                  const isPreviewTarget = previewDateKeys.has(dateKey);
+                  const isCreating = creatingDate === dateKey;
+                  const isSelectedDay = selectedDayKey === dateKey;
 
-                  {weeks.map((weekStart) => {
-                    const date = addDays(weekStart, rowIndex);
-                    const dateKey = toIsoDate(date);
-                    const isInCurrentYear = isDateInRange(date, yearStart, yearEnd);
-                    const hasScore = dateKey in dayScores;
-                    const score = hasScore ? dayScores[dateKey] ?? 0 : 0;
-                    const isPreviewTarget = previewDateKeys.has(dateKey);
-                    const isCreating = creatingDate === dateKey;
-                    const isSelectedDay = selectedDayKey === dateKey;
-
-                    return (
-                      <div
-                        key={dateKey}
-                        data-goal-date={dateKey}
-                        onClick={() => {
-                          if (!isInCurrentYear) return;
-                          if (isEraserOn) {
-                            onDeleteDayGoal(dateKey);
-                            return;
-                          }
-                          onSelectDay(date);
-                        }}
-                        onPointerEnter={() => {
-                          if (draggingTemplate) onHoverDate(dateKey);
-                        }}
-                        className={[
-                          "h-6 w-6 rounded-md border transition-all",
-                          isEraserOn && isInCurrentYear ? "cursor-pointer" : "",
-                          isInCurrentYear ? "border-border/70" : "border-transparent bg-transparent",
-                          isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
-                          draggingTemplate && isPreviewTarget
-                            ? isInCurrentYear
-                              ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.45)]"
-                              : "border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.45)]"
-                            : "",
-                          isSelectedDay && isInCurrentYear
-                            ? "shadow-[0_0_0_2px_rgba(59,130,246,0.35)] border-sky-300"
-                            : "",
-                          isCreating ? "animate-pulse" : "",
-                        ].join(" ")}
-                        style={{
-                          ...getHeatCellStyle(score, hasScore && isInCurrentYear),
-                          ...getDropIndicatorStyle(draggingTemplate, isPreviewTarget, isInCurrentYear),
-                        }}
-                      />
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </div>
+                  return (
+                    <div
+                      key={dateKey}
+                      data-goal-date={dateKey}
+                      onClick={() => {
+                        if (pressedDayKeyRef.current === dateKey) {
+                          pressedDayKeyRef.current = null;
+                          return;
+                        }
+                        handleDayActivate(date, dateKey, isInCurrentYear);
+                      }}
+                      onPointerDown={(event) => {
+                        if (event.pointerType === "touch" || event.button !== 0) return;
+                        pressedDayKeyRef.current = dateKey;
+                        handleDayActivate(date, dateKey, isInCurrentYear);
+                      }}
+                      onPointerEnter={() => {
+                        if (draggingTemplate) onHoverDate(dateKey);
+                      }}
+                      onPointerLeave={() => {
+                        if (pressedDayKeyRef.current === dateKey) {
+                          pressedDayKeyRef.current = null;
+                        }
+                      }}
+                      onPointerCancel={() => {
+                        if (pressedDayKeyRef.current === dateKey) {
+                          pressedDayKeyRef.current = null;
+                        }
+                      }}
+                      className={[
+                        "aspect-square w-full rounded-[4px] border",
+                        isEraserOn && isInCurrentYear ? "cursor-pointer" : "",
+                        isInCurrentYear ? "border-border/70" : "border-transparent bg-transparent",
+                        isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
+                        draggingTemplate && isPreviewTarget
+                          ? isInCurrentYear
+                            ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.45)]"
+                            : "border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.45)]"
+                          : "",
+                        isSelectedDay && isInCurrentYear
+                          ? "border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
+                          : "",
+                        isCreating ? "animate-pulse" : "",
+                      ].join(" ")}
+                      style={{
+                        ...getHeatCellStyle(score, hasScore && isInCurrentYear),
+                        ...getDropIndicatorStyle(
+                          draggingTemplate,
+                          isPreviewTarget,
+                          isInCurrentYear
+                        ),
+                      }}
+                    />
+                  );
+                })}
+              </Fragment>
+            ))}
           </div>
-        </ScrollArea>
+        </div>
 
         <Separator />
 
@@ -231,57 +258,72 @@ export function GoalCalendarCard({
               {weeks.length} weeks
             </Badge>
           </div>
-          <ScrollArea className="w-full whitespace-nowrap pb-1">
-            <div className="w-max pr-4" style={{ minWidth: `${weeks.length * 28}px` }}>
-              <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: `repeat(${weeks.length}, 24px)` }}>
-                {monthLabels.map((label, index) => (
-                  <div key={`week-month-${index}`} className="h-4 text-center text-[11px] text-muted-foreground">
-                    {label}
-                  </div>
-                ))}
+          <div className="mb-2 grid gap-1" style={{ gridTemplateColumns: weekGridTemplate }}>
+            {monthLabels.map((label, index) => (
+              <div
+                key={`week-month-${index}`}
+                className="overflow-visible text-left text-[10px] font-medium text-muted-foreground"
+              >
+                <span className="whitespace-nowrap">{label}</span>
               </div>
+            ))}
+          </div>
 
-              <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${weeks.length}, 24px)` }}>
-                {weeks.map((weekStart) => {
-                  const weekKey = toIsoDate(weekStart);
-                  const weekEndKey = toIsoDate(addDays(weekStart, 6));
-                  const weekAnchorDate = addDays(weekStart, 3);
-                  const isInCurrentYear = isDateInRange(weekAnchorDate, yearStart, yearEnd);
-                  const hasScore = weekKey in weekScores;
-                  const score = hasScore ? weekScores[weekKey] ?? 0 : 0;
-                  const isSelectedWeek = weekPreviewStartKey === weekKey;
+          <div className="grid gap-1" style={{ gridTemplateColumns: weekGridTemplate }}>
+            {weeks.map((weekStart) => {
+              const weekKey = toIsoDate(weekStart);
+              const weekEndKey = toIsoDate(addDays(weekStart, 6));
+              const weekAnchorDate = addDays(weekStart, 3);
+              const isInCurrentYear = isDateInRange(weekAnchorDate, yearStart, yearEnd);
+              const hasScore = weekKey in weekScores;
+              const score = hasScore ? weekScores[weekKey] ?? 0 : 0;
+              const isSelectedWeek = weekPreviewStartKey === weekKey;
 
-                  return (
-                    <div
-                      key={`week-cell-${weekKey}`}
-                      title={`${toDisplayDate(weekKey)} - ${toDisplayDate(weekEndKey)} | ${hasScore ? `${Math.round(score)}%` : "No goal"}`}
-                      onClick={() => {
-                        if (!isInCurrentYear) return;
-                        if (isEraserOn) {
-                          onDeleteWeekGoal(weekKey);
-                          return;
-                        }
-                        onSelectWeek(new Date(weekStart));
-                      }}
-                      className={[
-                        "h-6 w-6 rounded-md border transition-all",
-                        isInCurrentYear
-                          ? "cursor-pointer border-border/70"
-                          : "cursor-default border-border/30 opacity-60",
-                        isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
-                        isSelectedWeek ? "shadow-[0_0_0_2px_rgba(59,130,246,0.35)] border-sky-300" : "",
-                      ].join(" ")}
-                      style={
-                        hasScore && isInCurrentYear
-                          ? { backgroundColor: getWeekCalendarBandColor(score) }
-                          : undefined
-                      }
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </ScrollArea>
+              return (
+                <div
+                  key={`week-cell-${weekKey}`}
+                  title={`${toDisplayDate(weekKey)} - ${toDisplayDate(weekEndKey)} | ${hasScore ? `${Math.round(score)}%` : "No goal"}`}
+                  onClick={() => {
+                    if (pressedWeekKeyRef.current === weekKey) {
+                      pressedWeekKeyRef.current = null;
+                      return;
+                    }
+                    handleWeekActivate(weekStart, weekKey, isInCurrentYear);
+                  }}
+                  onPointerDown={(event) => {
+                    if (event.pointerType === "touch" || event.button !== 0) return;
+                    pressedWeekKeyRef.current = weekKey;
+                    handleWeekActivate(weekStart, weekKey, isInCurrentYear);
+                  }}
+                  onPointerLeave={() => {
+                    if (pressedWeekKeyRef.current === weekKey) {
+                      pressedWeekKeyRef.current = null;
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    if (pressedWeekKeyRef.current === weekKey) {
+                      pressedWeekKeyRef.current = null;
+                    }
+                  }}
+                  className={[
+                    "aspect-square w-full rounded-[4px] border",
+                    isInCurrentYear
+                      ? "cursor-pointer border-border/70"
+                      : "cursor-default border-border/30 opacity-60",
+                    isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
+                    isSelectedWeek
+                      ? "border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
+                      : "",
+                  ].join(" ")}
+                  style={
+                    hasScore && isInCurrentYear
+                      ? { backgroundColor: getWeekCalendarBandColor(score) }
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </div>
         </div>
 
         <Separator />

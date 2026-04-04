@@ -4,7 +4,6 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
@@ -52,9 +51,8 @@ export function WeekViewCard({
 }: Props) {
   const dayLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dayLongPressTriggeredRef = useRef(false);
+  const pressedDayKeyRef = useRef<string | null>(null);
   const selectedDay = days.find((day) => day.dateKey === dailyDateKey) ?? null;
-  const daysInScope = days.filter((day) => day.isInYear);
-  const daysWithGoals = daysInScope.filter((day) => day.hasScore).length;
   const activeDaysLabel = selectedDay
     ? `${selectedDay.label} ${selectedDay.date.getDate()}`
     : "No day selected";
@@ -82,9 +80,6 @@ export function WeekViewCard({
                 {monthLabel}
               </Badge>
             </div>
-            <CardDescription>
-              Weekly goal progress with quick access to the currently selected day.
-            </CardDescription>
           </div>
 
           <div className="flex items-center gap-1">
@@ -138,23 +133,6 @@ export function WeekViewCard({
               <div className="mt-1 text-sm text-muted-foreground">Average completion</div>
               <Progress value={stats.average} className="mt-3" />
             </div>
-
-            <div className="rounded-2xl border border-border bg-input p-4">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium">Days with goals</div>
-                <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
-                  {daysWithGoals}/{daysInScope.length || 7}
-                </Badge>
-              </div>
-              <div className="mt-3 text-2xl font-semibold">
-                {daysWithGoals}/{daysInScope.length || 7}
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">Days with goals</div>
-              <Progress
-                value={daysInScope.length ? Math.round((daysWithGoals / daysInScope.length) * 100) : 0}
-                className="mt-3"
-              />
-            </div>
           </div>
 
           <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
@@ -175,6 +153,10 @@ export function WeekViewCard({
                   key={day.dateKey}
                   data-goal-date={day.dateKey}
                   onClick={() => {
+                    if (pressedDayKeyRef.current === day.dateKey) {
+                      pressedDayKeyRef.current = null;
+                      return;
+                    }
                     if (!day.isInYear) return;
                     if (dayLongPressTriggeredRef.current) {
                       dayLongPressTriggeredRef.current = false;
@@ -186,8 +168,17 @@ export function WeekViewCard({
                     }
                     onSelectDailyDate(day.date);
                   }}
-                  onPointerDown={() => {
+                  onPointerDown={(event) => {
                     if (!day.isInYear) return;
+                    if (event.pointerType !== "touch" && event.button === 0) {
+                      pressedDayKeyRef.current = day.dateKey;
+
+                      if (isEraserOn) {
+                        onDeleteDayGoal(day.dateKey);
+                      } else {
+                        onSelectDailyDate(day.date);
+                      }
+                    }
                     if (isEraserOn) return;
                     const dayGoalId = day.dayGoalId;
                     if (!dayGoalId) return;
@@ -204,15 +195,21 @@ export function WeekViewCard({
                   }}
                   onPointerLeave={() => {
                     clearDayLongPressTimer();
+                    if (pressedDayKeyRef.current === day.dateKey) {
+                      pressedDayKeyRef.current = null;
+                    }
                   }}
                   onPointerCancel={() => {
                     clearDayLongPressTimer();
+                    if (pressedDayKeyRef.current === day.dateKey) {
+                      pressedDayKeyRef.current = null;
+                    }
                   }}
                   onPointerEnter={() => {
                     if (draggingTemplate) onHoverDate(day.dateKey);
                   }}
                   className={[
-                    "flex min-h-[170px] flex-col justify-between rounded-2xl border bg-input p-4 text-center transition-all",
+                    "flex min-h-[170px] flex-col justify-between rounded-2xl border bg-input p-4 text-center",
                     day.isInYear ? "cursor-pointer" : "cursor-default",
                     day.isInYear ? "border-border" : "border-border/40",
                     isPreviewTarget

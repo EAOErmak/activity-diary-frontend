@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  startTransition,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -15,7 +16,7 @@ import { ConfirmEntryGoalDialogV2 } from "@/features/goals/components/ConfirmEnt
 import { GoalCalendarCard } from "@/features/goals/components/GoalCalendarCard";
 import { GoalsDragPreview } from "@/features/goals/components/GoalsDragPreview";
 import { ReplaceGoalDialog } from "@/features/goals/components/ReplaceGoalDialog";
-import { TemplatesSidebar } from "@/features/goals/components/TemplatesSidebar";
+import { TemplatesSidebarV2 as TemplatesSidebar } from "@/features/goals/components/TemplatesSidebarV2";
 import { WeekViewCard } from "@/features/goals/components/WeekViewCard";
 import { useGoalCalendarGrid } from "@/features/goals/hooks/useGoalCalendarGrid";
 import { useGoalsSummaries } from "@/features/goals/hooks/useGoalsSummaries";
@@ -24,9 +25,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/shared/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import type {
@@ -67,23 +66,40 @@ type EntryConfirmDialogState = {
 };
 
 type GoalsWorkspaceView = "calendar" | "week" | "daily";
+const DROP_INTERACTION_SUPPRESS_MS = 250;
 
 const isGoalsWorkspaceView = (value: string | null): value is GoalsWorkspaceView =>
   value === "calendar" || value === "week" || value === "daily";
+
+const buildPreviewDateKeys = (
+  hoverDate: string | null,
+  draggingTemplate: DragTemplatePayload | null
+): Set<string> => {
+  if (!hoverDate || !draggingTemplate) return new Set<string>();
+  if (draggingTemplate.kind !== "week") return new Set<string>([hoverDate]);
+
+  const hoveredDate = fromIsoDate(hoverDate);
+  const monday = startOfWeekMonday(hoveredDate);
+  const weekKeys = new Set<string>();
+
+  for (let offset = 0; offset < 7; offset += 1) {
+    weekKeys.add(toIsoDate(addDays(monday, offset)));
+  }
+
+  return weekKeys;
+};
 
 export default function GoalsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterKind, setFilterKind] = useState<TemplateFilterKind>("all");
   const [filterName, setFilterName] = useState("");
   const [draggingTemplate, setDraggingTemplate] = useState<DragTemplatePayload | null>(null);
-  const [dragPointer, setDragPointer] = useState<PointerPosition | null>(null);
   const [hoverDate, setHoverDate] = useState<string | null>(null);
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
   const [replaceDialog, setReplaceDialog] = useState<ReplaceGoalDialogState | null>(null);
   const [isReplacingGoal, setIsReplacingGoal] = useState(false);
   const [eraserMode, setEraserMode] = useState<EraserMode>("eraseOff");
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
-  const [lastActionText, setLastActionText] = useState("");
   const [entryConfirmDialog, setEntryConfirmDialog] = useState<EntryConfirmDialogState | null>(
     null
   );
@@ -96,6 +112,10 @@ export default function GoalsPage() {
   const isEraserOn = eraserMode === "eraseOn";
 
   const hoverDateRef = useRef<string | null>(null);
+  const dragPointerRef = useRef<PointerPosition | null>(null);
+  const dragPointerRafRef = useRef<number | null>(null);
+  const calendarPreviewKeysRef = useRef<Set<string>>(new Set());
+  const suppressPostDropInteractionUntilRef = useRef(0);
   useEffect(() => {
     hoverDateRef.current = hoverDate;
   }, [hoverDate]);
@@ -104,6 +124,147 @@ export default function GoalsPage() {
   const [calendarYear, setCalendarYear] = useState(currentYear);
   const { yearStart, yearEnd, weeks, monthLabels, calendarFrom, calendarTo } =
     useGoalCalendarGrid(calendarYear);
+
+  const updateDragPreviewPosition = useCallback((x: number, y: number) => {
+    document.documentElement.style.setProperty("--goals-drag-x", `${x}px`);
+    document.documentElement.style.setProperty("--goals-drag-y", `${y}px`);
+  }, []);
+
+  const clearDragPreviewPosition = useCallback(() => {
+    document.documentElement.style.removeProperty("--goals-drag-x");
+    document.documentElement.style.removeProperty("--goals-drag-y");
+  }, []);
+
+  const updateDragPreviewTone = useCallback((canDrop: boolean) => {
+    document.documentElement.style.setProperty("--goals-drag-bg", canDrop ? "#3b82f6" : "#ef4444");
+    document.documentElement.style.setProperty(
+      "--goals-drag-border",
+      canDrop ? "#bfdbfe" : "#fecaca"
+    );
+    document.documentElement.style.setProperty(
+      "--goals-drag-shadow",
+      canDrop
+        ? "0 0 0 2px rgba(59,130,246,0.45)"
+        : "0 0 0 2px rgba(239,68,68,0.45)"
+    );
+  }, []);
+
+  const clearDragPreviewTone = useCallback(() => {
+    document.documentElement.style.removeProperty("--goals-drag-bg");
+    document.documentElement.style.removeProperty("--goals-drag-border");
+    document.documentElement.style.removeProperty("--goals-drag-shadow");
+  }, []);
+
+  const setCalendarPreviewCellState = useCallback(
+    (dateKey: string, active: boolean) => {
+      const cell = document.querySelector<HTMLElement>(`[data-goal-date="${dateKey}"]`);
+      if (!cell) return;
+
+      if (!active) {
+        if (cell.dataset.previewApplied !== "true") return;
+        cell.style.backgroundColor = cell.dataset.previewBg ?? "";
+        cell.style.borderColor = cell.dataset.previewBorderColor ?? "";
+        cell.style.boxShadow = cell.dataset.previewBoxShadow ?? "";
+        delete cell.dataset.previewApplied;
+        delete cell.dataset.previewBg;
+        delete cell.dataset.previewBorderColor;
+        delete cell.dataset.previewBoxShadow;
+        return;
+      }
+
+      const canDropOnDate = isDateInRange(fromIsoDate(dateKey), yearStart, yearEnd);
+      if (cell.dataset.previewApplied !== "true") {
+        cell.dataset.previewBg = cell.style.backgroundColor ?? "";
+        cell.dataset.previewBorderColor = cell.style.borderColor ?? "";
+        cell.dataset.previewBoxShadow = cell.style.boxShadow ?? "";
+      }
+
+      cell.dataset.previewApplied = "true";
+      cell.style.backgroundColor = canDropOnDate ? "#3b82f6" : "#ef4444";
+      cell.style.borderColor = canDropOnDate ? "#bfdbfe" : "#fecaca";
+      cell.style.boxShadow = canDropOnDate
+        ? "0 0 0 2px rgba(59,130,246,0.45)"
+        : "0 0 0 2px rgba(239,68,68,0.45)";
+    },
+    [yearEnd, yearStart]
+  );
+
+  const syncCalendarPreview = useCallback(
+    (nextKeys: Set<string>) => {
+      const prevKeys = calendarPreviewKeysRef.current;
+
+      prevKeys.forEach((dateKey) => {
+        if (!nextKeys.has(dateKey)) {
+          setCalendarPreviewCellState(dateKey, false);
+        }
+      });
+
+      nextKeys.forEach((dateKey) => {
+        if (!prevKeys.has(dateKey)) {
+          setCalendarPreviewCellState(dateKey, true);
+        }
+      });
+
+      calendarPreviewKeysRef.current = nextKeys;
+    },
+    [setCalendarPreviewCellState]
+  );
+
+  const clearCalendarPreview = useCallback(() => {
+    syncCalendarPreview(new Set<string>());
+  }, [syncCalendarPreview]);
+
+  const suppressPostDropInteractions = useCallback(() => {
+    suppressPostDropInteractionUntilRef.current = Date.now() + DROP_INTERACTION_SUPPRESS_MS;
+  }, []);
+
+  const shouldIgnorePostDropInteraction = useCallback(
+    () => Date.now() < suppressPostDropInteractionUntilRef.current,
+    []
+  );
+
+  const scheduleDragUpdate = useCallback(
+    (x: number, y: number) => {
+      dragPointerRef.current = { x, y };
+      if (dragPointerRafRef.current !== null) return;
+
+      dragPointerRafRef.current = window.requestAnimationFrame(() => {
+        dragPointerRafRef.current = null;
+        const pointer = dragPointerRef.current;
+        if (!pointer) return;
+
+        updateDragPreviewPosition(pointer.x, pointer.y);
+        const nextHoverDate = getDateKeyAtPoint(pointer.x, pointer.y);
+        const nextCanDrop =
+          nextHoverDate !== null && isDateInRange(fromIsoDate(nextHoverDate), yearStart, yearEnd);
+
+        updateDragPreviewTone(nextCanDrop);
+
+        if (activeView === "calendar") {
+          hoverDateRef.current = nextHoverDate;
+          syncCalendarPreview(buildPreviewDateKeys(nextHoverDate, draggingTemplate));
+          return;
+        }
+
+        clearCalendarPreview();
+        if (hoverDateRef.current !== nextHoverDate) {
+          hoverDateRef.current = nextHoverDate;
+          startTransition(() => {
+            setHoverDate(nextHoverDate);
+          });
+        }
+      });
+    },
+    [
+      activeView,
+      clearCalendarPreview,
+      draggingTemplate,
+      syncCalendarPreview,
+      updateDragPreviewPosition,
+      yearEnd,
+      yearStart,
+    ]
+  );
 
   const [weekPreviewStart, setWeekPreviewStart] = useState(() => startOfWeekMonday(new Date()));
   const [dailyDate, setDailyDate] = useState(() => {
@@ -132,7 +293,10 @@ export default function GoalsPage() {
 
   useEffect(() => {
     setHoverDate(null);
-  }, [calendarYear]);
+    hoverDateRef.current = null;
+    clearCalendarPreview();
+    clearDragPreviewTone();
+  }, [calendarYear, clearCalendarPreview, clearDragPreviewTone]);
 
   const filteredTemplates = useMemo(() => {
     const normalizedName = filterName.trim().toLowerCase();
@@ -154,24 +318,9 @@ export default function GoalsPage() {
   );
 
   const previewDateKeys = useMemo(() => {
-    if (!hoverDate || !draggingTemplate) return new Set<string>();
-    if (draggingTemplate.kind !== "week") return new Set<string>([hoverDate]);
-
-    const hoveredDate = fromIsoDate(hoverDate);
-    const monday = startOfWeekMonday(hoveredDate);
-    const weekKeys = new Set<string>();
-
-    for (let offset = 0; offset < 7; offset += 1) {
-      weekKeys.add(toIsoDate(addDays(monday, offset)));
-    }
-
-    return weekKeys;
-  }, [draggingTemplate, hoverDate]);
-
-  const canDropAtPointer = useMemo(() => {
-    if (!hoverDate) return false;
-    return isDateInRange(fromIsoDate(hoverDate), yearStart, yearEnd);
-  }, [hoverDate, yearEnd, yearStart]);
+    if (activeView === "calendar") return new Set<string>();
+    return buildPreviewDateKeys(hoverDate, draggingTemplate);
+  }, [activeView, draggingTemplate, hoverDate]);
 
   const weekPreviewMonthLabel = useMemo(() => {
     const referenceDate = addDays(weekPreviewStart, 3);
@@ -369,11 +518,7 @@ export default function GoalsPage() {
           ...prev,
           [created.targetDate]: Math.max(prev[created.targetDate] ?? 0, completeness),
         }));
-        setLastActionText(
-          `Goal "${template.name}" (${getGoalKindLabel(template.kind)}) replaced on ${toDisplayDate(
-            created.targetDate
-          )}`
-        );
+        toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
       } else {
         const created = await goalApi.replaceWeekGoal({
           templateId: template.id,
@@ -382,11 +527,7 @@ export default function GoalsPage() {
         const weekStartKey =
           replaceDialog.weekStartKey ?? toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)));
         setDayScores((prev) => mergeWeekScores(prev, created));
-        setLastActionText(
-          `Goal "${template.name}" (${getGoalKindLabel(
-            template.kind
-          )}) replaced for week from ${toDisplayDate(weekStartKey)}`
-        );
+        toast.success(`Week goal confirmed from ${toDisplayDate(weekStartKey)}`);
       }
 
       await reloadAll();
@@ -403,7 +544,7 @@ export default function GoalsPage() {
       if (eraserMode !== "eraseOn") return;
 
       if (!(dateKey in dayScores)) {
-        setLastActionText(`No day goal found on ${toDisplayDate(dateKey)}`);
+        toast.warning(`No day goal found on ${toDisplayDate(dateKey)}`);
         return;
       }
 
@@ -412,7 +553,7 @@ export default function GoalsPage() {
 
       try {
         await goalApi.deleteDayGoal(dateKey);
-        setLastActionText(`Day goal deleted on ${toDisplayDate(dateKey)}`);
+        toast.success(`Day goal deleted on ${toDisplayDate(dateKey)}`);
         await reloadAll();
       } finally {
         setIsDeletingGoal(false);
@@ -433,7 +574,7 @@ export default function GoalsPage() {
       ).some((weekDayKey) => weekDayKey in dayScores);
 
       if (!weekHasGoal) {
-        setLastActionText(`No week goal found from ${toDisplayDate(toIsoDate(weekStart))}`);
+        toast.warning(`No week goal found from ${toDisplayDate(toIsoDate(weekStart))}`);
         return;
       }
 
@@ -443,7 +584,7 @@ export default function GoalsPage() {
 
       try {
         await goalApi.deleteWeekGoal(weekStartKey);
-        setLastActionText(`Week goal deleted from ${toDisplayDate(weekStartKey)}`);
+        toast.success(`Week goal deleted from ${toDisplayDate(weekStartKey)}`);
         await reloadAll();
       } finally {
         setIsDeletingGoal(false);
@@ -460,7 +601,7 @@ export default function GoalsPage() {
       setIsDeletingGoal(true);
       try {
         await goalApi.deleteEntryGoal(entryGoalId);
-        setLastActionText(`Entry goal "${entryName ?? entryGoalId}" deleted`);
+        toast.success(`Entry goal "${entryName ?? entryGoalId}" deleted`);
         await reloadAll();
       } finally {
         setIsDeletingGoal(false);
@@ -475,7 +616,7 @@ export default function GoalsPage() {
     setCreatingDate(dateKey);
     try {
       await goalApi.confirmDayGoal(dayGoalId);
-      setLastActionText(`Day goal confirmed on ${toDisplayDate(dateKey)}`);
+      toast.success(`Day goal confirmed on ${toDisplayDate(dateKey)}`);
       await reloadAll();
     } finally {
       setCreatingDate(null);
@@ -499,14 +640,14 @@ export default function GoalsPage() {
       if (eraserMode === "eraseOn") return;
       if (!entry?.id) return;
       if (!userId) {
-        setLastActionText("Unable to confirm entry goal: user is not authenticated");
+        toast.error("Unable to confirm entry goal: user is not authenticated");
         return;
       }
       setCreatingDate(dailyDateKey);
 
       try {
         await goalApi.confirmEntryGoalSimple(entry.id, userId);
-        setLastActionText(`Entry goal "${entryName}" confirmed`);
+        toast.success(`Entry goal "${entryName}" confirmed`);
         await reloadAll();
       } finally {
         setCreatingDate(null);
@@ -518,7 +659,7 @@ export default function GoalsPage() {
   const handleSubmitEntryGoalConfirm = useCallback(
     async (goalId: number, payload: DiaryEntryCreate) => {
       if (!userId) {
-        setLastActionText("Unable to confirm entry goal: user is not authenticated");
+        toast.error("Unable to confirm entry goal: user is not authenticated");
         throw new Error("User is not authenticated");
       }
       setCreatingDate(dailyDateKey);
@@ -527,7 +668,7 @@ export default function GoalsPage() {
       try {
         await goalApi.confirmEntryGoal(goalId, userId, payload);
         const entryLabel = entryConfirmDialog?.entryName ?? String(goalId);
-        setLastActionText(`Entry goal "${entryLabel}" confirmed`);
+        toast.success(`Entry goal "${entryLabel}" confirmed`);
         await reloadAll();
         setEntryConfirmDialog(null);
       } finally {
@@ -554,12 +695,7 @@ export default function GoalsPage() {
             ...prev,
             [dateKey]: Math.max(prev[dateKey] ?? 0, completeness),
           }));
-          setLastActionText("");
-          toast.success(
-            `Goal "${template.name}" (${getGoalKindLabel(template.kind)}) added for ${toDisplayDate(
-              dateKey
-            )}`
-          );
+          toast.success(`Entry goal created on ${toDisplayDate(dateKey)}`);
           await reloadAll();
           return;
         }
@@ -584,12 +720,7 @@ export default function GoalsPage() {
             ...prev,
             [created.targetDate]: Math.max(prev[created.targetDate] ?? 0, completeness),
           }));
-          setLastActionText("");
-          toast.success(
-            `Goal "${template.name}" (${getGoalKindLabel(
-              template.kind
-            )}) added for ${toDisplayDate(created.targetDate)}`
-          );
+          toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
           await reloadAll();
           return;
         }
@@ -614,10 +745,9 @@ export default function GoalsPage() {
           targetDate: dateKey,
         });
         setDayScores((prev) => mergeWeekScores(prev, created));
-        setLastActionText("");
         toast.success(
-          `Goal "${template.name}" (${getGoalKindLabel(template.kind)}) added for week from ${toDisplayDate(
-            dateKey
+          `Week goal confirmed from ${toDisplayDate(
+            toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)))
           )}`
         );
         await reloadAll();
@@ -630,9 +760,17 @@ export default function GoalsPage() {
 
   const stopCustomDrag = useCallback(() => {
     setDraggingTemplate(null);
-    setDragPointer(null);
+    dragPointerRef.current = null;
+    if (dragPointerRafRef.current !== null) {
+      window.cancelAnimationFrame(dragPointerRafRef.current);
+      dragPointerRafRef.current = null;
+    }
     setHoverDate(null);
-  }, []);
+    hoverDateRef.current = null;
+    clearCalendarPreview();
+    clearDragPreviewPosition();
+    clearDragPreviewTone();
+  }, [clearCalendarPreview, clearDragPreviewPosition, clearDragPreviewTone]);
 
   useEffect(() => {
     if (!draggingTemplate) return;
@@ -643,14 +781,14 @@ export default function GoalsPage() {
     document.body.style.cursor = "grabbing";
 
     const handlePointerMove = (event: PointerEvent) => {
-      setDragPointer({ x: event.clientX, y: event.clientY });
-      setHoverDate(getDateKeyAtPoint(event.clientX, event.clientY));
+      scheduleDragUpdate(event.clientX, event.clientY);
     };
 
     const handlePointerUp = (event: PointerEvent) => {
       const dropDate = getDateKeyAtPoint(event.clientX, event.clientY) ?? hoverDateRef.current;
 
       if (dropDate && isDateInRange(fromIsoDate(dropDate), yearStart, yearEnd)) {
+        suppressPostDropInteractions();
         void applyGoalToDate(dropDate, draggingTemplate);
       }
 
@@ -674,7 +812,15 @@ export default function GoalsPage() {
       document.body.style.userSelect = prevUserSelect;
       document.body.style.cursor = prevCursor;
     };
-  }, [applyGoalToDate, draggingTemplate, stopCustomDrag, yearEnd, yearStart]);
+  }, [
+    applyGoalToDate,
+    draggingTemplate,
+    scheduleDragUpdate,
+    stopCustomDrag,
+    suppressPostDropInteractions,
+    yearEnd,
+    yearStart,
+  ]);
 
   const handleTemplatePointerDown = (
     template: TemplateItem,
@@ -689,8 +835,11 @@ export default function GoalsPage() {
       name: template.name,
       kind: template.kind,
     });
-    setDragPointer({ x: event.clientX, y: event.clientY });
+    updateDragPreviewPosition(event.clientX, event.clientY);
+    dragPointerRef.current = { x: event.clientX, y: event.clientY };
+    updateDragPreviewTone(false);
     setHoverDate(null);
+    hoverDateRef.current = null;
   };
 
   const isDailyPreviewTarget = previewDateKeys.has(dailyDateKey);
@@ -725,9 +874,7 @@ export default function GoalsPage() {
           : "min-h-screen pb-20 sm:pb-24 lg:pb-4"
       )}
     >
-      {draggingTemplate && dragPointer && (
-        <GoalsDragPreview x={dragPointer.x} y={dragPointer.y} canDrop={canDropAtPointer} />
-      )}
+      {draggingTemplate ? <GoalsDragPreview /> : null}
 
       <div
         className={cn(
@@ -753,13 +900,13 @@ export default function GoalsPage() {
           >
             <Card
               className={cn(
-                "overflow-hidden border-border/70 bg-background/80 shadow-sm",
-                isFixedDesktopWorkspace && "xl:mb-6 xl:shrink-0"
+                "mb-6 overflow-hidden border-border/70 bg-background/80 shadow-sm",
+                isFixedDesktopWorkspace && "xl:shrink-0"
               )}
             >
               <CardHeader className="gap-4 pb-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-3">
+                  <div>
                     <Badge
                       variant="outline"
                       className="inline-flex w-fit items-center gap-2 rounded-full border-border/60 bg-background px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
@@ -767,14 +914,6 @@ export default function GoalsPage() {
                       <Target className="h-4 w-4" />
                       Goals Workspace
                     </Badge>
-
-                    <div className="space-y-1">
-                      <CardTitle className="text-2xl">Goals planning board</CardTitle>
-                      <CardDescription className="max-w-2xl">
-                        Keep the current layout, but switch between yearly, weekly and daily
-                        planning with shadcn-style controls.
-                      </CardDescription>
-                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -795,12 +934,6 @@ export default function GoalsPage() {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                {lastActionText ? (
-                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-foreground">
-                    {lastActionText}
-                  </div>
-                ) : null}
-
                 <TabsList className="grid h-auto w-full grid-cols-1 gap-3 rounded-[28px] bg-surface/40 p-2 lg:grid-cols-3">
                   {viewOptions.map((option) => {
                     const Icon = option.icon;
@@ -876,7 +1009,6 @@ export default function GoalsPage() {
                   onPrevYear={() => shiftCalendarYear(-1)}
                   onNextYear={() => shiftCalendarYear(1)}
                   stats={stats}
-                  lastActionText=""
                   weeks={weeks}
                   monthLabels={monthLabels}
                   yearStart={yearStart}
@@ -889,7 +1021,7 @@ export default function GoalsPage() {
                   isEraserOn={isEraserOn}
                   selectedDayKey={dailyDateKey}
                   weekPreviewStartKey={weekPreviewStartKey}
-                  onHoverDate={setHoverDate}
+                  onHoverDate={() => {}}
                   onDeleteDayGoal={(dateKey) => {
                     void handleDeleteDayGoalOnDate(dateKey);
                   }}
@@ -940,6 +1072,7 @@ export default function GoalsPage() {
                 draggingTemplate={Boolean(draggingTemplate)}
                 creatingDate={creatingDate}
                 isEraserOn={isEraserOn}
+                shouldIgnorePostDropInteraction={shouldIgnorePostDropInteraction}
                 onPrevDay={() => shiftDailyDate(-1)}
                 onNextDay={() => shiftDailyDate(1)}
                 onHoverDate={setHoverDate}

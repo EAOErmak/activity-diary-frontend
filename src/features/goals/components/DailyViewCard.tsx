@@ -4,7 +4,6 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
@@ -12,7 +11,12 @@ import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Separator } from "@/shared/components/ui/separator";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
-import { formatDailyTime, getDiaryEntrySquareClass } from "@/features/goals/lib/goalsUtils";
+import {
+  formatDailyTime,
+  getCompletionColor,
+  getDiaryEntrySquareClass,
+  normalizeScore,
+} from "@/features/goals/lib/goalsUtils";
 
 const LONG_PRESS_MS = 600;
 
@@ -27,6 +31,7 @@ type Props = {
   draggingTemplate: boolean;
   creatingDate: string | null;
   isEraserOn: boolean;
+  shouldIgnorePostDropInteraction: () => boolean;
   onPrevDay: () => void;
   onNextDay: () => void;
   onHoverDate: (dateKey: string) => void;
@@ -48,6 +53,7 @@ export function DailyViewCard({
   draggingTemplate,
   creatingDate,
   isEraserOn,
+  shouldIgnorePostDropInteraction,
   onPrevDay,
   onNextDay,
   onHoverDate,
@@ -84,16 +90,13 @@ export function DailyViewCard({
     <Card className="w-full min-w-0">
       <CardHeader className="space-y-3">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
+          <div>
             <div className="flex items-center gap-2">
               <CardTitle>Daily View</CardTitle>
               <Badge variant="outline" className="rounded-full px-3 py-1">
                 Selected day
               </Badge>
             </div>
-            <CardDescription>
-              Confirm or remove goals for the selected day without changing the current layout.
-            </CardDescription>
           </div>
 
           <div className="flex items-center gap-1">
@@ -111,14 +114,6 @@ export function DailyViewCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="rounded-full px-3 py-1">
-            Entries: {dailyEntries.length}
-          </Badge>
-          {currentDayGoalId ? (
-            <Badge variant="outline" className="rounded-full px-3 py-1">
-              Day goal attached
-            </Badge>
-          ) : null}
           {isEraserOn ? (
             <Badge className="rounded-full bg-rose-500/15 px-3 py-1 text-rose-600 hover:bg-rose-500/15">
               Erase mode
@@ -129,11 +124,15 @@ export function DailyViewCard({
         <div
           data-goal-date={dailyDateKey}
           onClick={() => {
+            if (draggingTemplate) return;
+            if (shouldIgnorePostDropInteraction()) return;
             if (isEraserOn && canDropOnDailyDate) {
               onDeleteDayGoal(dailyDateKey);
             }
           }}
           onPointerDown={(event) => {
+            if (draggingTemplate) return;
+            if (shouldIgnorePostDropInteraction()) return;
             event.stopPropagation();
             if (isEraserOn) return;
             if (!currentDayGoalId) return;
@@ -144,14 +143,17 @@ export function DailyViewCard({
             }, LONG_PRESS_MS);
           }}
           onPointerUp={(event) => {
+            if (draggingTemplate) return;
             event.stopPropagation();
             clearDayLongPressTimer();
           }}
           onPointerLeave={(event) => {
+            if (draggingTemplate) return;
             event.stopPropagation();
             clearDayLongPressTimer();
           }}
           onPointerCancel={(event) => {
+            if (draggingTemplate) return;
             event.stopPropagation();
             clearDayLongPressTimer();
           }}
@@ -188,15 +190,19 @@ export function DailyViewCard({
                   {dailyEntries.map((entry, index) => {
                     const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
                     const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
+                    const entryCompleteness = normalizeScore(entry.completeness);
+                    const completionColor = getCompletionColor(entryCompleteness);
                     const entryTitle = entry.status
-                      ? `${entryName} - ${startedLabel} - ${entry.status}`
-                      : `${entryName} - ${startedLabel}`;
+                      ? `${entryName} - ${startedLabel} - ${entry.status} - ${entryCompleteness}%`
+                      : `${entryName} - ${startedLabel} - ${entryCompleteness}%`;
 
                     return (
                       <div
                         key={entry.id}
                         title={entryTitle}
                         onClick={(event) => {
+                          if (draggingTemplate) return;
+                          if (shouldIgnorePostDropInteraction()) return;
                           event.stopPropagation();
                           if (entryLongPressTriggeredRef.current) {
                             entryLongPressTriggeredRef.current = false;
@@ -209,6 +215,8 @@ export function DailyViewCard({
                           onConfirmEntryGoal(entry, entryName);
                         }}
                         onPointerDown={(event) => {
+                          if (draggingTemplate) return;
+                          if (shouldIgnorePostDropInteraction()) return;
                           event.stopPropagation();
                           if (isEraserOn) return;
                           entryLongPressTriggeredRef.current = false;
@@ -219,14 +227,17 @@ export function DailyViewCard({
                           }, LONG_PRESS_MS);
                         }}
                         onPointerUp={(event) => {
+                          if (draggingTemplate) return;
                           event.stopPropagation();
                           clearEntryLongPressTimer();
                         }}
                         onPointerLeave={(event) => {
+                          if (draggingTemplate) return;
                           event.stopPropagation();
                           clearEntryLongPressTimer();
                         }}
                         onPointerCancel={(event) => {
+                          if (draggingTemplate) return;
                           event.stopPropagation();
                           clearEntryLongPressTimer();
                         }}
@@ -256,6 +267,22 @@ export function DailyViewCard({
 
                         <div className="flex flex-1 items-center justify-center text-center">
                           {entryName}
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase opacity-80">
+                            <span>Done</span>
+                            <span>{entryCompleteness}%</span>
+                          </div>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-black/10">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${entryCompleteness}%`,
+                                backgroundColor: completionColor,
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     );
