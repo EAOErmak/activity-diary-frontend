@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   BookOpen,
   LayoutDashboard,
+  Link2,
   Moon,
   Shield,
   Sun,
@@ -29,6 +30,11 @@ const NAV_ITEMS = [
     to: "/admin/dictionary",
     label: "Словари",
     icon: BookOpen,
+  },
+  {
+    to: "/admin/metric-links",
+    label: "Metric Links",
+    icon: Link2,
   },
   {
     to: "/admin/tags",

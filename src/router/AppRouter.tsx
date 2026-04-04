@@ -25,6 +25,7 @@ import AdminDictionaryPage from "@/features/admin/dictionary/pages/AdminDictiona
 import AdminUsersPage from "@/features/admin/users/pages/AdminUsersShadcnPage";
 import AdminTagsPage from "@/features/admin/tags/pages/AdminTagsShadcnPage";
 import AdminOverviewPage from "@/features/admin/dashboard/pages/AdminOverviewShadcnPage";
+import AdminMetricLinksPage from "@/features/admin/entry-config/pages/AdminMetricLinksShadcnPage";
 import AdminLayout from "@/features/admin/layout/AdminPanelLayout";
 
 // 🆕 MODAL
@@ -96,6 +97,7 @@ export default function AppRouter() {
           <Route path="/admin/tags" element={<AdminTagsPage />} />
           <Route path="/admin/users/create" element={<AdminUserCreatePage />} />
           <Route path="/admin/dictionary" element={<AdminDictionaryPage />} />
+          <Route path="/admin/metric-links" element={<AdminMetricLinksPage />} />
         </Route>
 
         {/* FALLBACK */}
