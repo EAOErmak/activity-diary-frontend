@@ -98,7 +98,6 @@ export function ConfirmEntryGoalDialog({
   });
 
   const metricTypes = useDictionary("METRIC_NAME");
-  const units = useDictionary("METRIC_UNIT");
 
   useEffect(() => {
     if (!open || !goalId) {
@@ -200,7 +199,6 @@ export function ConfirmEntryGoalDialog({
 
                   <DiaryMetricsSection
                     metricTypes={metricTypes}
-                    units={units}
                     copyFirstMetricOnAppend
                   />
                 </form>

@@ -5,13 +5,11 @@ import { DiaryEntryFormValues } from "../DiaryEntryForm";
 
 type Props = {
   metricTypes: { id: number; label: string }[];
-  units: { id: number; label: string }[];
   copyFirstMetricOnAppend?: boolean;
 };
 
 export function DiaryMetricsSection({
   metricTypes,
-  units,
   copyFirstMetricOnAppend = false,
 }: Props) {
   const { control, getValues } = useFormContext<DiaryEntryFormValues>();
@@ -54,7 +52,6 @@ export function DiaryMetricsSection({
           key={field.id}
           index={index}
           metricTypes={metricTypes}
-          units={units}
           canRemove={fields.length > 0}
           onRemove={() => remove(index)}
         />

@@ -264,7 +264,7 @@ export default function EntryTemplateForm(props: Props) {
   } = form;
   const syncingRef = useRef<"timeStart" | "timeEnd" | null>(null);
 
-  const units = useDictionary("METRIC_UNIT");
+  const metricTypes = useDictionary("METRIC_NAME");
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -437,8 +437,7 @@ export default function EntryTemplateForm(props: Props) {
               <DiaryMoodSection />
 
               <DiaryMetricsSection
-                metricTypes={useDictionary("METRIC_NAME")}
-                units={units}
+                metricTypes={metricTypes}
                 copyFirstMetricOnAppend={mode === "create"}
               />
 

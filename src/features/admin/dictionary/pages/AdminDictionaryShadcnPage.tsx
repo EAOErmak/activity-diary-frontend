@@ -8,6 +8,7 @@ import {
   updateDictionaryItem,
 } from "@/api/admin/dictionaryAdminApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
+import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -75,6 +76,7 @@ export default function AdminDictionaryShadcnPage() {
       setIsLoadingItems(true);
       const data = await getDictionaryByTypeAdmin(tab);
       setItems(data);
+      await refreshDictionaryCache();
     } catch (error) {
       console.error(error);
       toast.error("Не удалось загрузить словарь.");

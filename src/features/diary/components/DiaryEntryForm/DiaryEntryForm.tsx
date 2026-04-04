@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import { Form } from "@/shared/components/ui/form";
 import {
@@ -25,6 +25,8 @@ import {
   DiaryStatusSection,
   DiaryTimeSection,   
 } from "./sections";
+
+void React;
 
 /* ==============================
    TYPES
@@ -89,16 +91,9 @@ export default function DiaryEntryForm(props: Props) {
           },
   });
 
-  const { control, watch, formState: { isSubmitting }} = form;
+  const { formState: { isSubmitting }} = form;
 
-  const categories = useDictionary("CATEGORY");
-  const metricNames = useDictionary("METRIC_NAME");
-  const units = useDictionary("METRIC_UNIT");
-
-  const metricsArray = useFieldArray({
-    control,
-    name: "metrics",
-  });
+  const metricTypes = useDictionary("METRIC_NAME");
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
@@ -165,8 +160,7 @@ export default function DiaryEntryForm(props: Props) {
             <DiaryTimeSection mode={mode} />
 
             <DiaryMetricsSection
-              metricTypes={useDictionary("METRIC_NAME")}
-              units={units}
+              metricTypes={metricTypes}
               copyFirstMetricOnAppend={mode === "create"}
             />
 

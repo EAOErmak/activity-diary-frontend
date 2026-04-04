@@ -26,7 +26,6 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { Form } from "@/shared/components/ui/form";
-import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Separator } from "@/shared/components/ui/separator";
 import { useDictionary } from "@/shared/hooks/useDictionary";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
@@ -107,7 +106,6 @@ export function ConfirmEntryGoalDialogV2({
   });
 
   const metricTypes = useDictionary("METRIC_NAME");
-  const units = useDictionary("METRIC_UNIT");
 
   useEffect(() => {
     if (!open || !goalId) {
@@ -163,7 +161,7 @@ export function ConfirmEntryGoalDialogV2({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[560px] max-w-[min(44rem,calc(100vw-2rem))] overflow-hidden p-0">
+      <DialogContent className="w-[560px] max-h-[calc(100vh-2rem)] max-w-[min(44rem,calc(100vw-2rem))] overflow-hidden p-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Confirm entry goal</DialogTitle>
           <DialogDescription>
@@ -171,17 +169,17 @@ export function ConfirmEntryGoalDialogV2({
           </DialogDescription>
         </DialogHeader>
 
-        <Card className="w-full border-0 shadow-none">
-          <CardHeader className="pb-5">
+        <Card className="flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden border-0 shadow-none">
+          <CardHeader className="shrink-0 pb-5">
             <CardTitle>Confirm Entry Goal</CardTitle>
             <CardDescription>
               Goal: {entryName || detail?.name || (goalId ? `Entry #${goalId}` : "--")}
             </CardDescription>
           </CardHeader>
 
-          <Separator />
+          <Separator className="shrink-0" />
 
-          <ScrollArea className="max-h-[calc(90vh-11rem)]">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <CardContent className="pt-6">
               {isLoadingDetail && (
                 <div className="text-sm text-muted-foreground">Loading goal details...</div>
@@ -205,40 +203,54 @@ export function ConfirmEntryGoalDialogV2({
                     <DiaryTimeSection mode="create" />
                     <DiaryMetricsSection
                       metricTypes={metricTypes}
-                      units={units}
                       copyFirstMetricOnAppend
                     />
+
+                    {submitError && (
+                      <div className="rounded-xl border border-border bg-surface p-3 text-sm text-muted-foreground">
+                        {submitError}
+                      </div>
+                    )}
+
+                    <CardFooter className="px-0 pt-0">
+                      <div className="flex w-full gap-3">
+                        <Button
+                          type="button"
+                          variant="form"
+                          className="w-32"
+                          disabled={isSubmitting}
+                          onClick={() => onOpenChange(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="flex-1"
+                          disabled={isSubmitting || isLoadingDetail}
+                        >
+                          {isSubmitting ? "Saving..." : "Save and Confirm"}
+                        </Button>
+                      </div>
+                    </CardFooter>
                   </form>
                 </Form>
               )}
 
-              {submitError && (
-                <div className="mt-4 rounded-xl border border-border bg-surface p-3 text-sm text-muted-foreground">
-                  {submitError}
-                </div>
+              {(isLoadingDetail || loadError) && (
+                <CardFooter className="px-0 pt-6">
+                  <Button
+                    type="button"
+                    variant="form"
+                    className="w-32"
+                    disabled={isSubmitting}
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                </CardFooter>
               )}
             </CardContent>
-          </ScrollArea>
-
-          <CardFooter className="gap-3 border-t border-border/60 pt-4">
-            <Button
-              type="button"
-              variant="form"
-              className="w-32"
-              disabled={isSubmitting}
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="confirm-entry-goal-form"
-              className="flex-1"
-              disabled={isSubmitting || isLoadingDetail}
-            >
-              {isSubmitting ? "Saving..." : "Save and Confirm"}
-            </Button>
-          </CardFooter>
+          </div>
         </Card>
       </DialogContent>
     </Dialog>

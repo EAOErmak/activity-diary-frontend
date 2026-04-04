@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   FormField,
   FormItem,
@@ -13,11 +14,11 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useMetricUnits } from "@/shared/hooks/useMetricUnits";
 
 type Props = {
   index: number;
   metricTypes: { id: number; label: string }[];
-  units: { id: number; label: string }[];
   onRemove: () => void;
   canRemove: boolean;
 };
@@ -25,17 +26,84 @@ type Props = {
 export function DiaryMetricItem({
   index,
   metricTypes,
-  units,
   onRemove,
   canRemove,
 }: Props) {
   const form = useFormContext();
+  const metricTypeId = useWatch({
+    control: form.control,
+    name: `metrics.${index}.metricTypeId`,
+  });
 
-  const values =
+  const values = (
     useWatch({
       control: form.control,
       name: `metrics.${index}.values`,
-    }) ?? [];
+    }) ?? []
+  ) as { unitId: number | null; value: number }[];
+
+  const selectedMetricTypeId =
+    typeof metricTypeId === "number" ? metricTypeId : null;
+
+  const { units, isLoading: isUnitsLoading } = useMetricUnits(
+    selectedMetricTypeId
+  );
+
+  const previousMetricTypeIdRef = useRef<number | null>(selectedMetricTypeId);
+
+  useEffect(() => {
+    if (previousMetricTypeIdRef.current === selectedMetricTypeId) {
+      return;
+    }
+
+    previousMetricTypeIdRef.current = selectedMetricTypeId;
+
+    if (values.length === 0) {
+      return;
+    }
+
+    form.setValue(
+      `metrics.${index}.values`,
+      values.map((value) => ({
+        ...value,
+        unitId: null,
+      })),
+      { shouldDirty: true }
+    );
+  }, [form, index, selectedMetricTypeId, values]);
+
+  useEffect(() => {
+    if (selectedMetricTypeId == null || isUnitsLoading || values.length === 0) {
+      return;
+    }
+
+    const availableUnitIds = new Set(units.map((unit) => unit.id));
+    const hasInvalidUnit = values.some(
+      (value) => value.unitId != null && !availableUnitIds.has(value.unitId)
+    );
+
+    if (!hasInvalidUnit) {
+      return;
+    }
+
+    form.setValue(
+      `metrics.${index}.values`,
+      values.map((value) =>
+        value.unitId != null && !availableUnitIds.has(value.unitId)
+          ? { ...value, unitId: null }
+          : value
+      )
+    );
+  }, [form, index, isUnitsLoading, selectedMetricTypeId, units, values]);
+
+  const unitPlaceholder =
+    selectedMetricTypeId == null
+      ? "Сначала выберите метрику"
+      : isUnitsLoading
+        ? "Загрузка..."
+        : units.length === 0
+          ? "Нет доступных ед."
+          : "Ед.";
 
   return (
     <div className="bg-metricSurface rounded-xl p-3 space-y-3">
@@ -102,11 +170,19 @@ export function DiaryMetricItem({
                       onValueChange={(v) =>
                         field.onChange(v ? Number(v) : null)
                       }
+                      disabled={selectedMetricTypeId == null || isUnitsLoading}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger title={unitPlaceholder}>
                         <SelectValue placeholder="Ед." />
                       </SelectTrigger>
                       <SelectContent>
+                        {selectedMetricTypeId != null &&
+                          !isUnitsLoading &&
+                          units.length === 0 && (
+                            <SelectItem value="no-units" disabled>
+                              Нет доступных единиц
+                            </SelectItem>
+                          )}
                         {units.map((u) => (
                           <SelectItem key={u.id} value={String(u.id)}>
                             {u.label}

@@ -7,6 +7,8 @@ import type {
 } from "@/shared/types/dictionary";
 import type { ApiResponse } from "@/shared/types/api";
 
+type DictionaryOptionDto = Pick<DictionaryEntity, "id" | "label">;
+
 const mapDictionary = (d: DictionaryResponse): DictionaryEntity => ({
   id: d.id,
   type: d.type,
@@ -101,10 +103,26 @@ export const getUnits = async (): Promise<DictionaryEntity[]> => {
   return getByType("METRIC_UNIT");
 };
 
+export const getUnitsByMetricNameId = async (
+  metricNameId: number
+): Promise<DictionaryEntity[]> => {
+  const { data } = await api.get<ApiResponse<DictionaryOptionDto[]>>(
+    `/dictionary/metric-names/${metricNameId}/units`
+  );
+
+  return data.data.map((unit) => ({
+    id: unit.id,
+    type: "METRIC_UNIT",
+    label: unit.label,
+    parentId: metricNameId,
+  }));
+};
+
 export const dictionaryApi = {
   getCategory,
   getSubCategoryByParent,
   getMetrics,
   getUnits,
+  getUnitsByMetricNameId,
   getAll,
 };
