@@ -19,12 +19,16 @@ type Slice<T> = {
   empty: boolean;
 };
 
-const STATUS_LABELS: Record<Tag["status"], string> = {
+type TagStatus = NonNullable<Tag["status"]>;
+
+const STATUS_LABELS: Record<TagStatus, string> = {
   PROPOSED: "Ожидает",
   APPROVED: "Одобрен",
   REJECTED: "Отклонен",
   DEPRECATED: "Устаревший",
 };
+
+const getTagStatus = (tag: Tag): TagStatus => tag.status ?? "PROPOSED";
 
 export default function AdminTagsPage() {
   const [query, setQuery] = useState("");
@@ -116,13 +120,13 @@ export default function AdminTagsPage() {
                 <tr key={t.id} className="border-t border-slate-700">
                   <td className="px-3 py-2">{t.id}</td>
                   <td className="px-3 py-2 truncate">{t.name}</td>
-                  <td className="px-3 py-2">{STATUS_LABELS[t.status]}</td>
+                  <td className="px-3 py-2">{STATUS_LABELS[getTagStatus(t)]}</td>
                   <td className="px-3 py-2 flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant="primary"
                       onClick={() => handleApprove(t.id)}
-                      disabled={t.status === "APPROVED"}
+                      disabled={getTagStatus(t) === "APPROVED"}
                     >
                       Одобрить
                     </Button>
@@ -130,7 +134,7 @@ export default function AdminTagsPage() {
                       size="sm"
                       variant="danger"
                       onClick={() => handleReject(t.id)}
-                      disabled={t.status === "REJECTED"}
+                      disabled={getTagStatus(t) === "REJECTED"}
                     >
                       Отклонить
                     </Button>
@@ -138,7 +142,7 @@ export default function AdminTagsPage() {
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDeprecate(t.id)}
-                      disabled={t.status === "DEPRECATED"}
+                      disabled={getTagStatus(t) === "DEPRECATED"}
                     >
                       Устаревший
                     </Button>

@@ -1,6 +1,6 @@
 import api from "../http/axiosInstance";
 import type { ApiResponse } from "@/shared/types/api";
-import type { Tag } from "@/shared/types/tag";
+import type { Tag, TagCreate } from "@/shared/types/tag";
 
 type Slice<T> = {
   content: T[];
@@ -21,6 +21,11 @@ export const getAdminTags = async (
     "/admin/tags",
     { params: { page, size, q } }
   );
+  return data.data;
+};
+
+export const createAdminTag = async (payload: TagCreate): Promise<Tag> => {
+  const { data } = await api.post<ApiResponse<Tag>>("/admin/tags", payload);
   return data.data;
 };
 

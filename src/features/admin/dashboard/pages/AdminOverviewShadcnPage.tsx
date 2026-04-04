@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { BookOpen, Database, Tags, Users } from "lucide-react";
+import { Database } from "lucide-react";
 import { toast } from "sonner";
 
 import { clearAdminDatabase } from "@/api/admin/adminDatabaseApi";
@@ -15,27 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-
-const ACTION_CARDS = [
-  {
-    to: "/admin/users",
-    title: "Пользователи",
-    description: "Управление аккаунтами, ролями и блокировками.",
-    icon: Users,
-  },
-  {
-    to: "/admin/dictionary",
-    title: "Словари",
-    description: "Редактирование системных справочников и метрик.",
-    icon: BookOpen,
-  },
-  {
-    to: "/admin/tags",
-    title: "Теги",
-    description: "Модерация пользовательских тегов и статусов.",
-    icon: Tags,
-  },
-] as const;
 
 export default function AdminOverviewShadcnPage() {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
@@ -66,38 +44,13 @@ export default function AdminOverviewShadcnPage() {
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
             Серверная статистика временно скрыта, пока соответствующие
-            backend-эндпоинты не работают. Ниже оставлены только рабочие
-            административные действия.
+            backend-эндпоинты не работают. На этой странице оставлена только
+            операция очистки базы данных.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {ACTION_CARDS.map((card) => {
-          const Icon = card.icon;
-
-          return (
-            <Card key={card.to} className="border border-border bg-surface">
-              <CardHeader className="space-y-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-foreground">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="space-y-1">
-                  <CardTitle>{card.title}</CardTitle>
-                  <CardDescription>{card.description}</CardDescription>
-                </div>
-              </CardHeader>
-              <CardFooter>
-                <Button asChild variant="surface" className="w-full">
-                  <Link to={card.to}>Открыть раздел</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card className="border border-destructive/30 bg-surface">
+      <Card className="w-full max-w-5xl border border-destructive/30 bg-surface 2xl:max-w-6xl">
         <CardHeader className="space-y-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
             <Database className="h-5 w-5" />

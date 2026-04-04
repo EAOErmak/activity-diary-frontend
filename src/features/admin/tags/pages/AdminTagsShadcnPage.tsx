@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
-import { Search, Tags } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
+import { Plus, Search, Tags } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   approveTag,
+  createAdminTag,
   deprecateTag,
   getAdminTags,
   rejectTag,
@@ -48,39 +50,71 @@ type PendingAction =
     }
   | null;
 
-const STATUS_LABELS: Record<Tag["status"], string> = {
+type TagStatus = NonNullable<Tag["status"]>;
+
+const STATUS_LABELS: Record<TagStatus, string> = {
   PROPOSED: "Ожидает",
   APPROVED: "Одобрен",
   REJECTED: "Отклонен",
   DEPRECATED: "Устаревший",
 };
 
-const STATUS_BADGE_CLASS: Record<Tag["status"], string> = {
+const STATUS_BADGE_CLASS: Record<TagStatus, string> = {
   PROPOSED: "border-border text-muted-foreground",
   APPROVED: "border-primary/30 text-primary",
   REJECTED: "border-destructive/30 text-destructive",
   DEPRECATED: "border-border text-muted-foreground",
 };
 
+const getTagStatus = (tag: Tag): TagStatus => tag.status ?? "PROPOSED";
+
 export default function AdminTagsShadcnPage() {
   const [query, setQuery] = useState("");
+  const [newTagName, setNewTagName] = useState("");
   const [page, setPage] = useState(0);
   const [data, setData] = useState<Slice<Tag> | null>(null);
   const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isMutating, setIsMutating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     void load();
   }, [page, query]);
 
-  async function load() {
+  async function load(nextPage = page, nextQuery = query) {
     try {
       setLoading(true);
-      const result = await getAdminTags(page, 20, query.trim() || undefined);
+      const result = await getAdminTags(
+        nextPage,
+        20,
+        nextQuery.trim() || undefined
+      );
       setData(result);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCreateTag(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const name = newTagName.trim();
+    if (!name) {
+      toast.error("Введите название тега.");
+      return;
+    }
+
+    try {
+      setIsCreating(true);
+      const createdTag = await createAdminTag({ name });
+      setNewTagName("");
+      setQuery("");
+      setPage(0);
+      toast.success(`Тег "${createdTag.name}" создан.`);
+      await load(0, "");
+    } finally {
+      setIsCreating(false);
     }
   }
 
@@ -143,6 +177,42 @@ export default function AdminTagsShadcnPage() {
           Модерация пользовательских тегов и управление их жизненным циклом.
         </p>
       </div>
+
+      <Card className="border border-border bg-surface">
+        <CardHeader>
+          <CardTitle>Создать тег</CardTitle>
+          <CardDescription>
+            Новый тег будет создан через административный endpoint и сразу
+            появится в общем списке.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={handleCreateTag}
+            className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Plus className="h-4 w-4" />
+                Название тега
+              </div>
+              <Input
+                value={newTagName}
+                onChange={(event) => setNewTagName(event.target.value)}
+                placeholder="Введите название тега..."
+                maxLength={255}
+                disabled={isCreating}
+                className="max-w-xl"
+              />
+            </div>
+
+            <Button type="submit" disabled={isCreating}>
+              <Plus className="mr-2 h-4 w-4" />
+              {isCreating ? "Создание..." : "Создать"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
@@ -217,9 +287,9 @@ export default function AdminTagsShadcnPage() {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={`rounded-full ${STATUS_BADGE_CLASS[tag.status]}`}
+                        className={`rounded-full ${STATUS_BADGE_CLASS[getTagStatus(tag)]}`}
                       >
-                        {STATUS_LABELS[tag.status]}
+                        {STATUS_LABELS[getTagStatus(tag)]}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -227,14 +297,14 @@ export default function AdminTagsShadcnPage() {
                         <Button
                           size="sm"
                           variant="surface"
-                          disabled={tag.status === "APPROVED" || isMutating}
+                          disabled={getTagStatus(tag) === "APPROVED" || isMutating}
                           onClick={() => requestApprove(tag)}
                         >
                           Одобрить
                         </Button>
                         <Button
                           size="sm"
-                          disabled={tag.status === "REJECTED" || isMutating}
+                          disabled={getTagStatus(tag) === "REJECTED" || isMutating}
                           onClick={() => requestReject(tag)}
                           className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
                         >
@@ -243,7 +313,7 @@ export default function AdminTagsShadcnPage() {
                         <Button
                           size="sm"
                           variant="surface"
-                          disabled={tag.status === "DEPRECATED" || isMutating}
+                          disabled={getTagStatus(tag) === "DEPRECATED" || isMutating}
                           onClick={() => requestDeprecate(tag)}
                         >
                           Устаревший
