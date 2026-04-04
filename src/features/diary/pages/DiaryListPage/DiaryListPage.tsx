@@ -18,6 +18,7 @@ export default function DiaryListPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editEntryId, setEditEntryId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const nowIso = new Date().toISOString();
@@ -56,6 +57,19 @@ export default function DiaryListPage() {
     window.addEventListener("diary:changed", onChanged);
     return () => window.removeEventListener("diary:changed", onChanged);
   }, [load]);
+
+  const handleDelete = useCallback(async (entry: DiaryEntryView) => {
+    if (entry.status === "DELETED") return;
+
+    setDeletingEntryId(entry.id);
+    try {
+      await diaryApi.deleteEntry(entry.id);
+      setEntries((prev) => prev.filter((item) => item.id !== entry.id));
+      window.dispatchEvent(new Event("diary:changed"));
+    } finally {
+      setDeletingEntryId(null);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-page text-foreground p-6 sm:p-10">
@@ -101,13 +115,15 @@ export default function DiaryListPage() {
         }}
       />
 
-    <DiaryTable
-      entries={entries}
-      onEdit={(id) => {
-        setEditEntryId(id);
-        setEditOpen(true);
-      }}
-    />
+      <DiaryTable
+        entries={entries}
+        deletingEntryId={deletingEntryId}
+        onEdit={(id) => {
+          setEditEntryId(id);
+          setEditOpen(true);
+        }}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

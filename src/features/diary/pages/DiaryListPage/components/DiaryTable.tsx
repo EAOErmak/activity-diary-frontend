@@ -9,7 +9,14 @@ import {
 import { DiaryTableRow } from "./DiaryTableRow";
 import type { DiaryEntryView } from "@/shared/types/diary";
 
-export function DiaryTable({ entries, onEdit }: { entries: DiaryEntryView[]; onEdit: (id: number) => void }) {
+type Props = {
+  entries: DiaryEntryView[];
+  deletingEntryId: number | null;
+  onEdit: (id: number) => void;
+  onDelete: (entry: DiaryEntryView) => Promise<void>;
+};
+
+export function DiaryTable({ entries, deletingEntryId, onEdit, onDelete }: Props) {
   return (
     <Card className="max-w-6xl mx-auto overflow-hidden">
       <Table>
@@ -25,7 +32,13 @@ export function DiaryTable({ entries, onEdit }: { entries: DiaryEntryView[]; onE
 
         <TableBody>
           {entries.map((e) => (
-            <DiaryTableRow key={e.id} entry={e} onEdit={onEdit}/>
+            <DiaryTableRow
+              key={e.id}
+              entry={e}
+              isDeleting={deletingEntryId === e.id}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           ))}
         </TableBody>
       </Table>
