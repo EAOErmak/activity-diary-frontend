@@ -10,11 +10,6 @@
     "skipLibCheck": true,
 
     /* ✅ ВОТ ЭТИ ДВЕ СТРОКИ — КЛЮЧЕВЫЕ */
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
