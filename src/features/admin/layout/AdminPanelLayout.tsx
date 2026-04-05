@@ -7,6 +7,7 @@ import {
   Shield,
   Sun,
   Tags,
+  UtensilsCrossed,
   Users,
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -30,6 +31,11 @@ const NAV_ITEMS = [
     to: "/admin/dictionary",
     label: "Словари",
     icon: BookOpen,
+  },
+  {
+    to: "/admin/foods",
+    label: "Еда",
+    icon: UtensilsCrossed,
   },
   {
     to: "/admin/metric-links",

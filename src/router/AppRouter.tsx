@@ -13,6 +13,7 @@ import DiaryFormPage from "@/features/diary/pages/DiaryFormPage";
 import DiaryDetailsPage from "@/features/diary/pages/DiaryDetailsPage";
 import DiaryEditPage from "@/features/diary/pages/DiaryEditPage";
 import EntryTemplatesPage from "@/features/entry-templates/pages/EntryTemplatesPage";
+import FoodPage from "@/features/food/pages/FoodPage";
 import GoalsPage from "@/features/goals/pages/GoalsPage";
 
 import DashboardPageV3 from "@/features/dashboard/pages/DashboardPageV3";
@@ -26,6 +27,7 @@ import AdminUsersPage from "@/features/admin/users/pages/AdminUsersShadcnPage";
 import AdminTagsPage from "@/features/admin/tags/pages/AdminTagsShadcnPage";
 import AdminOverviewPage from "@/features/admin/dashboard/pages/AdminOverviewShadcnPage";
 import AdminMetricLinksPage from "@/features/admin/entry-config/pages/AdminMetricLinksShadcnPage";
+import AdminGeneralFoodsPage from "@/features/admin/food/pages/AdminGeneralFoodsShadcnPage";
 import AdminLayout from "@/features/admin/layout/AdminPanelLayout";
 
 // 🆕 MODAL
@@ -61,6 +63,7 @@ export default function AppRouter() {
           <Route path="/diary" element={<DiaryListPage />} />
           <Route path="/diary/new" element={<DiaryFormPage />} />
           <Route path="/entry-templates" element={<EntryTemplatesPage />} />
+          <Route path="/food" element={<FoodPage />} />
           <Route path="/goals" element={<GoalsPage />} />
 
           {/* ❗ ОСТАЁТСЯ как обычная страница (deep link) 
@@ -98,6 +101,7 @@ export default function AppRouter() {
           <Route path="/admin/users/create" element={<AdminUserCreatePage />} />
           <Route path="/admin/dictionary" element={<AdminDictionaryPage />} />
           <Route path="/admin/metric-links" element={<AdminMetricLinksPage />} />
+          <Route path="/admin/foods" element={<AdminGeneralFoodsPage />} />
         </Route>
 
         {/* FALLBACK */}

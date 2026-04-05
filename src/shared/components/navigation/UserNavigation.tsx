@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   UserCircle2,
   LogOut,
+  UtensilsCrossed,
 } from "lucide-react";
 
 import userImgBlack from "@/assets/AD_black.svg";
@@ -58,6 +59,12 @@ export default function UserNavigation({ onNavigate }: Props) {
       to: "/entry-templates",
       label: "Шаблоны",
       icon: Layers,
+      show: true,
+    },
+    {
+      to: "/food",
+      label: "Еда",
+      icon: UtensilsCrossed,
       show: true,
     },
     {
