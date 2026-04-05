@@ -10,6 +10,7 @@ import {
   rejectTag,
 } from "@/api/admin/adminTagsApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
+import { AdminTagChartTypesManager } from "@/features/admin/tags/components/AdminTagChartTypesManager";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -353,6 +354,8 @@ export default function AdminTagsShadcnPage() {
           )}
         </CardContent>
       </Card>
+
+      <AdminTagChartTypesManager />
 
       <AdminConfirmationDialog
         open={pendingAction !== null}

@@ -20,6 +20,10 @@ export const CHART_TYPE_LABELS: Record<string, string> = {
   TRAINING_RAW: "Детальный прогресс тренировок",
 };
 
+export const ALL_CHART_TYPES: ChartType[] = Object.keys(CHART_TYPE_LABELS).map(
+  (chartType) => normalizeChartType(chartType)
+);
+
 export const getChartTypeLabel = (chartType: string): string =>
   CHART_TYPE_LABELS[normalizeChartType(chartType)] ?? chartType;
 
