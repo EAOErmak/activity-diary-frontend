@@ -57,17 +57,15 @@ export default function AnalyticsFiltersV3({
     selectedTagId == null
       ? "Сначала выберите тег"
       : isLoadingChartTypes
-        ? "Загрузка типов графика..."
-        : chartTypesErrorMessage
-          ? "Не удалось загрузить типы графика"
-        : availableChartTypes.length === 0
-          ? "Нет доступных графиков"
+        ? "Загрузка..."
+        : chartTypesErrorMessage || availableChartTypes.length === 0
+          ? "Недоступно"
           : "Выберите тип графика";
 
   return (
     <Card className="mb-6 shadow-sm">
       <CardContent className="grid gap-4 pt-3 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.35fr)_minmax(12rem,1fr)_minmax(9rem,0.82fr)_minmax(9rem,0.82fr)_auto] xl:items-end xl:[&>*]:min-w-0">
-        <div className="min-w-0 mb-1">
+        <div className="mb-1 min-w-0">
           <TagAutocompleteV2
             tags={tags}
             isLoading={isLoadingTags}
@@ -78,7 +76,7 @@ export default function AnalyticsFiltersV3({
           />
         </div>
 
-        <div className="space-y-2 mb-1">
+        <div className="mb-1 space-y-2">
           <Label>Тип графика</Label>
           <Select
             value={chartType ?? ""}
@@ -101,41 +99,22 @@ export default function AnalyticsFiltersV3({
               ))}
             </SelectContent>
           </Select>
-          {chartTypesErrorMessage && (
-            <p className="text-sm text-destructive">{chartTypesErrorMessage}</p>
-          )}
-          {!chartTypesErrorMessage &&
-            selectedTagId != null &&
-            !isLoadingChartTypes &&
-            availableChartTypes.length === 0 && (
-              <p className="text-sm text-mutedForeground">
-                Для этого тега нет доступных графиков.
-              </p>
-            )}
-          {false && !chartTypesErrorMessage &&
-            selectedTagId != null &&
-            !isLoadingChartTypes &&
-            availableChartTypes.length === 0 && (
-              <p className="text-sm text-mutedForeground">
-                Р”Р»СЏ СЌС‚РѕРіРѕ С‚РµРіР° РЅРµС‚ РґРѕСЃС‚СѓРїРЅС‹С… РіСЂР°С„РёРєРѕРІ.
-              </p>
-            )}
         </div>
 
-        <div className="space-y-2 mb-1">
+        <div className="mb-1 space-y-2">
           <Label>Дата начала</Label>
           <DatePicker date={fromDate} setDate={onFromDateChange} showTime={false} />
         </div>
 
-        <div className="space-y-2 mb-1">
+        <div className="mb-1 space-y-2">
           <Label>Дата конца</Label>
           <DatePicker date={toDate} setDate={onToDateChange} showTime={false} />
         </div>
 
-        <div className="flex items-end md:col-span-2 xl:col-span-1 mb-1">
+        <div className="mb-1 flex items-end md:col-span-2 xl:col-span-1">
           <Button
             variant="primary"
-            className="w-full xl:w-auto xl:min-w-[8.5rem]"
+            className="w-full xl:min-w-[8.5rem] xl:w-auto"
             onClick={onReset}
           >
             Сбросить
