@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { goalApi } from "@/api/goalApi";
 import {
+  mapDaySummariesToConfirmedByDate,
   mapDaySummariesToScores,
   mapWeekSummariesToScores,
 } from "@/features/goals/lib/goalsUtils";
@@ -19,6 +20,7 @@ export const useGoalsSummaries = ({
 }: Params) => {
   const [dayScores, setDayScores] = useState<Record<string, number>>({});
   const [dayGoalIdsByDate, setDayGoalIdsByDate] = useState<Record<string, number>>({});
+  const [dayGoalConfirmedByDate, setDayGoalConfirmedByDate] = useState<Record<string, boolean>>({});
   const [weekScores, setWeekScores] = useState<Record<string, number>>({});
   const [dailyEntries, setDailyEntries] = useState<DiaryEntryGoalSummary[]>([]);
   const [isLoadingDailyEntries, setIsLoadingDailyEntries] = useState(false);
@@ -27,6 +29,7 @@ export const useGoalsSummaries = ({
     const summaries = await goalApi.listDaySummaries(calendarFrom, calendarTo);
     const normalizedSummaries = summaries ?? [];
     setDayScores(mapDaySummariesToScores(normalizedSummaries));
+    setDayGoalConfirmedByDate(mapDaySummariesToConfirmedByDate(normalizedSummaries));
     const nextDayGoalIdsByDate = normalizedSummaries.reduce<Record<string, number>>((acc, summary) => {
       if (typeof summary.id === "number" && summary.id > 0) {
         acc[summary.targetDate] = summary.id;
@@ -88,6 +91,7 @@ export const useGoalsSummaries = ({
     dayScores,
     setDayScores,
     dayGoalIdsByDate,
+    dayGoalConfirmedByDate,
     weekScores,
     dailyEntries,
     isLoadingDailyEntries,

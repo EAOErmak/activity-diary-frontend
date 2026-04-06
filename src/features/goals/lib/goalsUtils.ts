@@ -1,5 +1,7 @@
 import type { DayGoalSummary, GoalKind, WeekGoalSummary, WeekGoalView } from "@/shared/types/goal";
 
+const CONFIRMED_DAY_STATUSES = new Set(["CONFIRMED", "COMPLETED", "DONE", "FINISHED"]);
+
 export const WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 export const WEEKDAY_FULL_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -183,6 +185,44 @@ export const mapDaySummariesToScores = (
   }
 
   return scores;
+};
+
+const isDayGoalConfirmed = (summary: DayGoalSummary): boolean => {
+  const rawSummary = summary as Record<string, unknown>;
+
+  const directConfirmed = rawSummary.confirmed;
+  if (typeof directConfirmed === "boolean") {
+    return directConfirmed;
+  }
+
+  const confirmField = Object.entries(rawSummary).find(
+    ([key, value]) => key.toLowerCase().includes("confirm") && typeof value === "boolean"
+  );
+  if (typeof confirmField?.[1] === "boolean") {
+    return confirmField[1];
+  }
+
+  const statusField = Object.entries(rawSummary).find(
+    ([key, value]) => key.toLowerCase().includes("status") && typeof value === "string"
+  );
+  if (typeof statusField?.[1] === "string") {
+    return CONFIRMED_DAY_STATUSES.has(statusField[1].toUpperCase());
+  }
+
+  return normalizeScore(summary.completeness) >= 100;
+};
+
+export const mapDaySummariesToConfirmedByDate = (
+  summaries: DayGoalSummary[]
+): Record<string, boolean> => {
+  const confirmedByDate: Record<string, boolean> = {};
+
+  for (const summary of summaries) {
+    if (!summary?.targetDate) continue;
+    confirmedByDate[summary.targetDate] = isDayGoalConfirmed(summary);
+  }
+
+  return confirmedByDate;
 };
 
 const toIsoDateFromTemporal = (value: string | null | undefined): string | null => {

@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   useCallback,
   useEffect,
@@ -44,15 +45,13 @@ import {
   getDateKeyAtPoint,
   getGoalKindLabel,
   isDateInRange,
-  mergeWeekScores,
-  normalizeScore,
   startOfWeekMonday,
   toDisplayDate,
   toIsoDate,
 } from "@/features/goals/lib/goalsUtils";
 import { cn } from "@/shared/lib/utils";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
-import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
+import type { DayGoalView, DiaryEntryGoalSummary, WeekGoalView } from "@/shared/types/goal";
 import { useAuthStore } from "@/shared/store/authStore";
 
 type PointerPosition = {
@@ -67,9 +66,21 @@ type EntryConfirmDialogState = {
 
 type GoalsWorkspaceView = "calendar" | "week" | "daily";
 const DROP_INTERACTION_SUPPRESS_MS = 250;
+const GOAL_MUTATION_IN_PROGRESS_MESSAGE = "Wait for the current goal update to finish.";
 
 const isGoalsWorkspaceView = (value: string | null): value is GoalsWorkspaceView =>
   value === "calendar" || value === "week" || value === "daily";
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
+const getWeekDateKeys = (weekStart: Date): string[] =>
+  Array.from({ length: 7 }, (_, dayOffset) => toIsoDate(addDays(weekStart, dayOffset)));
 
 const buildPreviewDateKeys = (
   hoverDate: string | null,
@@ -116,6 +127,7 @@ export default function GoalsPage() {
   const dragPointerRafRef = useRef<number | null>(null);
   const calendarPreviewKeysRef = useRef<Set<string>>(new Set());
   const suppressPostDropInteractionUntilRef = useRef(0);
+  const goalMutationLockRef = useRef(false);
   useEffect(() => {
     hoverDateRef.current = hoverDate;
   }, [hoverDate]);
@@ -275,12 +287,17 @@ export default function GoalsPage() {
 
   const dailyDateKey = useMemo(() => toIsoDate(dailyDate), [dailyDate]);
   const dailyDateLabel = useMemo(() => formatDailyDate(dailyDate), [dailyDate]);
+  const todayKey = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return toIsoDate(today);
+  }, []);
 
   const { isLoadingTemplates, templateItems, loadTemplates } = useGoalsTemplates();
   const {
     dayScores,
-    setDayScores,
     dayGoalIdsByDate,
+    dayGoalConfirmedByDate,
     weekScores,
     dailyEntries,
     isLoadingDailyEntries,
@@ -290,6 +307,93 @@ export default function GoalsPage() {
     calendarTo,
     dailyDateKey,
   });
+
+  const beginGoalMutation = useCallback(() => {
+    if (goalMutationLockRef.current) {
+      return false;
+    }
+
+    goalMutationLockRef.current = true;
+    return true;
+  }, []);
+
+  const endGoalMutation = useCallback(() => {
+    goalMutationLockRef.current = false;
+  }, []);
+
+  const reportGoalMutationError = useCallback((error: unknown, fallbackMessage: string) => {
+    if (axios.isAxiosError(error)) return;
+    toast.error(getErrorMessage(error, fallbackMessage));
+  }, []);
+
+  const verifyEntryGoalCreated = useCallback(async (dateKey: string, goalId: number) => {
+    const entries = await goalApi.listEntrySummariesByDate(dateKey);
+    return entries.some((entry) => entry.id === goalId);
+  }, []);
+
+  const verifyDayGoalCreated = useCallback(async (dateKey: string, goalId: number) => {
+    const summaries = await goalApi.listDaySummaries(dateKey, dateKey);
+    return summaries.some((summary) => summary.targetDate === dateKey && summary.id === goalId);
+  }, []);
+
+  const verifyWeekGoalCreated = useCallback(async (weekGoal: WeekGoalView) => {
+    const firstDay = weekGoal.days[0];
+    if (!firstDay?.targetDate) {
+      return false;
+    }
+
+    const weekStart = startOfWeekMonday(fromIsoDate(firstDay.targetDate));
+    const weekStartKey = toIsoDate(weekStart);
+    const weekEndKey = toIsoDate(addDays(weekStart, 6));
+    const summaries = await goalApi.listDaySummaries(weekStartKey, weekEndKey);
+    const existingDates = new Set(summaries.map((summary) => summary.targetDate));
+
+    return weekGoal.days.every((day) => existingDates.has(day.targetDate));
+  }, []);
+
+  const assertEntryGoalPersisted = useCallback(
+    async (dateKey: string, goalId: number) => {
+      const exists = await verifyEntryGoalCreated(dateKey, goalId);
+      if (exists) return;
+
+      throw new Error(
+        `Server returned success, but the entry goal was not found on ${toDisplayDate(dateKey)} after refresh.`
+      );
+    },
+    [verifyEntryGoalCreated]
+  );
+
+  const assertDayGoalPersisted = useCallback(
+    async (dayGoal: DayGoalView) => {
+      const exists = await verifyDayGoalCreated(dayGoal.targetDate, dayGoal.id);
+      if (exists) return;
+
+      throw new Error(
+        `Server returned success, but the day goal was not found on ${toDisplayDate(dayGoal.targetDate)} after refresh.`
+      );
+    },
+    [verifyDayGoalCreated]
+  );
+
+  const assertWeekGoalPersisted = useCallback(
+    async (weekGoal: WeekGoalView) => {
+      const exists = await verifyWeekGoalCreated(weekGoal);
+      if (exists) return;
+
+      const firstDay = weekGoal.days[0];
+      if (!firstDay?.targetDate) {
+        throw new Error(
+          "Server returned success, but the week goal response did not contain any target dates."
+        );
+      }
+
+      const weekStartKey = toIsoDate(startOfWeekMonday(fromIsoDate(firstDay.targetDate)));
+      throw new Error(
+        `Server returned success, but the week goal was not found from ${toDisplayDate(weekStartKey)} after refresh.`
+      );
+    },
+    [verifyWeekGoalCreated]
+  );
 
   useEffect(() => {
     setHoverDate(null);
@@ -335,6 +439,7 @@ export default function GoalsPage() {
       const hasScore = dateKey in dayScores;
       const score = hasScore ? dayScores[dateKey] ?? 0 : 0;
       const dayGoalId = dayGoalIdsByDate[dateKey] ?? null;
+      const isConfirmed = dayGoalConfirmedByDate[dateKey] ?? false;
 
       return {
         date,
@@ -344,9 +449,10 @@ export default function GoalsPage() {
         hasScore,
         score,
         dayGoalId,
+        isConfirmed,
       };
     });
-  }, [dayGoalIdsByDate, dayScores, weekPreviewStart, yearEnd, yearStart]);
+  }, [dayGoalConfirmedByDate, dayGoalIdsByDate, dayScores, weekPreviewStart, yearEnd, yearStart]);
 
   const weekPreviewStats = useMemo(() => {
     const daysWithGoal = weekPreviewDays.filter((day) => day.isInYear && day.hasScore);
@@ -504,6 +610,11 @@ export default function GoalsPage() {
     if (!replaceDialog) return;
 
     const { dateKey, template, kind } = replaceDialog;
+    if (!beginGoalMutation()) {
+      toast.warning(GOAL_MUTATION_IN_PROGRESS_MESSAGE);
+      return;
+    }
+
     setIsReplacingGoal(true);
     setCreatingDate(dateKey);
 
@@ -513,11 +624,8 @@ export default function GoalsPage() {
           templateId: template.id,
           targetDate: dateKey,
         });
-        const completeness = normalizeScore(created.completeness);
-        setDayScores((prev) => ({
-          ...prev,
-          [created.targetDate]: Math.max(prev[created.targetDate] ?? 0, completeness),
-        }));
+        await reloadAll();
+        await assertDayGoalPersisted(created);
         toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
       } else {
         const created = await goalApi.replaceWeekGoal({
@@ -526,17 +634,27 @@ export default function GoalsPage() {
         });
         const weekStartKey =
           replaceDialog.weekStartKey ?? toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)));
-        setDayScores((prev) => mergeWeekScores(prev, created));
+        await reloadAll();
+        await assertWeekGoalPersisted(created);
         toast.success(`Week goal confirmed from ${toDisplayDate(weekStartKey)}`);
       }
-
-      await reloadAll();
+    } catch (error) {
+      reportGoalMutationError(error, "Failed to replace the goal");
     } finally {
+      endGoalMutation();
       setIsReplacingGoal(false);
       setReplaceDialog(null);
       setCreatingDate(null);
     }
-  }, [reloadAll, replaceDialog]);
+  }, [
+    assertDayGoalPersisted,
+    assertWeekGoalPersisted,
+    beginGoalMutation,
+    endGoalMutation,
+    reloadAll,
+    replaceDialog,
+    reportGoalMutationError,
+  ]);
 
   const handleDeleteDayGoalOnDate = useCallback(
     async (dateKey: string) => {
@@ -682,21 +800,24 @@ export default function GoalsPage() {
   const applyGoalToDate = useCallback(
     async (dateKey: string, template: DragTemplatePayload) => {
       if (eraserMode !== "eraseOff") return;
-      setCreatingDate(dateKey);
+      let hasMutationLock = false;
 
       try {
         if (template.kind === "entry") {
+          if (!beginGoalMutation()) {
+            toast.warning(GOAL_MUTATION_IN_PROGRESS_MESSAGE);
+            return;
+          }
+
+          hasMutationLock = true;
+          setCreatingDate(dateKey);
           const created = await goalApi.createEntryGoal({
             templateId: template.id,
             targetDate: dateKey,
           });
-          const completeness = normalizeScore(created.completeness);
-          setDayScores((prev) => ({
-            ...prev,
-            [dateKey]: Math.max(prev[dateKey] ?? 0, completeness),
-          }));
-          toast.success(`Entry goal created on ${toDisplayDate(dateKey)}`);
           await reloadAll();
+          await assertEntryGoalPersisted(dateKey, created.id);
+          toast.success(`Entry goal created on ${toDisplayDate(dateKey)}`);
           return;
         }
 
@@ -711,24 +832,25 @@ export default function GoalsPage() {
             return;
           }
 
+          if (!beginGoalMutation()) {
+            toast.warning(GOAL_MUTATION_IN_PROGRESS_MESSAGE);
+            return;
+          }
+
+          hasMutationLock = true;
+          setCreatingDate(dateKey);
           const created = await goalApi.createDayGoal({
             templateId: template.id,
             targetDate: dateKey,
           });
-          const completeness = normalizeScore(created.completeness);
-          setDayScores((prev) => ({
-            ...prev,
-            [created.targetDate]: Math.max(prev[created.targetDate] ?? 0, completeness),
-          }));
-          toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
           await reloadAll();
+          await assertDayGoalPersisted(created);
+          toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
           return;
         }
 
         const weekStart = startOfWeekMonday(fromIsoDate(dateKey));
-        const weekDateKeys = Array.from({ length: 7 }, (_, dayOffset) =>
-          toIsoDate(addDays(weekStart, dayOffset))
-        );
+        const weekDateKeys = getWeekDateKeys(weekStart);
         const hasExistingGoal = weekDateKeys.some((weekDayKey) => weekDayKey in dayScores);
         if (hasExistingGoal) {
           setReplaceDialog({
@@ -740,22 +862,44 @@ export default function GoalsPage() {
           return;
         }
 
+        if (!beginGoalMutation()) {
+          toast.warning(GOAL_MUTATION_IN_PROGRESS_MESSAGE);
+          return;
+        }
+
+        hasMutationLock = true;
+        setCreatingDate(dateKey);
         const created = await goalApi.createWeekGoal({
           templateId: template.id,
           targetDate: dateKey,
         });
-        setDayScores((prev) => mergeWeekScores(prev, created));
+        await reloadAll();
+        await assertWeekGoalPersisted(created);
         toast.success(
           `Week goal confirmed from ${toDisplayDate(
             toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)))
           )}`
         );
-        await reloadAll();
+      } catch (error) {
+        reportGoalMutationError(error, "Failed to create the goal");
       } finally {
-        setCreatingDate(null);
+        if (hasMutationLock) {
+          endGoalMutation();
+          setCreatingDate(null);
+        }
       }
     },
-    [dayScores, eraserMode, reloadAll]
+    [
+      assertDayGoalPersisted,
+      assertEntryGoalPersisted,
+      assertWeekGoalPersisted,
+      beginGoalMutation,
+      dayScores,
+      endGoalMutation,
+      eraserMode,
+      reloadAll,
+      reportGoalMutationError,
+    ]
   );
 
   const stopCustomDrag = useCallback(() => {
@@ -826,7 +970,9 @@ export default function GoalsPage() {
     template: TemplateItem,
     event: ReactPointerEvent<HTMLDivElement>
   ) => {
-    if (eraserMode !== "eraseOff" || isDeletingGoal) return;
+    if (eraserMode !== "eraseOff" || isDeletingGoal || isReplacingGoal || goalMutationLockRef.current) {
+      return;
+    }
     if (event.button !== 0) return;
 
     event.preventDefault();
@@ -1006,6 +1152,7 @@ export default function GoalsPage() {
                 <GoalCalendarCard
                   className={cn(isFixedDesktopWorkspace && "xl:h-full")}
                   calendarYear={calendarYear}
+                  todayKey={todayKey}
                   onPrevYear={() => shiftCalendarYear(-1)}
                   onNextYear={() => shiftCalendarYear(1)}
                   stats={stats}
@@ -1042,6 +1189,7 @@ export default function GoalsPage() {
                   stats={weekPreviewStats}
                   days={weekPreviewDays}
                   dailyDateKey={dailyDateKey}
+                  todayKey={todayKey}
                   previewDateKeys={previewDateKeys}
                   draggingTemplate={Boolean(draggingTemplate)}
                   creatingDate={creatingDate}
@@ -1064,6 +1212,7 @@ export default function GoalsPage() {
               <DailyViewCard
                 dailyDateLabel={dailyDateLabel}
                 dailyDateKey={dailyDateKey}
+                isToday={dailyDateKey === todayKey}
                 currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
                 dailyEntries={dailyEntries}
                 isLoadingDailyEntries={isLoadingDailyEntries}

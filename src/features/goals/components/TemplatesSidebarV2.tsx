@@ -1,5 +1,5 @@
 import { type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
-import { Eraser, GripVertical, RefreshCw, Sparkles } from "lucide-react";
+import { Eraser, RefreshCw, Sparkles } from "lucide-react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
@@ -52,7 +52,7 @@ const sidebarFixedStyle = {
 } as CSSProperties;
 
 const getTemplateHint = (kind: TemplateItem["kind"]): string => {
-  if (kind === "entry") return "";
+  if (kind === "entry") return "Assign to one entry";
   if (kind === "day") return "Assign to one date";
   return "Fill a whole week";
 };
@@ -207,7 +207,7 @@ export function TemplatesSidebarV2({
                       )}
                     >
                       <div className="min-w-0">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-semibold text-foreground">
                               {template.name}
@@ -222,16 +222,12 @@ export function TemplatesSidebarV2({
                           <Badge
                             variant="outline"
                             className={cn(
-                              "shrink-0 rounded-full border-0 px-2 py-1 text-[10px] uppercase",
+                              "shrink-0 self-center rounded-full border-0 px-2 py-1 text-[10px] uppercase",
                               getGoalKindBadgeClass(template.kind)
                             )}
                           >
                             {getGoalKindLabel(template.kind)}
                           </Badge>
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-end">
-                          <GripVertical className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
                         </div>
                       </div>
                     </div>

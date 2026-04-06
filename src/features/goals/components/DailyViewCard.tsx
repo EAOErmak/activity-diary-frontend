@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
+import { useLongPressProgress } from "@/features/goals/hooks/useLongPressProgress";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Separator } from "@/shared/components/ui/separator";
 import { Skeleton } from "@/shared/components/ui/skeleton";
@@ -23,6 +24,7 @@ const LONG_PRESS_MS = 600;
 type Props = {
   dailyDateLabel: string;
   dailyDateKey: string;
+  isToday: boolean;
   currentDayGoalId: number | null;
   dailyEntries: DiaryEntryGoalSummary[];
   isLoadingDailyEntries: boolean;
@@ -45,6 +47,7 @@ type Props = {
 export function DailyViewCard({
   dailyDateLabel,
   dailyDateKey,
+  isToday,
   currentDayGoalId,
   dailyEntries,
   isLoadingDailyEntries,
@@ -63,28 +66,9 @@ export function DailyViewCard({
   onConfirmEntryGoal,
   onConfirmEntryGoalSimple,
 }: Props) {
-  const dayLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const entryLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryLongPressTriggeredRef = useRef(false);
-
-  const clearDayLongPressTimer = useCallback(() => {
-    if (!dayLongPressTimerRef.current) return;
-    clearTimeout(dayLongPressTimerRef.current);
-    dayLongPressTimerRef.current = null;
-  }, []);
-
-  const clearEntryLongPressTimer = useCallback(() => {
-    if (!entryLongPressTimerRef.current) return;
-    clearTimeout(entryLongPressTimerRef.current);
-    entryLongPressTimerRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      clearDayLongPressTimer();
-      clearEntryLongPressTimer();
-    };
-  }, [clearDayLongPressTimer, clearEntryLongPressTimer]);
+  const dayLongPress = useLongPressProgress(LONG_PRESS_MS);
+  const entryLongPress = useLongPressProgress(LONG_PRESS_MS);
 
   return (
     <Card className="w-full min-w-0">
@@ -96,6 +80,11 @@ export function DailyViewCard({
               <Badge variant="outline" className="rounded-full px-3 py-1">
                 Selected day
               </Badge>
+              {isToday ? (
+                <Badge className="rounded-full border-0 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 px-3 py-1 text-white shadow-sm">
+                  Today
+                </Badge>
+              ) : null}
             </div>
           </div>
 
@@ -137,38 +126,48 @@ export function DailyViewCard({
             if (isEraserOn) return;
             if (!currentDayGoalId) return;
 
-            clearDayLongPressTimer();
-            dayLongPressTimerRef.current = setTimeout(() => {
+            dayLongPress.start("daily-goal", () => {
               onConfirmDayGoal(currentDayGoalId);
-            }, LONG_PRESS_MS);
+            });
           }}
           onPointerUp={(event) => {
             if (draggingTemplate) return;
             event.stopPropagation();
-            clearDayLongPressTimer();
+            dayLongPress.stop("daily-goal");
           }}
           onPointerLeave={(event) => {
             if (draggingTemplate) return;
             event.stopPropagation();
-            clearDayLongPressTimer();
+            dayLongPress.stop("daily-goal");
           }}
           onPointerCancel={(event) => {
             if (draggingTemplate) return;
             event.stopPropagation();
-            clearDayLongPressTimer();
+            dayLongPress.stop("daily-goal");
           }}
           onPointerEnter={() => {
             if (draggingTemplate) onHoverDate(dailyDateKey);
           }}
           className={[
-            "rounded-xl border bg-surface p-3 transition-all",
+            "relative overflow-hidden rounded-xl border bg-surface p-3 transition-all",
             isDailyPreviewTarget
               ? canDropOnDailyDate
                 ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
                 : "border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
               : "border-border",
+            isToday
+              ? "border-amber-300/80 shadow-[0_0_26px_rgba(251,146,60,0.18)]"
+              : "",
             creatingDate === dailyDateKey ? "animate-pulse" : "",
           ].join(" ")}
+          style={
+            isToday
+              ? {
+                  outline: "2px solid rgba(251,191,36,0.8)",
+                  outlineOffset: "1px",
+                }
+              : undefined
+          }
         >
           <div className="relative min-h-[120px]">
             {isLoadingDailyEntries && (
@@ -188,10 +187,16 @@ export function DailyViewCard({
               <ScrollArea className="max-h-[420px] w-full">
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3 pr-4">
                   {dailyEntries.map((entry, index) => {
+                    const entryHoldId = `entry-${entry.id}`;
                     const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
                     const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
                     const entryCompleteness = normalizeScore(entry.completeness);
                     const completionColor = getCompletionColor(entryCompleteness);
+                    const isEntryConfirming = entryLongPress.activeId === entryHoldId;
+                    const entryDisplayedProgress = isEntryConfirming
+                      ? entryCompleteness +
+                        ((100 - entryCompleteness) * entryLongPress.progress) / 100
+                      : entryCompleteness;
                     const entryTitle = entry.status
                       ? `${entryName} - ${startedLabel} - ${entry.status} - ${entryCompleteness}%`
                       : `${entryName} - ${startedLabel} - ${entryCompleteness}%`;
@@ -220,32 +225,31 @@ export function DailyViewCard({
                           event.stopPropagation();
                           if (isEraserOn) return;
                           entryLongPressTriggeredRef.current = false;
-                          clearEntryLongPressTimer();
-                          entryLongPressTimerRef.current = setTimeout(() => {
+                          entryLongPress.start(entryHoldId, () => {
                             entryLongPressTriggeredRef.current = true;
                             onConfirmEntryGoalSimple(entry, entryName);
-                          }, LONG_PRESS_MS);
+                          });
                         }}
                         onPointerUp={(event) => {
                           if (draggingTemplate) return;
                           event.stopPropagation();
-                          clearEntryLongPressTimer();
+                          entryLongPress.stop(entryHoldId);
                         }}
                         onPointerLeave={(event) => {
                           if (draggingTemplate) return;
                           event.stopPropagation();
-                          clearEntryLongPressTimer();
+                          entryLongPress.stop(entryHoldId);
                         }}
                         onPointerCancel={(event) => {
                           if (draggingTemplate) return;
                           event.stopPropagation();
-                          clearEntryLongPressTimer();
+                          entryLongPress.stop(entryHoldId);
                         }}
                         onContextMenu={(event) => {
                           if (isEraserOn) event.preventDefault();
                         }}
                         className={[
-                          "h-[120px] w-[120px] rounded-xl border p-2 flex flex-col justify-between",
+                          "relative h-[120px] w-[120px] overflow-hidden rounded-xl border p-2 flex flex-col justify-between",
                           "text-sm font-semibold leading-tight break-words",
                           isEraserOn ? "cursor-pointer" : "cursor-default",
                           getDiaryEntrySquareClass(entry.status),
@@ -276,10 +280,13 @@ export function DailyViewCard({
                           </div>
                           <div className="h-1.5 overflow-hidden rounded-full bg-black/10">
                             <div
-                              className="h-full rounded-full"
+                              className="h-full rounded-full transition-colors duration-150"
                               style={{
-                                width: `${entryCompleteness}%`,
-                                backgroundColor: completionColor,
+                                width: `${entryDisplayedProgress}%`,
+                                backgroundColor:
+                                  isEntryConfirming && entryLongPress.progress >= 98
+                                    ? "#22c55e"
+                                    : completionColor,
                               }}
                             />
                           </div>

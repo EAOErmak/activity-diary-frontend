@@ -25,6 +25,7 @@ import {
 type Props = {
   className?: string;
   calendarYear: number;
+  todayKey: string;
   onPrevYear: () => void;
   onNextYear: () => void;
   stats: GoalCalendarStats;
@@ -50,6 +51,7 @@ type Props = {
 export function GoalCalendarCard({
   className,
   calendarYear,
+  todayKey,
   onPrevYear,
   onNextYear,
   stats,
@@ -183,6 +185,7 @@ export function GoalCalendarCard({
                   const date = addDays(weekStart, rowIndex);
                   const dateKey = toIsoDate(date);
                   const isInCurrentYear = isDateInRange(date, yearStart, yearEnd);
+                  const isToday = dateKey === todayKey;
                   const hasScore = dateKey in dayScores;
                   const score = hasScore ? dayScores[dateKey] ?? 0 : 0;
                   const isPreviewTarget = previewDateKeys.has(dateKey);
@@ -231,6 +234,9 @@ export function GoalCalendarCard({
                         isSelectedDay && isInCurrentYear
                           ? "border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
                           : "",
+                        isToday && isInCurrentYear
+                          ? "border-amber-300/80 shadow-[0_0_18px_rgba(251,146,60,0.24)]"
+                          : "",
                         isCreating ? "animate-pulse" : "",
                       ].join(" ")}
                       style={{
@@ -240,6 +246,12 @@ export function GoalCalendarCard({
                           isPreviewTarget,
                           isInCurrentYear
                         ),
+                        ...(isToday && isInCurrentYear
+                          ? {
+                              outline: "2px solid rgba(251,191,36,0.85)",
+                              outlineOffset: "1px",
+                            }
+                          : {}),
                       }}
                     />
                   );
