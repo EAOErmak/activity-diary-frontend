@@ -30,10 +30,10 @@ import type { FoodDictionaryOption, FoodUpsertDto } from "@/shared/types/food";
 
 type FoodFormValues = {
   dictionaryItemId: number | null;
-  protein: number;
-  fat: number;
-  carbs: number;
-  callories: number;
+  protein: string;
+  fat: string;
+  carbs: string;
+  callories: string;
 };
 
 export type FoodFormInitialValues = FoodUpsertDto & {
@@ -85,6 +85,72 @@ function dedupeOptions(options: FoodDictionaryOption[]) {
   return Array.from(seen.values());
 }
 
+function parseDecimal(value: string) {
+  return Number(value.replace(",", "."));
+}
+
+function validateMacroValue(value: string, label: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return `Укажите ${label}`;
+  }
+
+  const parsedValue = parseDecimal(trimmedValue);
+
+  if (!Number.isFinite(parsedValue)) {
+    return "Введите корректное число";
+  }
+
+  if (parsedValue < 0) {
+    return "Значение не может быть отрицательным";
+  }
+
+  return true;
+}
+
+type FoodNumberInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+};
+
+function FoodNumberInput({ value, onChange }: FoodNumberInputProps) {
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      value={value}
+      onFocus={(event) => {
+        if (event.currentTarget.value.trim() === "0") {
+          event.currentTarget.select();
+        }
+      }}
+      onChange={(event) => {
+        const nextValue = event.target.value.replace(",", ".");
+
+        if (/^\d*(\.\d{0,2})?$/.test(nextValue)) {
+          onChange(nextValue);
+        }
+      }}
+      onBlur={(event) => {
+        const trimmedValue = event.currentTarget.value.trim();
+
+        if (!trimmedValue) {
+          onChange("0");
+          return;
+        }
+
+        const normalizedValue = trimmedValue.replace(",", ".");
+
+        if (/^\d+(\.\d+)?$/.test(normalizedValue)) {
+          onChange(normalizedValue);
+        }
+      }}
+      className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+    />
+  );
+}
+
 export default function FoodForm(props: Props) {
   const {
     mode,
@@ -115,17 +181,17 @@ export default function FoodForm(props: Props) {
       mode === "edit"
         ? {
             dictionaryItemId: props.initialValues.dictionaryItemId,
-            protein: props.initialValues.protein,
-            fat: props.initialValues.fat,
-            carbs: props.initialValues.carbs,
-            callories: props.initialValues.callories,
+            protein: String(props.initialValues.protein),
+            fat: String(props.initialValues.fat),
+            carbs: String(props.initialValues.carbs),
+            callories: String(props.initialValues.callories),
           }
         : {
             dictionaryItemId: null,
-            protein: 0,
-            fat: 0,
-            carbs: 0,
-            callories: 0,
+            protein: "0",
+            fat: "0",
+            carbs: "0",
+            callories: "0",
           },
   });
 
@@ -145,6 +211,41 @@ export default function FoodForm(props: Props) {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const selectedDictionaryItemId = watch("dictionaryItemId");
+  const optionsStatusMessage = useMemo(() => {
+    if (optionsError) {
+      return {
+        text: optionsError,
+        tone: "destructive" as const,
+      };
+    }
+
+    if (isLoadingOptions) {
+      return {
+        text: "Загрузка вариантов...",
+        tone: "muted" as const,
+      };
+    }
+
+    if (options.length === 0) {
+      return {
+        text:
+          deferredSearchQuery.trim() || allowEmptySearch
+            ? noOptionsMessage
+            : idleOptionsMessage,
+        tone: "muted" as const,
+      };
+    }
+
+    return null;
+  }, [
+    allowEmptySearch,
+    deferredSearchQuery,
+    idleOptionsMessage,
+    isLoadingOptions,
+    noOptionsMessage,
+    options.length,
+    optionsError,
+  ]);
 
   useEffect(() => {
     let isActive = true;
@@ -234,10 +335,10 @@ export default function FoodForm(props: Props) {
 
                 await onSubmit({
                   dictionaryItemId: values.dictionaryItemId,
-                  protein: values.protein,
-                  fat: values.fat,
-                  carbs: values.carbs,
-                  callories: values.callories,
+                  protein: parseDecimal(values.protein),
+                  fat: parseDecimal(values.fat),
+                  carbs: parseDecimal(values.carbs),
+                  callories: parseDecimal(values.callories),
                 });
               })}
               className="space-y-5"
@@ -302,44 +403,32 @@ export default function FoodForm(props: Props) {
                 />
               </div>
 
-              {optionsError && (
-                <p className="text-sm text-destructive">{optionsError}</p>
-              )}
-
-              {!optionsError &&
-                !isLoadingOptions &&
-                options.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    {deferredSearchQuery.trim() || allowEmptySearch
-                      ? noOptionsMessage
-                      : idleOptionsMessage}
+              <div className="min-h-10">
+                {optionsStatusMessage && (
+                  <p
+                    className={
+                      optionsStatusMessage.tone === "destructive"
+                        ? "text-sm leading-5 text-destructive"
+                        : "text-sm leading-5 text-muted-foreground"
+                    }
+                  >
+                    {optionsStatusMessage.text}
                   </p>
                 )}
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <FormField
                   control={form.control}
                   name="protein"
                   rules={{
-                    required: "Укажите белки",
-                    min: {
-                      value: 0,
-                      message: "Значение не может быть отрицательным",
-                    },
+                    validate: (value) => validateMacroValue(value, "белки"),
                   }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Белки</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={field.value}
-                          onChange={(event) =>
-                            field.onChange(Number(event.target.value))
-                          }
-                        />
+                        <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -350,25 +439,13 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="fat"
                   rules={{
-                    required: "Укажите жиры",
-                    min: {
-                      value: 0,
-                      message: "Значение не может быть отрицательным",
-                    },
+                    validate: (value) => validateMacroValue(value, "жиры"),
                   }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Жиры</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={field.value}
-                          onChange={(event) =>
-                            field.onChange(Number(event.target.value))
-                          }
-                        />
+                        <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -379,25 +456,13 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="carbs"
                   rules={{
-                    required: "Укажите углеводы",
-                    min: {
-                      value: 0,
-                      message: "Значение не может быть отрицательным",
-                    },
+                    validate: (value) => validateMacroValue(value, "углеводы"),
                   }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Углеводы</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={field.value}
-                          onChange={(event) =>
-                            field.onChange(Number(event.target.value))
-                          }
-                        />
+                        <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -408,25 +473,13 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="callories"
                   rules={{
-                    required: "Укажите калории",
-                    min: {
-                      value: 0,
-                      message: "Значение не может быть отрицательным",
-                    },
+                    validate: (value) => validateMacroValue(value, "калории"),
                   }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Калории на 1 г</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={field.value}
-                          onChange={(event) =>
-                            field.onChange(Number(event.target.value))
-                          }
-                        />
+                        <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
