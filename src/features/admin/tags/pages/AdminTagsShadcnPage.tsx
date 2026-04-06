@@ -51,23 +51,38 @@ type PendingAction =
     }
   | null;
 
-type TagStatus = NonNullable<Tag["status"]>;
+const TAG_STATUSES = ["PROPOSED", "APPROVED", "REJECTED", "DEPRECATED"] as const;
 
-const STATUS_LABELS: Record<TagStatus, string> = {
-  PROPOSED: "Ожидает",
-  APPROVED: "Одобрен",
-  REJECTED: "Отклонен",
-  DEPRECATED: "Устаревший",
+type TagStatus = (typeof TAG_STATUSES)[number];
+
+const STATUS_META: Record<TagStatus, { label: string; badgeClassName: string }> = {
+  PROPOSED: {
+    label: "Ожидает",
+    badgeClassName: "border-amber-500/30 bg-amber-500/10 text-amber-200",
+  },
+  APPROVED: {
+    label: "Одобрен",
+    badgeClassName: "border-primary/30 bg-primary/10 text-primary",
+  },
+  REJECTED: {
+    label: "Отклонен",
+    badgeClassName: "border-destructive/30 bg-destructive/10 text-destructive",
+  },
+  DEPRECATED: {
+    label: "Устаревший",
+    badgeClassName: "border-slate-500/30 bg-slate-500/10 text-slate-200",
+  },
 };
 
-const STATUS_BADGE_CLASS: Record<TagStatus, string> = {
-  PROPOSED: "border-border text-muted-foreground",
-  APPROVED: "border-primary/30 text-primary",
-  REJECTED: "border-destructive/30 text-destructive",
-  DEPRECATED: "border-border text-muted-foreground",
-};
+function getTagStatus(tag: Tag): TagStatus {
+  const status = tag.status;
 
-const getTagStatus = (tag: Tag): TagStatus => tag.status ?? "PROPOSED";
+  if (status && TAG_STATUSES.includes(status as TagStatus)) {
+    return status as TagStatus;
+  }
+
+  return "PROPOSED";
+}
 
 export default function AdminTagsShadcnPage() {
   const [query, setQuery] = useState("");
@@ -276,53 +291,57 @@ export default function AdminTagsShadcnPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                tags.map((tag) => (
-                  <TableRow key={tag.id}>
-                    <TableCell>{tag.id}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Tags className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{tag.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={`rounded-full ${STATUS_BADGE_CLASS[getTagStatus(tag)]}`}
-                      >
-                        {STATUS_LABELS[getTagStatus(tag)]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          variant="surface"
-                          disabled={getTagStatus(tag) === "APPROVED" || isMutating}
-                          onClick={() => requestApprove(tag)}
+                tags.map((tag) => {
+                  const status = getTagStatus(tag);
+
+                  return (
+                    <TableRow key={tag.id}>
+                      <TableCell>{tag.id}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Tags className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{tag.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={`rounded-full font-medium ${STATUS_META[status].badgeClassName}`}
                         >
-                          Одобрить
-                        </Button>
-                        <Button
-                          size="sm"
-                          disabled={getTagStatus(tag) === "REJECTED" || isMutating}
-                          onClick={() => requestReject(tag)}
-                          className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
-                        >
-                          Отклонить
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="surface"
-                          disabled={getTagStatus(tag) === "DEPRECATED" || isMutating}
-                          onClick={() => requestDeprecate(tag)}
-                        >
-                          Устаревший
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {STATUS_META[status].label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="surface"
+                            disabled={status === "APPROVED" || isMutating}
+                            onClick={() => requestApprove(tag)}
+                          >
+                            Одобрить
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={status === "REJECTED" || isMutating}
+                            onClick={() => requestReject(tag)}
+                            className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
+                          >
+                            Отклонить
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="surface"
+                            disabled={status === "DEPRECATED" || isMutating}
+                            onClick={() => requestDeprecate(tag)}
+                          >
+                            Устаревший
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
