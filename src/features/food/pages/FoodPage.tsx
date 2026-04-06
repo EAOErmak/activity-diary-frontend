@@ -1,5 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Database, Plus, Search, UserRound, UtensilsCrossed } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
@@ -67,6 +68,7 @@ function buildUserFoodOptions(
 }
 
 export default function FoodPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("general");
   const [generalQuery, setGeneralQuery] = useState("");
   const [userQuery, setUserQuery] = useState("");
@@ -94,7 +96,7 @@ export default function FoodPage() {
       setGeneralFoodsError(
         error instanceof Error
           ? error.message
-          : "Не удалось загрузить общую базу продуктов."
+          : t("errors.foodBaseLoad")
       );
     } finally {
       setIsLoadingGeneralFoods(false);
@@ -112,7 +114,7 @@ export default function FoodPage() {
       setUserFoodsError(
         error instanceof Error
           ? error.message
-          : "Не удалось загрузить ваши продукты."
+          : t("errors.userFoodsLoad")
       );
     } finally {
       setIsLoadingUserFoods(false);
@@ -139,22 +141,22 @@ export default function FoodPage() {
   const generalResultLabel = useMemo(
     () =>
       generalFoods.length === 1
-        ? "1 продукт"
-        : `${generalFoods.length} продуктов`,
-    [generalFoods.length]
+        ? t("food.oneProduct")
+        : t("food.manyProducts", { count: String(generalFoods.length) }),
+    [generalFoods.length, t]
   );
 
   const userResultLabel = useMemo(
     () =>
       userFoods.length === 1
-        ? "1 продукт"
-        : `${userFoods.length} продуктов`,
-    [userFoods.length]
+        ? t("food.oneProduct")
+        : t("food.manyProducts", { count: String(userFoods.length) }),
+    [t, userFoods.length]
   );
 
   async function handleCreateUserFood(payload: FoodUpsertDto) {
     await createUserFood(payload);
-    toast.success("Продукт добавлен.");
+    toast.success(t("food.productCreated"));
     setCreateDialogOpen(false);
     await loadUserFoods(userQuery);
   }
@@ -165,7 +167,7 @@ export default function FoodPage() {
     }
 
     await updateUserFood(editingFood.id, payload);
-    toast.success("Продукт обновлен.");
+    toast.success(t("food.productUpdated"));
     setEditingFood(null);
     await loadUserFoods(userQuery);
   }
@@ -178,7 +180,7 @@ export default function FoodPage() {
     try {
       setIsDeleting(true);
       await deleteUserFood(pendingDelete.id);
-      toast.success(`Продукт "${pendingDelete.dictionaryItemLabel}" удален.`);
+      toast.success(t("food.productDeleted", { label: pendingDelete.dictionaryItemLabel }));
       setPendingDelete(null);
       await loadUserFoods(userQuery);
     } finally {
@@ -190,38 +192,36 @@ export default function FoodPage() {
     <div className="min-h-screen bg-page text-foreground">
       <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-6 py-6 sm:px-8 lg:px-10">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Еда</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("food.title")}</h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Просматривайте общую базу продуктов и управляйте своими продуктами с
-            индивидуальными значениями БЖУ.
+            {t("food.subtitle")}
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-fit">
-            <TabsTrigger value="general">Общая база</TabsTrigger>
-            <TabsTrigger value="user">Мои продукты</TabsTrigger>
+            <TabsTrigger value="general">{t("food.generalTab")}</TabsTrigger>
+            <TabsTrigger value="user">{t("food.userTab")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-4">
             <Card className="border-border/70 bg-background/95 shadow-sm">
               <CardHeader>
-                <CardTitle>Общая база продуктов</CardTitle>
+                <CardTitle>{t("food.generalBaseTitle")}</CardTitle>
                 <CardDescription>
-                  Доступна только для просмотра и используется как общий источник
-                  продуктовых позиций.
+                  {t("food.generalBaseDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Search className="h-4 w-4" />
-                    Поиск
+                    {t("food.search")}
                   </div>
                   <Input
                     value={generalQuery}
                     onChange={(event) => setGeneralQuery(event.target.value)}
-                    placeholder="Поиск по общей базе продуктов..."
+                    placeholder={t("food.generalSearchPlaceholder")}
                     className="max-w-xl"
                   />
                 </div>
@@ -235,28 +235,27 @@ export default function FoodPage() {
 
             <Card className="border-border/70 bg-background/95 shadow-sm">
               <CardHeader>
-                <CardTitle>Список продуктов</CardTitle>
+                <CardTitle>{t("food.productsListTitle")}</CardTitle>
                 <CardDescription>
-                  Значения БЖУ из общей базы доступны всем пользователям только для
-                  просмотра.
+                  {t("food.productsListDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Продукт</TableHead>
-                      <TableHead className="w-28 text-right">Белки</TableHead>
-                      <TableHead className="w-28 text-right">Жиры</TableHead>
-                      <TableHead className="w-32 text-right">Углеводы</TableHead>
-                      <TableHead className="w-36 text-right">Калории на 1 г</TableHead>
+                      <TableHead>{t("food.product")}</TableHead>
+                      <TableHead className="w-28 text-right">{t("food.proteins")}</TableHead>
+                      <TableHead className="w-28 text-right">{t("food.fats")}</TableHead>
+                      <TableHead className="w-32 text-right">{t("food.carbs")}</TableHead>
+                      <TableHead className="w-36 text-right">{t("food.caloriesPerGram")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoadingGeneralFoods ? (
                       <TableRow>
                         <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                          Загрузка...
+                          {t("common.loading")}
                         </TableCell>
                       </TableRow>
                     ) : generalFoodsError ? (
@@ -268,7 +267,7 @@ export default function FoodPage() {
                     ) : generalFoods.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                          В общей базе пока нет продуктов по этому запросу.
+                          {t("food.noGeneralProducts")}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -298,22 +297,21 @@ export default function FoodPage() {
           <TabsContent value="user" className="space-y-4">
             <Card className="border-border/70 bg-background/95 shadow-sm">
               <CardHeader>
-                <CardTitle>Мои продукты</CardTitle>
+                <CardTitle>{t("food.userProductsTitle")}</CardTitle>
                 <CardDescription>
-                  Создавайте собственные продуктовые записи, редактируйте их и
-                  удаляйте без доступа к общей базе.
+                  {t("food.userProductsDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Search className="h-4 w-4" />
-                    Поиск
+                    {t("food.search")}
                   </div>
                   <Input
                     value={userQuery}
                     onChange={(event) => setUserQuery(event.target.value)}
-                    placeholder="Поиск по вашим продуктам..."
+                    placeholder={t("food.userSearchPlaceholder")}
                     className="max-w-xl"
                   />
                 </div>
@@ -325,36 +323,35 @@ export default function FoodPage() {
 
                 <Button onClick={() => setCreateDialogOpen(true)} className="w-full lg:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
-                  Добавить продукт
+                  {t("food.addProduct")}
                 </Button>
               </CardContent>
             </Card>
 
             <Card className="border-border/70 bg-background/95 shadow-sm">
               <CardHeader>
-                <CardTitle>Ваш список</CardTitle>
+                <CardTitle>{t("food.yourListTitle")}</CardTitle>
                 <CardDescription>
-                  Доступные только вам продуктовые записи с пользовательскими
-                  значениями БЖУ.
+                  {t("food.yourListDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Продукт</TableHead>
-                      <TableHead className="w-28 text-right">Белки</TableHead>
-                      <TableHead className="w-28 text-right">Жиры</TableHead>
-                      <TableHead className="w-32 text-right">Углеводы</TableHead>
-                      <TableHead className="w-36 text-right">Калории на 1 г</TableHead>
-                      <TableHead className="w-40 text-right">Действия</TableHead>
+                      <TableHead>{t("food.product")}</TableHead>
+                      <TableHead className="w-28 text-right">{t("food.proteins")}</TableHead>
+                      <TableHead className="w-28 text-right">{t("food.fats")}</TableHead>
+                      <TableHead className="w-32 text-right">{t("food.carbs")}</TableHead>
+                      <TableHead className="w-36 text-right">{t("food.caloriesPerGram")}</TableHead>
+                      <TableHead className="w-40 text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoadingUserFoods ? (
                       <TableRow>
                         <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                          Загрузка...
+                          {t("common.loading")}
                         </TableCell>
                       </TableRow>
                     ) : userFoodsError ? (
@@ -366,7 +363,7 @@ export default function FoodPage() {
                     ) : userFoods.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                          У вас пока нет продуктов по этому запросу.
+                          {t("food.noUserProducts")}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -391,7 +388,7 @@ export default function FoodPage() {
                                 variant="surface"
                                 onClick={() => setEditingFood(food)}
                               >
-                                Редактировать
+                                {t("common.edit")}
                               </Button>
                               <Button
                                 size="sm"
@@ -399,7 +396,7 @@ export default function FoodPage() {
                                 className="text-destructive"
                                 onClick={() => setPendingDelete(food)}
                               >
-                                Удалить
+                                {t("common.delete")}
                               </Button>
                             </div>
                           </TableCell>
@@ -418,12 +415,12 @@ export default function FoodPage() {
         mode="create"
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        title="Новый продукт"
-        submitLabel="Создать продукт"
-        searchPlaceholder="Введите название продукта для поиска..."
-        selectPlaceholder="Выберите продукт"
-        idleOptionsMessage="Введите запрос, чтобы подобрать продукт из доступной базы."
-        noOptionsMessage="Подходящие продукты не найдены."
+        title={t("food.createTitle")}
+        submitLabel={t("food.createSubmit")}
+        searchPlaceholder={t("food.createSearchPlaceholder")}
+        selectPlaceholder={t("food.selectProduct")}
+        idleOptionsMessage={t("food.idleOptionsMessage")}
+        noOptionsMessage={t("food.noOptionsMessage")}
         allowEmptySearch
         loadOptions={loadUserFoodOptions}
         onSubmit={handleCreateUserFood}
@@ -438,12 +435,12 @@ export default function FoodPage() {
               setEditingFood(null);
             }
           }}
-          title="Редактирование продукта"
-          submitLabel="Сохранить изменения"
-          searchPlaceholder="Уточните название продукта..."
-          selectPlaceholder="Выберите продукт"
-          idleOptionsMessage="Введите запрос, чтобы подобрать продукт из доступной базы."
-          noOptionsMessage="Подходящие продукты не найдены."
+          title={t("food.editTitle")}
+          submitLabel={t("common.saveChanges")}
+          searchPlaceholder={t("food.editSearchPlaceholder")}
+          selectPlaceholder={t("food.selectProduct")}
+          idleOptionsMessage={t("food.idleOptionsMessage")}
+          noOptionsMessage={t("food.noOptionsMessage")}
           allowEmptySearch
           loadOptions={loadUserFoodOptions}
           initialValues={{
@@ -465,13 +462,13 @@ export default function FoodPage() {
             setPendingDelete(null);
           }
         }}
-        title="Удалить продукт?"
+        title={t("food.deleteTitle")}
         description={
           pendingDelete == null
             ? ""
-            : `Продукт "${pendingDelete.dictionaryItemLabel}" будет удален из вашего списка.`
+            : t("food.deleteDescription", { label: pendingDelete.dictionaryItemLabel })
         }
-        confirmLabel={isDeleting ? "Удаление..." : "Удалить"}
+        confirmLabel={isDeleting ? t("common.deleting") : t("common.delete")}
         loading={isDeleting}
         tone="danger"
         onConfirm={handleDeleteUserFood}

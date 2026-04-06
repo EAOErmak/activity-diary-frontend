@@ -25,6 +25,7 @@ import {
   DiaryStatusSection,
   DiaryTimeSection,   
 } from "./sections";
+import { useTranslation } from "react-i18next";
 
 void React;
 
@@ -71,7 +72,13 @@ type Props =
 ============================== */
 
 export default function DiaryEntryForm(props: Props) {
-  const { mode, title = "Запись", submitLabel = "Сохранить", onSubmit } = props;
+  const { t } = useTranslation();
+  const { mode, onSubmit } = props;
+  const title =
+    props.title ??
+    (mode === "create" ? t("diary.newEntryTitle") : t("diary.editEntryTitle"));
+  const submitLabel =
+    props.submitLabel ?? (mode === "create" ? t("common.create") : t("common.save"));
 
   const form = useForm<DiaryEntryFormValues>({
     defaultValues:
@@ -170,7 +177,7 @@ export default function DiaryEntryForm(props: Props) {
                 className="w-full"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Сохранение..." : submitLabel}
+                {isSubmitting ? t("common.saving") : submitLabel}
               </Button>
             </CardFooter>
           </form>

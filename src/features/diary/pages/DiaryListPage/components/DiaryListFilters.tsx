@@ -13,6 +13,7 @@ import {
   SelectItem,
 } from "@/shared/components/ui/select";
 import { Badge } from "@/shared/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   status: DisplayStatus | "";
@@ -27,6 +28,7 @@ type Props = {
 };
 
 export function DiaryListFilters(props: Props) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!props.date) {
       props.onDateChange(new Date());
@@ -54,7 +56,7 @@ export function DiaryListFilters(props: Props) {
         
         {/* STATUS */}
         <div className="flex-1">
-          <Label>Статус</Label>
+          <Label>{t("diary.statusLabel")}</Label>
           <Select
             value={props.status || "ALL"}
             onValueChange={(v) =>
@@ -62,23 +64,23 @@ export function DiaryListFilters(props: Props) {
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Все статусы" />
+              <SelectValue placeholder={t("diary.statusAll")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Все</SelectItem>
-              <SelectItem value="ACTIVE">В процессе</SelectItem>
-              <SelectItem value="PLANNED">Запланировано</SelectItem>
-              <SelectItem value="FINISHED">Завершено</SelectItem>
-              <SelectItem value="FAILED">Провал</SelectItem>
+              <SelectItem value="ALL">{t("diary.allStatuses")}</SelectItem>
+              <SelectItem value="ACTIVE">{t("diary.status.active")}</SelectItem>
+              <SelectItem value="PLANNED">{t("diary.status.planned")}</SelectItem>
+              <SelectItem value="FINISHED">{t("diary.status.finished")}</SelectItem>
+              <SelectItem value="FAILED">{t("diary.status.failed")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* TAG SEARCH */}
         <div className="flex-1">
-          <Label>Поиск по тегам</Label>
+          <Label>{t("diary.tagSearchLabel")}</Label>
           <Input
-            placeholder="Введите тег"
+            placeholder={t("diary.tagPlaceholder")}
             value={props.tagQuery}
             onChange={(e) => props.onTagQueryChange(e.target.value)}
             onKeyDown={(e) => {
@@ -106,7 +108,7 @@ export function DiaryListFilters(props: Props) {
 
         {/* DATE */}
         <div className="flex-1">
-          <Label>Дата</Label>
+          <Label>{t("diary.dateLabel")}</Label>
           <DatePicker
             date={props.date}
             setDate={props.onDateChange}
@@ -117,7 +119,7 @@ export function DiaryListFilters(props: Props) {
         {/* RESET */}
         <div className="flex items-end">
           <Button variant="primary" onClick={props.onReset}>
-            Сбросить
+            {t("common.reset")}
           </Button>
         </div>
       </CardContent>

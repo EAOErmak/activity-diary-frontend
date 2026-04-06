@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -93,17 +94,17 @@ function validateMacroValue(value: string, label: string) {
   const trimmedValue = value.trim();
 
   if (!trimmedValue) {
-    return `Укажите ${label}`;
+    return `__REQUIRED__${label}`;
   }
 
   const parsedValue = parseDecimal(trimmedValue);
 
   if (!Number.isFinite(parsedValue)) {
-    return "Введите корректное число";
+    return "__INVALID__";
   }
 
   if (parsedValue < 0) {
-    return "Значение не может быть отрицательным";
+    return "__NEGATIVE__";
   }
 
   return true;
@@ -152,10 +153,9 @@ function FoodNumberInput({ value, onChange }: FoodNumberInputProps) {
 }
 
 export default function FoodForm(props: Props) {
+  const { t } = useTranslation();
   const {
     mode,
-    title = mode === "create" ? "Новый продукт" : "Редактирование продукта",
-    submitLabel = "Сохранить",
     searchPlaceholder,
     selectPlaceholder,
     idleOptionsMessage,
@@ -164,6 +164,8 @@ export default function FoodForm(props: Props) {
     loadOptions,
     onSubmit,
   } = props;
+  const title = props.title ?? (mode === "create" ? t("food.createTitle") : t("food.editTitle"));
+  const submitLabel = props.submitLabel ?? t("common.save");
 
   const initialOption = useMemo<FoodDictionaryOption | null>(() => {
     if (mode !== "edit") {
@@ -221,7 +223,7 @@ export default function FoodForm(props: Props) {
 
     if (isLoadingOptions) {
       return {
-        text: "Загрузка вариантов...",
+        text: t("food.loadingOptions"),
         tone: "muted" as const,
       };
     }
@@ -280,7 +282,7 @@ export default function FoodForm(props: Props) {
         setOptionsError(
           error instanceof Error
             ? error.message
-            : "Не удалось загрузить список продуктов."
+            : t("food.loadOptionsError")
         );
       } finally {
         if (isActive) {
@@ -328,7 +330,7 @@ export default function FoodForm(props: Props) {
                 if (values.dictionaryItemId == null) {
                   form.setError("dictionaryItemId", {
                     type: "required",
-                    message: "Выберите продукт",
+                    message: t("food.selectProductForValidation"),
                   });
                   return;
                 }
@@ -347,7 +349,7 @@ export default function FoodForm(props: Props) {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Search className="h-4 w-4" />
-                    Поиск продукта
+                    {t("food.searchProduct")}
                   </div>
                   <Input
                     value={searchQuery}
@@ -360,11 +362,11 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="dictionaryItemId"
                   rules={{
-                    validate: (value) => value != null || "Выберите продукт",
+                    validate: (value) => value != null || t("food.selectProductForValidation"),
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Продукт</FormLabel>
+                      <FormLabel>{t("food.product")}</FormLabel>
                       <FormControl>
                         <Select
                           value={field.value != null ? String(field.value) : ""}
@@ -383,7 +385,7 @@ export default function FoodForm(props: Props) {
                             <SelectValue
                               placeholder={
                                 isLoadingOptions
-                                  ? "Загрузка..."
+                                  ? t("common.loading")
                                   : selectPlaceholder
                               }
                             />
@@ -422,11 +424,19 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="protein"
                   rules={{
-                    validate: (value) => validateMacroValue(value, "белки"),
+                    validate: (value) => {
+                      const result = validateMacroValue(value, t("food.proteins").toLowerCase());
+                      if (result === "__INVALID__") return t("food.invalidNumber");
+                      if (result === "__NEGATIVE__") return t("food.negativeValue");
+                      if (typeof result === "string" && result.startsWith("__REQUIRED__")) {
+                        return t("food.enterValue", { label: result.replace("__REQUIRED__", "") });
+                      }
+                      return result;
+                    },
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Белки</FormLabel>
+                      <FormLabel>{t("food.proteins")}</FormLabel>
                       <FormControl>
                         <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
@@ -439,11 +449,19 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="fat"
                   rules={{
-                    validate: (value) => validateMacroValue(value, "жиры"),
+                    validate: (value) => {
+                      const result = validateMacroValue(value, t("food.fats").toLowerCase());
+                      if (result === "__INVALID__") return t("food.invalidNumber");
+                      if (result === "__NEGATIVE__") return t("food.negativeValue");
+                      if (typeof result === "string" && result.startsWith("__REQUIRED__")) {
+                        return t("food.enterValue", { label: result.replace("__REQUIRED__", "") });
+                      }
+                      return result;
+                    },
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Жиры</FormLabel>
+                      <FormLabel>{t("food.fats")}</FormLabel>
                       <FormControl>
                         <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
@@ -456,11 +474,19 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="carbs"
                   rules={{
-                    validate: (value) => validateMacroValue(value, "углеводы"),
+                    validate: (value) => {
+                      const result = validateMacroValue(value, t("food.carbs").toLowerCase());
+                      if (result === "__INVALID__") return t("food.invalidNumber");
+                      if (result === "__NEGATIVE__") return t("food.negativeValue");
+                      if (typeof result === "string" && result.startsWith("__REQUIRED__")) {
+                        return t("food.enterValue", { label: result.replace("__REQUIRED__", "") });
+                      }
+                      return result;
+                    },
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Углеводы</FormLabel>
+                      <FormLabel>{t("food.carbs")}</FormLabel>
                       <FormControl>
                         <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
@@ -473,11 +499,19 @@ export default function FoodForm(props: Props) {
                   control={form.control}
                   name="callories"
                   rules={{
-                    validate: (value) => validateMacroValue(value, "калории"),
+                    validate: (value) => {
+                      const result = validateMacroValue(value, t("food.caloriesPerGram").toLowerCase());
+                      if (result === "__INVALID__") return t("food.invalidNumber");
+                      if (result === "__NEGATIVE__") return t("food.negativeValue");
+                      if (typeof result === "string" && result.startsWith("__REQUIRED__")) {
+                        return t("food.enterValue", { label: result.replace("__REQUIRED__", "") });
+                      }
+                      return result;
+                    },
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Калории на 1 г</FormLabel>
+                      <FormLabel>{t("food.caloriesPerGram")}</FormLabel>
                       <FormControl>
                         <FoodNumberInput value={field.value} onChange={field.onChange} />
                       </FormControl>
@@ -493,7 +527,7 @@ export default function FoodForm(props: Props) {
                   className="w-full sm:w-auto sm:min-w-[12rem]"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Сохранение..." : submitLabel}
+                  {isSubmitting ? t("common.saving") : submitLabel}
                 </Button>
               </CardFooter>
             </form>

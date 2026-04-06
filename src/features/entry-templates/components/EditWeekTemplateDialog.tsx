@@ -10,6 +10,7 @@ import WeekTemplateForm from "@/features/entry-templates/components/ScheduleTemp
 import type { ScheduleTemplateOption } from "@/features/entry-templates/components/ScheduleTemplateForm/types";
 import type { WeekTemplateView } from "@/shared/types/scheduleTemplate";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -26,6 +27,7 @@ export function EditWeekTemplateDialog({
   dayTemplates,
   onUpdated,
 }: Props) {
+  const { t } = useTranslation();
   if (!template) return null;
 
   return (
@@ -35,11 +37,11 @@ export function EditWeekTemplateDialog({
         <DialogDescription />
 
         <WeekTemplateForm
-          title="Редактировать шаблон недели"
-          submitLabel="Сохранить изменения"
-          namePlaceholder="Например: Рабочая неделя"
-          itemPlaceholder="Выберите шаблон дня"
-          emptyOptionsHint="Сначала создайте хотя бы один шаблон дня."
+          title={t("templates.editWeekTitle")}
+          submitLabel={t("common.saveChanges")}
+          namePlaceholder={t("templates.weekNamePlaceholder")}
+          itemPlaceholder={t("templates.weekItemPlaceholder")}
+          emptyOptionsHint={t("templates.weekEmptyOptionsHint")}
           dayTemplates={dayTemplates}
           initialName={template.name}
           initialSelectedItems={template.items.map((item) => ({
@@ -54,7 +56,7 @@ export function EditWeekTemplateDialog({
                 dayOfWeek: slot,
               })),
             });
-            toast.success("Шаблон недели обновлен");
+            toast.success(t("templates.weekUpdated"));
             onOpenChange(false);
             onUpdated?.();
           }}

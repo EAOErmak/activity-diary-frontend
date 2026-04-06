@@ -1,5 +1,6 @@
 ﻿import React, { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { CalendarEvent } from "../lib/calendarTypes";
 import { getEventPosition } from "../utils/eventPosition";
 import { getUiStatus, STATUS_STYLES, getLeftBarColor } from "../../../shared/lib/uiStatus";
@@ -17,6 +18,7 @@ export default function EventBlock({
   startHour,
   hourHeight,
 }: Props) {
+  const { t } = useTranslation();
   const nav = useNavigate();
   const location = useLocation();
   const { top, height } = useMemo(
@@ -24,7 +26,7 @@ export default function EventBlock({
     [event, day, startHour, hourHeight]
   );
 
-  const title = event.firstTag ?? "Без названия";
+  const title = event.firstTag ?? t("calendar.untitledEvent");
 
   // ✅ ВАЖНО: вычисляем UI-статус
   const uiStatus = getUiStatus({

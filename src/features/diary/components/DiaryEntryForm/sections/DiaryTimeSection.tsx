@@ -8,6 +8,7 @@ import {
 import { DatePicker } from "@/shared/components/ui/date-picker";
 import { useFormContext } from "react-hook-form";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 function toDate(value?: string) {
   return value ? new Date(value) : undefined;
@@ -28,6 +29,7 @@ function addMinutes(date: Date, minutes: number) {
 }
 
 export function DiaryTimeSection({ mode }: Props) {
+  const { t } = useTranslation();
   const form = useFormContext();
   const syncingRef = useRef<"whenStarted" | "whenEnded" | null>(null);
 
@@ -122,7 +124,7 @@ export function DiaryTimeSection({ mode }: Props) {
         name="whenStarted"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Начало</FormLabel>
+            <FormLabel>{t("diary.timeStart")}</FormLabel>
 
             <FormControl>
               <DatePicker
@@ -142,7 +144,7 @@ export function DiaryTimeSection({ mode }: Props) {
         name="whenEnded"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Конец</FormLabel>
+            <FormLabel>{t("diary.timeEnd")}</FormLabel>
 
             <FormControl>
               <DatePicker

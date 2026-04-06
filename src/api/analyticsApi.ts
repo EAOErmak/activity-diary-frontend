@@ -1,5 +1,6 @@
 import axios from "axios";
 import api from "./http/axiosInstance";
+import i18n from "@/shared/i18n/config";
 import type { ApiResponse } from "@/shared/types/api";
 import type {
   ChartFilter,
@@ -43,7 +44,7 @@ export async function getAnalyticsChartTypes(
 
     return data.data.map(normalizeChartType);
   } catch (error) {
-    throw toAnalyticsApiError(error, "Не удалось загрузить типы графиков.");
+    throw toAnalyticsApiError(error, i18n.t("errors.analyticsChartTypesLoad"));
   }
 }
 
@@ -63,7 +64,7 @@ export async function getAnalyticsChart(
 
     return data.data;
   } catch (error) {
-    throw toAnalyticsApiError(error, "Не удалось загрузить аналитику.");
+    throw toAnalyticsApiError(error, i18n.t("errors.analyticsLoad"));
   }
 }
 

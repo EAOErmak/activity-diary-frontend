@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bar,
   BarChart,
@@ -20,6 +21,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/shared/components/ui/chart";
+import { getIntlLocale } from "@/shared/i18n/locale";
 import {
   getChartTypeLabel,
   type ChartPoint,
@@ -32,10 +34,6 @@ export const description = "A grouped bar chart on a single axis";
 const SERIES_SPACER_COUNT = 2;
 const GOLDEN_ANGLE = 137.508;
 
-const numberFormatter = new Intl.NumberFormat("ru-RU", {
-  maximumFractionDigits: 2,
-});
-
 const toNumber = (value: number | string) =>
   typeof value === "number" ? value : Number(value);
 
@@ -47,12 +45,12 @@ const formatMetricValue = (
   unit?: string | null
 ) => {
   const numericValue = typeof value === "number" ? value : Number(value ?? 0);
+  const numberFormatter = new Intl.NumberFormat(getIntlLocale(), {
+    maximumFractionDigits: 2,
+  });
   const formattedValue = numberFormatter.format(numericValue);
   return unit ? `${formattedValue} ${unit}` : formattedValue;
 };
-
-const getSeriesTitle = (index: number, total: number) =>
-  total === 1 ? "Основная серия" : `Серия ${index + 1}`;
 
 type Props = {
   data: ChartResponse;
@@ -67,9 +65,6 @@ type FlattenedPoint = {
   seriesLabel: string;
   isSpacer: boolean;
 };
-
-const getSeriesLabel = (index: number, total: number) =>
-  total === 1 ? "Primary series" : `Series ${index + 1}`;
 
 const createRandomPointPalette = (size: number) => {
   let hue = Math.floor(Math.random() * 360);
@@ -96,6 +91,7 @@ const getSourceSeries = (data: ChartResponse): ChartSeries[] => {
 };
 
 export default function ActivityBarChart({ data, tagName }: Props) {
+  const { t } = useTranslation();
   const { chartPoints, pointByKey } = useMemo(() => {
     const sourceSeries = getSourceSeries(data);
     const paletteSize = sourceSeries.reduce((maxSize, series) => {
@@ -108,7 +104,10 @@ export default function ActivityBarChart({ data, tagName }: Props) {
 
     const normalizedGroups = sourceSeries
       .map((series, seriesIndex) => {
-        const seriesLabel = getSeriesLabel(seriesIndex, sourceSeries.length);
+        const seriesLabel =
+          sourceSeries.length === 1
+            ? t("dashboard.primarySeries")
+            : t("dashboard.series", { index: String(seriesIndex + 1) });
 
         const points = (series.points ?? [])
           .filter((point) => point?.label)
@@ -152,14 +151,16 @@ export default function ActivityBarChart({ data, tagName }: Props) {
       chartPoints: flattenedPoints,
       pointByKey: new Map(flattenedPoints.map((point) => [point.key, point])),
     };
-  }, [data]);
+  }, [data, t]);
 
   const primaryChartColor =
     chartPoints.find((point) => !point.isSpacer)?.color ?? "hsl(221, 83%, 53%)";
 
   const chartConfig = {
     value: {
-      label: data.unit ? `Value (${data.unit})` : "Value",
+      label: data.unit
+        ? `${t("dashboard.valueLabel")} (${data.unit})`
+        : t("dashboard.valueLabel"),
       color: primaryChartColor,
     },
   } satisfies ChartConfig;
@@ -180,13 +181,11 @@ export default function ActivityBarChart({ data, tagName }: Props) {
     return (
       <Card>
         <CardContent className="pt-6 text-sm text-mutedForeground">
-          Нет данных для отображения по выбранным фильтрам.
+          {t("dashboard.noData")}
         </CardContent>
       </Card>
     );
   }
-
-  const normalizedSeries: any[] = [];
 
   return (
     <Card>
@@ -266,66 +265,5 @@ export default function ActivityBarChart({ data, tagName }: Props) {
         </div>
       </CardContent>
     </Card>
-  );
-
-  return (
-    <div className="grid gap-6 xl:grid-cols-2">
-      {normalizedSeries.map((series) => {
-        const seriesTitle = getSeriesTitle(series.index, normalizedSeries.length);
-        const chartConfig = {
-          value: {
-            label: seriesTitle,
-            color: series.color,
-          },
-        } satisfies ChartConfig;
-
-        return (
-          <Card key={`chart-series-${series.index}`} className="border border-border">
-            <CardHeader>
-              <CardTitle>{getChartTypeLabel(data.chartType)}</CardTitle>
-              <CardDescription>
-                {tagName ? `${tagName} • ` : ""}
-                {seriesTitle} • {series.data.length} точек
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[320px] w-full">
-                <BarChart accessibilityLayer data={series.data}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    minTickGap={20}
-                    tickFormatter={formatAxisLabel}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) =>
-                          numberFormatter.format(
-                            typeof value === "number"
-                              ? value
-                              : Number(value ?? 0)
-                          )
-                        }
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="value"
-                    fill={series.color}
-                    radius={[10, 10, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
   );
 }

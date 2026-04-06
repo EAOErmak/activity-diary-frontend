@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Loader2, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Tag } from "@/shared/types/tag";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -22,6 +23,7 @@ export default function TagAutocompleteV2({
   onValueChange,
   onSelect,
 }: Props) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -55,7 +57,7 @@ export default function TagAutocompleteV2({
 
   return (
     <div className="space-y-2">
-      <Label>Тег</Label>
+      <Label>{t("dashboard.tagLabel")}</Label>
 
       <div ref={rootRef} className="relative">
         <div className="relative">
@@ -101,7 +103,7 @@ export default function TagAutocompleteV2({
                 selectTag(visibleTags[highlightedIndex] ?? visibleTags[0]);
               }
             }}
-            placeholder={isLoading ? "Загрузка тегов..." : "Начните вводить тег"}
+            placeholder={isLoading ? t("dashboard.tagLoading") : t("dashboard.tagPlaceholder")}
             className="pl-11 pr-10"
             role="combobox"
             aria-expanded={isOpen}
@@ -121,13 +123,13 @@ export default function TagAutocompleteV2({
               {isLoading && (
                 <div className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-mutedForeground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Загрузка тегов...
+                  {t("dashboard.tagLoading")}
                 </div>
               )}
 
               {!isLoading && visibleTags.length === 0 && (
                 <div className="rounded-xl px-3 py-2 text-sm text-mutedForeground">
-                  Ничего не найдено
+                  {t("dashboard.nothingFound")}
                 </div>
               )}
 

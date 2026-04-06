@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { goalApi } from "@/api/goalApi";
 import type { DiaryEntryFormValues } from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
@@ -88,6 +89,7 @@ export function ConfirmEntryGoalDialog({
   onOpenChange,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation();
   const [detail, setDetail] = useState<DiaryEntryGoalDetail | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -126,7 +128,7 @@ export function ConfirmEntryGoalDialog({
         setDetail(null);
         form.reset(EMPTY_FORM_VALUES);
         setLoadError(
-          error instanceof Error ? error.message : "Не удалось загрузить данные цели"
+          error instanceof Error ? error.message : t("goals.loadDetailError")
         );
       } finally {
         if (cancelled) return;
@@ -150,7 +152,7 @@ export function ConfirmEntryGoalDialog({
       await onSubmit(goalId, toConfirmPayload(values));
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : "Не удалось подтвердить запись"
+        error instanceof Error ? error.message : t("goals.confirmError")
       );
     }
   });
@@ -159,23 +161,28 @@ export function ConfirmEntryGoalDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-[min(42rem,calc(100vw-2rem))] overflow-hidden p-0">
         <DialogHeader className="sr-only">
-          <DialogTitle>Подтверждение записи по цели</DialogTitle>
+          <DialogTitle>{t("goals.confirmDialogTitle")}</DialogTitle>
           <DialogDescription>
-            Отредактируйте значения записи и подтвердите выполнение цели.
+            {t("goals.confirmDialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <Card className="w-full max-h-[90vh] overflow-y-auto no-scrollbar">
           <CardHeader>
-            <CardTitle>Подтверждение записи</CardTitle>
+            <CardTitle>{t("goals.confirmCardTitle")}</CardTitle>
             <div className="text-sm text-muted-foreground">
-              Цель: {entryName || detail?.name || (goalId ? `Запись #${goalId}` : "--")}
+              {t("goals.goalLabel", {
+                name:
+                  entryName ||
+                  detail?.name ||
+                  (goalId ? t("goals.goalEntryFallback", { id: String(goalId) }) : "--"),
+              })}
             </div>
           </CardHeader>
 
           <CardContent>
             {isLoadingDetail && (
-              <div className="text-sm text-muted-foreground">Загрузка данных цели...</div>
+              <div className="text-sm text-muted-foreground">{t("goals.loadingGoalData")}</div>
             )}
 
             {!isLoadingDetail && loadError && (
@@ -220,7 +227,7 @@ export function ConfirmEntryGoalDialog({
               disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
             >
-              Отмена
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -228,7 +235,7 @@ export function ConfirmEntryGoalDialog({
               className="flex-1"
               disabled={isSubmitting || isLoadingDetail}
             >
-              {isSubmitting ? "Сохранение..." : "Сохранить и подтвердить"}
+              {isSubmitting ? t("common.saving") : t("goals.confirmSubmit")}
             </Button>
           </CardFooter>
         </Card>

@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
 import { Button } from "@/shared/components/ui/button";
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export default function LoginForm({ onSubmit }: Props) {
+  const { t } = useTranslation();
   const form = useForm<LoginFormValues>({
     defaultValues: {
       username: "",
@@ -42,10 +44,10 @@ export default function LoginForm({ onSubmit }: Props) {
         <FormField
           control={control}
           name="username"
-          rules={{ required: "Введите username или email" }}
+          rules={{ required: t("auth.validation.usernameOrEmailRequired") }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>{t("auth.username")}</FormLabel>
               <FormControl>
                 <Input placeholder="username" {...field} />
               </FormControl>
@@ -58,10 +60,10 @@ export default function LoginForm({ onSubmit }: Props) {
         <FormField
           control={control}
           name="password"
-          rules={{ required: "Введите пароль" }}
+          rules={{ required: t("auth.validation.passwordRequired") }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Пароль</FormLabel>
+              <FormLabel>{t("auth.password")}</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
@@ -71,16 +73,16 @@ export default function LoginForm({ onSubmit }: Props) {
         />
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Вход..." : "Войти"}
+          {isSubmitting ? t("auth.loginSubmitting") : t("auth.loginSubmit")}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
-          Нет аккаунта?{" "}
+          {t("auth.noAccount")}{" "}
           <NavLink
             to="/register"
             className="underline underline-offset-4 hover:text-primary"
           >
-            Зарегистрироваться
+            {t("auth.goToRegister")}
           </NavLink>
         </p>
       </form>

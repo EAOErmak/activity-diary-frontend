@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import DiaryEntryForm, {
   DiaryEntryFormValues,
@@ -12,6 +13,7 @@ import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 
 export default function DiaryEditPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -63,16 +65,16 @@ export default function DiaryEditPage() {
   };
 
   if (loading)
-    return <p className="text-white text-center p-10">Р—Р°РіСЂСѓР·РєР°...</p>;
+    return <p className="text-white text-center p-10">{t("common.loading")}</p>;
 
   if (status === "DELETED") {
     return (
       <Card className="max-w-xl mx-auto bg-slate-900 text-white p-8 mt-10 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 text-center">
-          Р—Р°РїРёСЃСЊ РЅРµРґРѕСЃС‚СѓРїРЅР°
+          {t("diary.deletedEntryTitle")}
         </h2>
         <p className="text-gray-300 text-center mb-6">
-          Р­С‚Р° Р·Р°РїРёСЃСЊ Р±С‹Р»Р° РїРѕРјРµС‡РµРЅР° РєР°Рє СѓРґР°Р»С‘РЅРЅР°СЏ Рё Р±РѕР»СЊС€Рµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РёР·РјРµРЅРµРЅР°.
+          {t("diary.deletedEntryDescription")}
         </p>
 
         <div className="flex justify-center">
@@ -80,7 +82,7 @@ export default function DiaryEditPage() {
             className="bg-blue-600 hover:bg-blue-700"
             onClick={() => nav("/diary")}
           >
-            Р’РµСЂРЅСѓС‚СЊСЃСЏ РЅР°Р·Р°Рґ
+            {t("diary.backToDiary")}
           </Button>
         </div>
       </Card>
@@ -89,13 +91,13 @@ export default function DiaryEditPage() {
 
   // =============== NORMAL EDIT ===============
   if (!values)
-    return <p className="text-white text-center p-10">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РїРёСЃРё</p>;
+    return <p className="text-white text-center p-10">{t("diary.loadEntryError")}</p>;
 
   return (
     <DiaryEntryForm
       mode="edit"
-      title="Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ Р·Р°РїРёСЃРё"
-      submitLabel="РЎРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ"
+      title={t("diary.editEntryTitle")}
+      submitLabel={t("common.saveChanges")}
       initialValues={values}
       onSubmit={handleSubmit}
     />

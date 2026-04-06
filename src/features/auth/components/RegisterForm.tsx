@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
 import type { RegisterRequest } from "@/shared/types/auth";
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export default function RegisterForm({ onSubmit }: Props) {
+  const { t } = useTranslation();
   const form = useForm<RegisterRequest>({
     defaultValues: {
       fullName: "",
@@ -41,10 +43,10 @@ export default function RegisterForm({ onSubmit }: Props) {
         <FormField
           control={control}
           name="fullName"
-          rules={{ required: "Введите полное имя", minLength: 2 }}
+          rules={{ required: t("auth.validation.fullNameRequired"), minLength: 2 }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Полное имя</FormLabel>
+              <FormLabel>{t("auth.fullName")}</FormLabel>
               <FormControl>
                 <Input placeholder="Full Name" {...field} />
               </FormControl>
@@ -57,7 +59,7 @@ export default function RegisterForm({ onSubmit }: Props) {
         <FormField
           control={control}
           name="email"
-          rules={{ required: "Введите email" }}
+          rules={{ required: t("auth.validation.emailRequired") }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
@@ -74,8 +76,8 @@ export default function RegisterForm({ onSubmit }: Props) {
           control={control}
           name="username"
           rules={{
-            required: "Введите username",
-            minLength: { value: 3, message: "Минимум 3 символа" },
+            required: t("auth.validation.usernameRequired"),
+            minLength: { value: 3, message: t("auth.validation.min3Chars") },
           }}
           render={({ field }) => (
             <FormItem>
@@ -93,12 +95,12 @@ export default function RegisterForm({ onSubmit }: Props) {
           control={control}
           name="password"
           rules={{
-            required: "Введите пароль",
-            minLength: { value: 8, message: "Минимум 8 символов" },
+            required: t("auth.validation.passwordRequired"),
+            minLength: { value: 8, message: t("auth.validation.min8Chars") },
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Пароль</FormLabel>
+              <FormLabel>{t("auth.password")}</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
@@ -108,16 +110,16 @@ export default function RegisterForm({ onSubmit }: Props) {
         />
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
+          {isSubmitting ? t("auth.registerSubmitting") : t("auth.registerSubmit")}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
-          Уже есть аккаунт?{" "}
+          {t("auth.hasAccount")}{" "}
           <NavLink
             to="/login"
             className="underline underline-offset-4 hover:text-primary"
           >
-            Войти
+            {t("auth.goToLogin")}
           </NavLink>
         </p>
       </form>

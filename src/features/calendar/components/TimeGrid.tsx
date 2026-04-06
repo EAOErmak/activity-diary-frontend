@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect, useLayoutEffect, useState } from "react";
 import { format, startOfDay, endOfDay } from "date-fns";
+import { getDateFnsLocale } from "@/shared/i18n/locale";
 import type { CalendarEvent } from "../lib/calendarTypes";
 import EventBlock from "@/features/calendar/components/EventBlock";
 
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function TimeGrid({ days, events }: Props) {
+  const locale = getDateFnsLocale();
   const hours = useMemo(
     () => Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i),
     []
@@ -131,7 +133,7 @@ export default function TimeGrid({ days, events }: Props) {
                 style={{ height: HEADER_HEIGHT }}
               >
                 <span className="text-[15px] uppercase text-mutedForeground">
-                  {format(day, "EEE")}
+                  {format(day, "EEE", { locale })}
                 </span>
                 <span
                   className={

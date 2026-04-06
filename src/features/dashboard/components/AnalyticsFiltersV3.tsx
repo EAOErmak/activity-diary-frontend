@@ -1,4 +1,5 @@
 import type { Tag } from "@/shared/types/tag";
+import { useTranslation } from "react-i18next";
 import {
   getChartTypeLabel,
   type ChartType,
@@ -53,14 +54,15 @@ export default function AnalyticsFiltersV3({
   onToDateChange,
   onReset,
 }: Props) {
+  const { t } = useTranslation();
   const chartTypePlaceholder =
     selectedTagId == null
-      ? "Сначала выберите тег"
+      ? t("dashboard.chartTypePlaceholderSelectTag")
       : isLoadingChartTypes
-        ? "Загрузка..."
+        ? t("dashboard.chartTypePlaceholderLoading")
         : chartTypesErrorMessage || availableChartTypes.length === 0
-          ? "Недоступно"
-          : "Выберите тип графика";
+          ? t("dashboard.chartTypePlaceholderUnavailable")
+          : t("dashboard.chartTypePlaceholderSelect");
 
   return (
     <Card className="mb-6 shadow-sm">
@@ -77,7 +79,7 @@ export default function AnalyticsFiltersV3({
         </div>
 
         <div className="mb-1 space-y-2">
-          <Label>Тип графика</Label>
+          <Label>{t("dashboard.chartTypeLabel")}</Label>
           <Select
             value={chartType ?? ""}
             onValueChange={(value) => onChartTypeChange(value || null)}
@@ -102,12 +104,12 @@ export default function AnalyticsFiltersV3({
         </div>
 
         <div className="mb-1 space-y-2">
-          <Label>Дата начала</Label>
+          <Label>{t("dashboard.startDateLabel")}</Label>
           <DatePicker date={fromDate} setDate={onFromDateChange} showTime={false} />
         </div>
 
         <div className="mb-1 space-y-2">
-          <Label>Дата конца</Label>
+          <Label>{t("dashboard.endDateLabel")}</Label>
           <DatePicker date={toDate} setDate={onToDateChange} showTime={false} />
         </div>
 
@@ -117,7 +119,7 @@ export default function AnalyticsFiltersV3({
             className="w-full xl:min-w-[8.5rem] xl:w-auto"
             onClick={onReset}
           >
-            Сбросить
+            {t("common.reset")}
           </Button>
         </div>
       </CardContent>

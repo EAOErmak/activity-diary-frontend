@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/api/userApi";
 export function useProfile() {
   const [user, setUser] = useState<UserDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<"profile.loadError" | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -13,7 +13,7 @@ export function useProfile() {
 
     getCurrentUser()
       .then(setUser)
-      .catch(() => setError("Не удалось загрузить профиль"))
+      .catch(() => setError("profile.loadError"))
       .finally(() => setLoading(false));
   }, []);
 

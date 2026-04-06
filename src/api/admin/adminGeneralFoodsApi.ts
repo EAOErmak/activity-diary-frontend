@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import api from "@/api/http/axiosInstance";
+import i18n from "@/shared/i18n/config";
 import type { ApiResponse } from "@/shared/types/api";
 import type {
   FoodUpsertDto,
@@ -42,7 +43,7 @@ export async function createGeneralFood(
 
     return data.data;
   } catch (error) {
-    throw toAdminGeneralFoodApiError(error, "Не удалось создать продукт.");
+    throw toAdminGeneralFoodApiError(error, i18n.t("errors.adminFoodCreate"));
   }
 }
 
@@ -58,7 +59,7 @@ export async function updateGeneralFood(
 
     return data.data;
   } catch (error) {
-    throw toAdminGeneralFoodApiError(error, "Не удалось обновить продукт.");
+    throw toAdminGeneralFoodApiError(error, i18n.t("errors.adminFoodUpdate"));
   }
 }
 
@@ -66,6 +67,6 @@ export async function deleteGeneralFood(id: number): Promise<void> {
   try {
     await api.delete(`/admin/general-foods/${id}`);
   } catch (error) {
-    throw toAdminGeneralFoodApiError(error, "Не удалось удалить продукт.");
+    throw toAdminGeneralFoodApiError(error, i18n.t("errors.adminFoodDelete"));
   }
 }

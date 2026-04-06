@@ -6,6 +6,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { toast } from "sonner";
+import i18n from "@/shared/i18n/config";
 import { useAuthStore } from "@/shared/store/authStore";
 import { isTokenExpired } from "@/shared/lib/jwt";
 import type { ApiResponse } from "@/shared/types/api";
@@ -76,7 +77,7 @@ function extractErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return "Ошибка";
+  return i18n.t("errors.generic");
 }
 
 function showErrorToast(error: unknown) {
@@ -205,9 +206,9 @@ api.interceptors.response.use(
         }
       | undefined;
     if (data?.success === false) {
-      toast.error(data.message ?? "Ошибка");
+      toast.error(data.message ?? i18n.t("errors.generic"));
       return Promise.reject(
-        new Error(data.message ?? "Ошибка")
+        new Error(data.message ?? i18n.t("errors.generic"))
       );
     }
     return response;

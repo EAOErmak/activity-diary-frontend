@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -34,16 +35,6 @@ import type {
 
 const EMPTY_SELECTED_ITEMS: ScheduleTemplateSelectedItem[] = [];
 
-export const WEEKDAY_LABELS = [
-  "Понедельник",
-  "Вторник",
-  "Среда",
-  "Четверг",
-  "Пятница",
-  "Суббота",
-  "Воскресенье",
-];
-
 type WeekTemplateFormValues = {
   name: string;
   items: { templateId: number | null }[];
@@ -67,9 +58,9 @@ type Props = {
 
 export default function WeekTemplateForm({
   title,
-  submitLabel = "Сохранить",
-  namePlaceholder = "Например: Рабочая неделя",
-  itemPlaceholder = "Выберите шаблон дня",
+  submitLabel,
+  namePlaceholder,
+  itemPlaceholder,
   emptyOptionsHint,
   dayTemplates,
   initialName = "",
@@ -77,8 +68,21 @@ export default function WeekTemplateForm({
   requireAllDays = false,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation();
+  const weekdayLabels = [
+    t("templates.monday"),
+    t("templates.tuesday"),
+    t("templates.wednesday"),
+    t("templates.thursday"),
+    t("templates.friday"),
+    t("templates.saturday"),
+    t("templates.sunday"),
+  ];
+  const resolvedSubmitLabel = submitLabel ?? t("common.save");
+  const resolvedNamePlaceholder = namePlaceholder ?? t("templates.weekNamePlaceholder");
+  const resolvedItemPlaceholder = itemPlaceholder ?? t("templates.weekItemPlaceholder");
   const defaultValues = useMemo<WeekTemplateFormValues>(() => {
-    const items = Array.from({ length: WEEKDAY_LABELS.length }, () => ({
+    const items = Array.from({ length: weekdayLabels.length }, () => ({
       templateId: null as number | null,
     }));
 
@@ -93,7 +97,7 @@ export default function WeekTemplateForm({
       name: initialName,
       items,
     };
-  }, [initialName, initialSelectedItems]);
+  }, [initialName, initialSelectedItems, weekdayLabels.length]);
 
   const form = useForm<WeekTemplateFormValues>({
     defaultValues,
@@ -118,7 +122,7 @@ export default function WeekTemplateForm({
         <CardHeader className="pb-4">
           <CardTitle>{title}</CardTitle>
           <CardDescription>
-            Назначьте шаблон дня для каждого дня недели.
+            {t("templates.weekDescription")}
           </CardDescription>
         </CardHeader>
 
@@ -130,7 +134,7 @@ export default function WeekTemplateForm({
                 if (!name) {
                   form.setError("name", {
                     type: "required",
-                    message: "Название обязательно",
+                    message: t("templates.nameRequired"),
                   });
                   return;
                 }
@@ -143,7 +147,7 @@ export default function WeekTemplateForm({
                   if (hasEmptySlot) {
                     form.setError("items", {
                       type: "required",
-                      message: "Заполните все 7 дней недели",
+                      message: t("templates.weekAllDaysRequired"),
                     });
                     return;
                   }
@@ -165,7 +169,7 @@ export default function WeekTemplateForm({
                 if (selectedItems.length === 0) {
                   form.setError("items", {
                     type: "required",
-                    message: "Добавьте минимум один день недели",
+                    message: t("templates.weekAtLeastOne"),
                   });
                   return;
                 }
@@ -181,10 +185,10 @@ export default function WeekTemplateForm({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Название</FormLabel>
+                      <FormLabel>{t("templates.nameLabel")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={namePlaceholder}
+                          placeholder={resolvedNamePlaceholder}
                           maxLength={120}
                           {...field}
                         />
@@ -197,21 +201,19 @@ export default function WeekTemplateForm({
 
               <div className="space-y-3 rounded-2xl border border-transparent bg-input p-3.5 transition-colors hover:border-border/60 focus-within:border-border/60 sm:p-4">
                 <div className="space-y-1">
-                  <div className="text-sm font-medium">Дни недели</div>
+                  <div className="text-sm font-medium">{t("templates.weekDaysTitle")}</div>
                   <div className="text-xs text-muted-foreground">
-                    Для каждого дня можно выбрать отдельный шаблон или оставить
-                    поле пустым.
+                    {t("templates.weekDaysHint")}
                   </div>
                 </div>
 
                 {!hasOptions && (
                   <div className="text-sm text-muted-foreground">
-                    {emptyOptionsHint ??
-                      "Сначала создайте хотя бы один шаблон дня."}
+                    {emptyOptionsHint ?? t("templates.weekEmptyOptionsHint")}
                   </div>
                 )}
 
-                {WEEKDAY_LABELS.map((dayLabel, index) => (
+                {weekdayLabels.map((dayLabel, index) => (
                   <div
                     key={dayLabel}
                     className={`rounded-xl border bg-[hsl(var(--input-hover))] p-3 transition-colors ${
@@ -252,7 +254,7 @@ export default function WeekTemplateForm({
                                       : "border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus:border-border/60"
                                   }
                                 >
-                                  <SelectValue placeholder={itemPlaceholder} />
+                                  <SelectValue placeholder={resolvedItemPlaceholder} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {dayTemplates.map((option) => (
@@ -284,7 +286,7 @@ export default function WeekTemplateForm({
                   className="w-full sm:w-auto sm:min-w-[12rem]"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Сохранение..." : submitLabel}
+                  {isSubmitting ? t("common.saving") : resolvedSubmitLabel}
                 </Button>
               </CardFooter>
             </form>

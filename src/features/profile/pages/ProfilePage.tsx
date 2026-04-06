@@ -5,19 +5,21 @@ import {
   CardContent,
   CardFooter,
 } from "@/shared/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/components/ui/button";
 import { ProfileView } from "../components/ProfileView";
 import { useProfile } from "../hooks/useProfile";
 import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user, loading, error } = useProfile();
   const navigate = useNavigate();
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        Загрузка профиля…
+        {t("profile.loading")}
       </div>
     );
   }
@@ -25,7 +27,7 @@ export default function ProfilePage() {
   if (error || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-destructive">
-        {error ?? "Профиль не найден"}
+        {error ? t(error) : t("profile.notFound")}
       </div>
     );
   }
@@ -34,7 +36,7 @@ export default function ProfilePage() {
     <div className="min-h-screen flex items-center justify-center bg-page p-4">
       <Card className="w-full max-w-lg border border-border/60 shadow-lg">
         <CardHeader>
-          <CardTitle>Профиль</CardTitle>
+          <CardTitle>{t("profile.title")}</CardTitle>
         </CardHeader>
 
         <CardContent>
@@ -47,7 +49,7 @@ export default function ProfilePage() {
             variant="primary"
             onClick={() => navigate("/profile/edit")}
           >
-            Редактировать профиль
+            {t("profile.editButton")}
           </Button>
         </CardFooter>
       </Card>

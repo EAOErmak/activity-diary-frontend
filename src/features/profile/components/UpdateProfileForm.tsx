@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { profileApi } from "@/api/userApi";
 
 import { Button } from "@/shared/components/ui/button";
@@ -22,6 +23,7 @@ type FormValues = {
 };
 
 export function UpdateProfileForm({ fullName, onSuccess }: Props) {
+  const { t } = useTranslation();
   const form = useForm<FormValues>({
     defaultValues: { fullName },
   });
@@ -39,12 +41,12 @@ export function UpdateProfileForm({ fullName, onSuccess }: Props) {
           control={form.control}
           name="fullName"
           rules={{
-            required: "Введите имя",
-            maxLength: { value: 128, message: "Максимум 128 символов" },
+            required: t("profile.validation.nameRequired"),
+            maxLength: { value: 128, message: t("profile.validation.nameMaxLength") },
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Полное имя</FormLabel>
+              <FormLabel>{t("profile.fullName")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -54,7 +56,7 @@ export function UpdateProfileForm({ fullName, onSuccess }: Props) {
         />
 
         <Button className="w-full" type="submit">
-          Сохранить имя
+          {t("profile.saveName")}
         </Button>
       </form>
     </Form>

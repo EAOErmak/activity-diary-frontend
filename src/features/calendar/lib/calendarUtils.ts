@@ -1,4 +1,5 @@
 import { startOfWeek, addDays, format } from "date-fns";
+import { getDateFnsLocale } from "@/shared/i18n/locale";
 import type { DiaryEntryView } from "@/shared/types/diary";
 import type { CalendarEvent } from "./calendarTypes";
 
@@ -15,8 +16,9 @@ export function getWeekDays(base: Date) {
 
 export function formatWeekRange(base: Date) {
   const days = getWeekDays(base);
-  const a = format(days[0], "MMM d");
-  const b = format(days[6], "MMM d, yyyy");
+  const locale = getDateFnsLocale();
+  const a = format(days[0], "MMM d", { locale });
+  const b = format(days[6], "MMM d, yyyy", { locale });
   return `${a} — ${b}`;
 }
 

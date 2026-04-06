@@ -3,10 +3,12 @@
 import * as React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Calendar } from "@/shared/components/ui/calendar";
+import { getDateFnsLocale } from "@/shared/i18n/locale";
 import {
   Popover,
   PopoverContent,
@@ -108,6 +110,7 @@ const DatePickerCalendar = React.memo(
 );
 
 export function DatePicker({ date, setDate, showTime = true }: Props) {
+  const { t } = useTranslation();
   const [displayDate, setDisplayDate] = React.useState(date);
   const [time, setTime] = React.useState(
     date ? format(date, "HH:mm") : "00:00"
@@ -335,9 +338,11 @@ export function DatePicker({ date, setDate, showTime = true }: Props) {
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
           {displayDate ? (
-            format(displayDate, showTime ? "dd.MM.yyyy HH:mm" : "dd.MM.yyyy")
+            format(displayDate, showTime ? "dd.MM.yyyy HH:mm" : "dd.MM.yyyy", {
+              locale: getDateFnsLocale(),
+            })
           ) : (
-            <span>{showTime ? "Выбери дату и время" : "Выбери дату"}</span>
+            <span>{showTime ? t("common.chooseDateTime") : t("common.chooseDate")}</span>
           )}
         </Button>
       </PopoverTrigger>

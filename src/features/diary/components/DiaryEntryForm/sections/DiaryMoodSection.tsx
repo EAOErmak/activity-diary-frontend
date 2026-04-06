@@ -1,4 +1,5 @@
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   FormField,
   FormItem,
@@ -20,12 +21,13 @@ type Props = {
 };
 
 export function DiaryMoodSection() {
+  const { t } = useTranslation();
   return (
     <FormField
       name="mood"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Настроение</FormLabel>
+          <FormLabel>{t("diary.moodLabel")}</FormLabel>
 
           <div className="flex justify-evenly w-full">
             {MOODS.map((lvl) => {

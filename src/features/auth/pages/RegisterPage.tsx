@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import RegisterForm from "@/features/auth/components/RegisterForm";
 import { registerRequest } from "@/api/authApi";
@@ -13,6 +14,7 @@ import {
 } from "@/shared/components/ui/card";
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const nav = useNavigate();
 
   async function handle(data: RegisterRequest) {
@@ -20,7 +22,7 @@ export default function RegisterPage() {
       await registerRequest(data);
       nav("/login"); // экран "Проверьте почту"
     } catch (err: any) {
-      alert(err?.response?.data?.error?.message || "Ошибка регистрации");
+      alert(err?.response?.data?.error?.message || t("auth.registerError"));
     }
   }
 
@@ -28,9 +30,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-page p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Регистрация</CardTitle>
+          <CardTitle>{t("auth.registerTitle")}</CardTitle>
           <CardDescription>
-            Создать новый аккаунт
+            {t("auth.registerSubtitle")}
           </CardDescription>
         </CardHeader>
 

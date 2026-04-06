@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { profileApi } from "@/api/userApi";
 
 import { Button } from "@/shared/components/ui/button";
@@ -18,6 +19,7 @@ type FormValues = {
 };
 
 export function ChangePasswordForm() {
+  const { t } = useTranslation();
   const form = useForm<FormValues>({
     defaultValues: {
       currentPassword: "",
@@ -37,10 +39,10 @@ export function ChangePasswordForm() {
         <FormField
           control={form.control}
           name="currentPassword"
-          rules={{ required: "Введите текущий пароль" }}
+          rules={{ required: t("profile.validation.currentPasswordRequired") }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Текущий пароль</FormLabel>
+              <FormLabel>{t("profile.currentPassword")}</FormLabel>
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
@@ -53,13 +55,13 @@ export function ChangePasswordForm() {
           control={form.control}
           name="newPassword"
           rules={{
-            required: "Введите новый пароль",
-            minLength: { value: 8, message: "Минимум 8 символов" },
-            maxLength: { value: 64, message: "Максимум 64 символа" },
+            required: t("profile.validation.newPasswordRequired"),
+            minLength: { value: 8, message: t("auth.validation.min8Chars") },
+            maxLength: { value: 64, message: t("profile.validation.passwordMaxLength") },
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Новый пароль</FormLabel>
+              <FormLabel>{t("profile.newPassword")}</FormLabel>
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
@@ -69,7 +71,7 @@ export function ChangePasswordForm() {
         />
 
         <Button variant="danger" className="w-full" type="submit">
-          Сменить пароль
+          {t("profile.changePassword")}
         </Button>
       </form>
     </Form>

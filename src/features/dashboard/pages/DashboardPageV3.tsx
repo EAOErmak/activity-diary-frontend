@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { getAnalyticsChart, getAnalyticsChartTypes } from "@/api/analyticsApi";
 import { getAllTags } from "@/api/tagApi";
 import ActivityBarChart from "@/features/dashboard/components/ActivityBarChart";
@@ -36,6 +37,7 @@ const buildDefaultFromDate = () => buildDateWithDayOffset(-15);
 const buildDefaultToDate = () => buildDateWithDayOffset(15);
 
 export default function DashboardPageV3() {
+  const { t } = useTranslation();
   const [tagQuery, setTagQuery] = useState("");
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [chartType, setChartType] = useState<ChartType | null>(null);
@@ -75,7 +77,7 @@ export default function DashboardPageV3() {
   });
 
   const chartTypesErrorMessage = isChartTypesError
-    ? chartTypesError?.message ?? "Не удалось загрузить типы графика."
+    ? chartTypesError?.message ?? t("errors.analyticsChartTypesLoad")
     : null;
 
   const isDateRangeInvalid = Boolean(
@@ -124,29 +126,29 @@ export default function DashboardPageV3() {
     retry: false,
   });
 
-  const chartErrorMessage = error?.message ?? "Не удалось загрузить аналитику.";
+  const chartErrorMessage = error?.message ?? t("errors.analyticsLoad");
 
   const pendingAlert = useMemo<AnalyticsAlertState | null>(() => {
     if (isTagsError) {
       return {
         key: "tags-error",
-        title: "Ошибка загрузки",
-        description: "Не удалось загрузить список тегов.",
+        title: t("dashboard.loadingErrorTitle"),
+        description: t("dashboard.tagsLoadError"),
       };
     }
 
     if (isDateRangeInvalid) {
       return {
         key: `invalid-range:${fromDate?.toISOString() ?? "none"}:${toDate?.toISOString() ?? "none"}`,
-        title: "Некорректный диапазон дат",
-        description: "Дата начала не может быть позже даты конца.",
+        title: t("dashboard.invalidDateRangeTitle"),
+        description: t("dashboard.invalidDateRangeDescription"),
       };
     }
 
     if (selectedTagId !== null && chartTypesErrorMessage) {
       return {
         key: `chart-types-error:${selectedTagId}:${chartTypesErrorMessage}`,
-        title: "Ошибка загрузки",
+        title: t("dashboard.loadingErrorTitle"),
         description: chartTypesErrorMessage,
       };
     }
@@ -158,15 +160,15 @@ export default function DashboardPageV3() {
     ) {
       return {
         key: `empty-chart-types:${selectedTagId}`,
-        title: "Нет доступных графиков",
-        description: "Для этого тега нет доступных графиков.",
+        title: t("dashboard.noChartTypesTitle"),
+        description: t("dashboard.noChartTypesDescription"),
       };
     }
 
     if (selectedTagId !== null && chartType !== null && isError) {
       return {
         key: `chart-error:${selectedTagId}:${chartType}:${chartErrorMessage}`,
-        title: "Ошибка загрузки",
+        title: t("dashboard.loadingErrorTitle"),
         description: chartErrorMessage,
       };
     }
@@ -216,14 +218,14 @@ export default function DashboardPageV3() {
             <AlertDialogDescription>{alertState?.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction>Понятно</AlertDialogAction>
+            <AlertDialogAction>{t("dashboard.ok")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Аналитика</h1>
+          <h1 className="text-3xl font-bold">{t("dashboard.title")}</h1>
         </div>
 
         <AnalyticsFiltersV3
@@ -275,8 +277,10 @@ export default function DashboardPageV3() {
 
         {selectedTagId !== null && chartType !== null && selectedTagName && (
           <div className="text-sm text-mutedForeground">
-            Текущий график: {getChartTypeLabel(chartType)} для тега{" "}
-            <span className="font-medium text-foreground">{selectedTagName}</span>
+            {t("dashboard.currentChart", {
+              chartType: getChartTypeLabel(chartType),
+              tagName: selectedTagName,
+            })}
           </div>
         )}
 

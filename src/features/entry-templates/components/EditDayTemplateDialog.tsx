@@ -10,6 +10,7 @@ import DayTemplateForm from "@/features/entry-templates/components/ScheduleTempl
 import type { ScheduleTemplateOption } from "@/features/entry-templates/components/ScheduleTemplateForm/types";
 import type { DayTemplateView } from "@/shared/types/scheduleTemplate";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -26,6 +27,7 @@ export function EditDayTemplateDialog({
   entryTemplates,
   onUpdated,
 }: Props) {
+  const { t } = useTranslation();
   if (!template) return null;
 
   return (
@@ -35,11 +37,11 @@ export function EditDayTemplateDialog({
         <DialogDescription />
 
         <DayTemplateForm
-          title="Редактировать шаблон дня"
-          submitLabel="Сохранить изменения"
-          namePlaceholder="Например: День тренировок"
-          itemPlaceholder="Выберите шаблон записи"
-          emptyOptionsHint="Сначала создайте хотя бы один шаблон записи."
+          title={t("templates.editDayTitle")}
+          submitLabel={t("common.saveChanges")}
+          namePlaceholder={t("templates.dayNamePlaceholder")}
+          itemPlaceholder={t("templates.dayItemPlaceholder")}
+          emptyOptionsHint={t("templates.dayEmptyOptionsHint")}
           entryTemplates={entryTemplates}
           initialName={template.name}
           initialSelectedItems={template.items.map((item) => ({
@@ -54,7 +56,7 @@ export function EditDayTemplateDialog({
                 position: slot,
               })),
             });
-            toast.success("Шаблон дня обновлен");
+            toast.success(t("templates.dayUpdated"));
             onOpenChange(false);
             onUpdated?.();
           }}

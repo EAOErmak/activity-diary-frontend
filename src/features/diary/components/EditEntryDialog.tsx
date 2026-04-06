@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 
 import DiaryEntryForm, {
   DiaryEntryFormValues,
@@ -25,6 +26,7 @@ export function EditEntryDialog({
   open,
   onOpenChange,
 }: Props) {
+  const { t } = useTranslation();
   const [values, setValues] =
     useState<DiaryEntryFormValues | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,17 +70,17 @@ useEffect(() => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Редактирование записи</DialogTitle>
+          <DialogTitle>{t("diary.editEntryTitle")}</DialogTitle>
         </DialogHeader>
 
         {loading || !values ? (
           <p className="text-white text-center py-10">
-            Загрузка...
+            {t("common.loading")}
           </p>
         ) : (
           <DiaryEntryForm
             mode="edit"
-            submitLabel="Сохранить изменения"
+            submitLabel={t("common.saveChanges")}
             initialValues={values}
             onSubmit={handleSubmit}
           />

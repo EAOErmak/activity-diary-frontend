@@ -7,6 +7,7 @@ import {
 } from "@/shared/components/ui/form";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   requireTag?: boolean;
@@ -15,6 +16,7 @@ type Props = {
 const MAX_DESCRIPTION_LENGTH = 1000;
 
 export function DiaryDescriptionSection({ requireTag = false }: Props) {
+  const { t } = useTranslation();
   const form = useFormContext();
   return (
     <FormField
@@ -23,24 +25,24 @@ export function DiaryDescriptionSection({ requireTag = false }: Props) {
       rules={{
         maxLength: {
           value: MAX_DESCRIPTION_LENGTH,
-          message: `Максимум ${MAX_DESCRIPTION_LENGTH} символов`,
+          message: t("diary.descriptionMaxLength", { count: MAX_DESCRIPTION_LENGTH }),
         },
         validate: (value: string) => {
           if (!requireTag) return true;
           if (!value) {
-            return "Добавь тег вида #тег (минимум 2 символа)";
+            return t("diary.tagRequired");
           }
           const hasTag = /#([\p{L}\p{N}_-]{2,})/u.test(value);
-          return hasTag || "Добавь тег вида #тег (минимум 2 символа)";
+          return hasTag || t("diary.tagRequired");
         },
       }}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Комментарий</FormLabel>
+          <FormLabel>{t("diary.descriptionLabel")}</FormLabel>
 
           <FormControl>
             <Textarea
-              placeholder="Комментарий к записи"
+              placeholder={t("diary.descriptionPlaceholder")}
               maxLength={MAX_DESCRIPTION_LENGTH}
               {...field}
             />

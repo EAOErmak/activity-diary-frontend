@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { entryTemplateApi } from "@/api/entryTemplateApi";
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
@@ -15,6 +16,7 @@ import type { DiaryEntryTemplate, DiaryEntryTemplateView } from "@/shared/types/
 import type { DayTemplateView, WeekTemplateView } from "@/shared/types/scheduleTemplate";
 
 export default function EntryTemplatesPage() {
+  const { t } = useTranslation();
   const [templateKind, setTemplateKind] = useState<"entry" | "weekday" | "week">(
     "entry"
   );
@@ -108,21 +110,21 @@ export default function EntryTemplatesPage() {
   };
 
   const removeEntryTemplate = async (id: number) => {
-    const confirmed = window.confirm("Удалить шаблон?");
+    const confirmed = window.confirm(t("templates.deleteEntryConfirm"));
     if (!confirmed) return;
     await entryTemplateApi.deleteEntryTemplate(id);
     await loadEntryTemplates();
   };
 
   const removeDayTemplate = async (id: number) => {
-    const confirmed = window.confirm("Удалить шаблон дня?");
+    const confirmed = window.confirm(t("templates.deleteDayConfirm"));
     if (!confirmed) return;
     await scheduleTemplateApi.deleteDayTemplate(id);
     await Promise.all([loadDayTemplates(), loadWeekTemplates()]);
   };
 
   const removeWeekTemplate = async (id: number) => {
-    const confirmed = window.confirm("Удалить шаблон недели?");
+    const confirmed = window.confirm(t("templates.deleteWeekConfirm"));
     if (!confirmed) return;
     await scheduleTemplateApi.deleteWeekTemplate(id);
     await loadWeekTemplates();
@@ -133,9 +135,9 @@ export default function EntryTemplatesPage() {
       <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-6 px-6 py-6 sm:px-8 lg:px-10">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-xl space-y-1">
-            <h1 className="text-2xl font-semibold">Шаблоны</h1>
+            <h1 className="text-2xl font-semibold">{t("templates.pageTitle")}</h1>
             <p className="text-sm text-muted-foreground">
-              Выберите тип шаблонов, которые хотите создавать
+              {t("templates.pageSubtitle")}
             </p>
           </div>
           <Button
@@ -153,16 +155,16 @@ export default function EntryTemplatesPage() {
             }}
           >
             {templateKind === "entry"
-              ? "Создать шаблон записи"
+              ? t("templates.createEntry")
               : templateKind === "weekday"
-              ? "Создать шаблон дня"
-              : "Создать шаблон недели"}
+              ? t("templates.createDay")
+              : t("templates.createWeek")}
           </Button>
         </div>
 
         <Card className="border-border/70 bg-background/95 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle>Тип шаблона</CardTitle>
+            <CardTitle>{t("templates.templateType")}</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid gap-3 md:grid-cols-3">
@@ -175,9 +177,9 @@ export default function EntryTemplatesPage() {
                     : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
                 }`}
               >
-                <div className="text-sm font-semibold sm:text-base">Шаблоны записей</div>
+                <div className="text-sm font-semibold sm:text-base">{t("templates.entryTypeTitle")}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Быстро создавать повторяющиеся записи
+                  {t("templates.entryTypeDescription")}
                 </div>
               </button>
               <button
@@ -189,9 +191,9 @@ export default function EntryTemplatesPage() {
                     : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
                 }`}
               >
-                <div className="text-sm font-semibold sm:text-base">Шаблоны дней</div>
+                <div className="text-sm font-semibold sm:text-base">{t("templates.dayTypeTitle")}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Планирование повторяющихся дней
+                  {t("templates.dayTypeDescription")}
                 </div>
               </button>
               <button
@@ -203,9 +205,9 @@ export default function EntryTemplatesPage() {
                     : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
                 }`}
               >
-                <div className="text-sm font-semibold sm:text-base">Шаблоны недели</div>
+                <div className="text-sm font-semibold sm:text-base">{t("templates.weekTypeTitle")}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Сценарии и планы на неделю
+                  {t("templates.weekTypeDescription")}
                 </div>
               </button>
             </div>
@@ -216,21 +218,21 @@ export default function EntryTemplatesPage() {
           <CardHeader className="pb-3">
             <CardTitle>
               {templateKind === "entry"
-                ? "Ваши шаблоны записей"
+                ? t("templates.yourEntryTemplates")
                 : templateKind === "weekday"
-                ? "Ваши шаблоны дня"
-                : "Ваши шаблоны недели"}
+                ? t("templates.yourDayTemplates")
+                : t("templates.yourWeekTemplates")}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             {templateKind === "entry" && (
               <>
                 {entryLoading && (
-                  <div className="text-sm text-muted-foreground">Загрузка...</div>
+                  <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
                 )}
                 {!entryLoading && entryTemplates.length === 0 && (
                   <div className="text-sm text-muted-foreground">
-                    Здесь появятся созданные шаблоны.
+                    {t("templates.emptyEntryTemplates")}
                   </div>
                 )}
                 {!entryLoading && entryTemplates.length > 0 && (
@@ -250,7 +252,7 @@ export default function EntryTemplatesPage() {
                             <div className="min-w-0">
                               <div className="text-lg font-semibold truncate">{tpl.name}</div>
                               <div className="text-sm text-muted-foreground">
-                                Настроение: {tpl.mood ?? "—"}
+                                {t("templates.moodValue", { value: String(tpl.mood ?? "—") })}
                               </div>
                             </div>
                             <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -260,7 +262,7 @@ export default function EntryTemplatesPage() {
                                 className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                                 onClick={() => openEntryTemplateEdit(tpl.id)}
                               >
-                                Редактировать
+                                {t("common.edit")}
                               </Button>
                               <Button
                                 size="sm"
@@ -268,7 +270,7 @@ export default function EntryTemplatesPage() {
                                 className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                                 onClick={() => removeEntryTemplate(tpl.id)}
                               >
-                                Удалить
+                                {t("common.delete")}
                               </Button>
                             </div>
                           </div>
@@ -289,11 +291,11 @@ export default function EntryTemplatesPage() {
             {templateKind === "weekday" && (
               <>
                 {dayLoading && (
-                  <div className="text-sm text-muted-foreground">Загрузка...</div>
+                  <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
                 )}
                 {!dayLoading && dayTemplates.length === 0 && (
                   <div className="text-sm text-muted-foreground">
-                    Здесь появятся шаблоны дня.
+                    {t("templates.emptyDayTemplates")}
                   </div>
                 )}
                 {!dayLoading && dayTemplates.length > 0 && (
@@ -307,7 +309,7 @@ export default function EntryTemplatesPage() {
                           <div className="min-w-0">
                             <div className="text-lg font-semibold truncate">{tpl.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              Записей в шаблоне: {tpl.items.length}
+                              {t("templates.dayItemsCount", { count: tpl.items.length })}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -317,7 +319,7 @@ export default function EntryTemplatesPage() {
                               className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                               onClick={() => openDayTemplateEdit(tpl)}
                             >
-                              Редактировать
+                              {t("common.edit")}
                             </Button>
                             <Button
                               size="sm"
@@ -325,7 +327,7 @@ export default function EntryTemplatesPage() {
                               className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                               onClick={() => removeDayTemplate(tpl.id)}
                             >
-                              Удалить
+                              {t("common.delete")}
                             </Button>
                           </div>
                         </div>
@@ -339,11 +341,11 @@ export default function EntryTemplatesPage() {
             {templateKind === "week" && (
               <>
                 {weekLoading && (
-                  <div className="text-sm text-muted-foreground">Загрузка...</div>
+                  <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
                 )}
                 {!weekLoading && weekTemplates.length === 0 && (
                   <div className="text-sm text-muted-foreground">
-                    Здесь появятся шаблоны недели.
+                    {t("templates.emptyWeekTemplates")}
                   </div>
                 )}
                 {!weekLoading && weekTemplates.length > 0 && (
@@ -357,7 +359,7 @@ export default function EntryTemplatesPage() {
                           <div className="min-w-0">
                             <div className="text-lg font-semibold truncate">{tpl.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              Дней в шаблоне: {tpl.items.length}
+                              {t("templates.weekItemsCount", { count: tpl.items.length })}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -367,7 +369,7 @@ export default function EntryTemplatesPage() {
                               className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                               onClick={() => openWeekTemplateEdit(tpl)}
                             >
-                              Редактировать
+                              {t("common.edit")}
                             </Button>
                             <Button
                               size="sm"
@@ -375,7 +377,7 @@ export default function EntryTemplatesPage() {
                               className="border border-transparent hover:border-border active:border-border focus-visible:border-border"
                               onClick={() => removeWeekTemplate(tpl.id)}
                             >
-                              Удалить
+                              {t("common.delete")}
                             </Button>
                           </div>
                         </div>

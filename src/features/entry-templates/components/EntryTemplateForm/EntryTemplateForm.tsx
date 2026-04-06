@@ -38,6 +38,7 @@ import {
   DiaryMetricsSection,
 } from "@/features/diary/components/DiaryEntryForm/sections";
 import { useDictionary } from "@/shared/hooks/useDictionary";
+import { useTranslation } from "react-i18next";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
@@ -223,12 +224,12 @@ type Props =
     };
 
 export default function EntryTemplateForm(props: Props) {
-  const {
-    mode,
-    title = "Шаблон записи",
-    submitLabel = "Сохранить",
-    onSubmit,
-  } = props;
+  const { t } = useTranslation();
+  const { mode, onSubmit } = props;
+  const title =
+    props.title ??
+    (mode === "create" ? t("templates.entryTitle") : t("templates.editEntryTitle"));
+  const submitLabel = props.submitLabel ?? t("common.save");
   const currentTime = getCurrentTimeHHmm();
 
   const form = useForm<EntryTemplateFormValues>({
@@ -331,7 +332,7 @@ export default function EntryTemplateForm(props: Props) {
                 if (!name) {
                   form.setError("name", {
                     type: "required",
-                    message: "Название обязательно",
+                    message: t("templates.nameRequired"),
                   });
                   return;
                 }
@@ -375,14 +376,14 @@ export default function EntryTemplateForm(props: Props) {
               className="space-y-5"
             >
               <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Название</FormLabel>
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>{t("templates.nameLabel")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Например: Утро, Тренировка"
+                        placeholder={t("templates.entryNamePlaceholder")}
                         maxLength={120}
                         {...field}
                       />
@@ -400,7 +401,7 @@ export default function EntryTemplateForm(props: Props) {
                   name="timeStart"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Время начала</FormLabel>
+                      <FormLabel>{t("templates.entryTimeStart")}</FormLabel>
                       <FormControl>
                         <TimeSelectControl value={field.value || ""} onChange={field.onChange} />
                       </FormControl>
@@ -414,7 +415,7 @@ export default function EntryTemplateForm(props: Props) {
                   name="timeEnd"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Время окончания</FormLabel>
+                      <FormLabel>{t("templates.entryTimeEnd")}</FormLabel>
                       <FormControl>
                         <TimeSelectControl value={field.value || ""} onChange={field.onChange} />
                       </FormControl>
@@ -437,7 +438,7 @@ export default function EntryTemplateForm(props: Props) {
                   className="w-full sm:w-auto sm:min-w-[12rem]"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Сохранение..." : submitLabel}
+                  {isSubmitting ? t("common.saving") : submitLabel}
                 </Button>
               </CardFooter>
             </form>

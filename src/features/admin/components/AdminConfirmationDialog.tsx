@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/components/ui/alert-dialog";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/components/ui/button";
 
 type AdminConfirmationDialogProps = {
@@ -27,12 +28,13 @@ export function AdminConfirmationDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = "Отмена",
+  cancelLabel,
   loading = false,
   tone = "primary",
   onOpenChange,
   onConfirm,
 }: AdminConfirmationDialogProps) {
+  const { t } = useTranslation();
   const confirmClassName =
     tone === "danger"
       ? "!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
@@ -49,7 +51,7 @@ export function AdminConfirmationDialog({
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
             <Button variant="surface" disabled={loading}>
-              {cancelLabel}
+              {cancelLabel ?? t("common.cancel")}
             </Button>
           </AlertDialogCancel>
 

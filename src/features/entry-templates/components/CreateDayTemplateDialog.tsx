@@ -9,6 +9,7 @@ import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
 import DayTemplateForm from "@/features/entry-templates/components/ScheduleTemplateForm/DayTemplateForm";
 import type { ScheduleTemplateOption } from "@/features/entry-templates/components/ScheduleTemplateForm/types";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -23,6 +24,7 @@ export function CreateDayTemplateDialog({
   entryTemplates,
   onCreated,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
@@ -30,10 +32,10 @@ export function CreateDayTemplateDialog({
         <DialogDescription />
 
         <DayTemplateForm
-          title="Шаблон дня"
-          namePlaceholder="Например: День тренировок"
-          itemPlaceholder="Выберите шаблон записи"
-          emptyOptionsHint="Сначала создайте хотя бы один шаблон записи."
+          title={t("templates.dayTitle")}
+          namePlaceholder={t("templates.dayNamePlaceholder")}
+          itemPlaceholder={t("templates.dayItemPlaceholder")}
+          emptyOptionsHint={t("templates.dayEmptyOptionsHint")}
           entryTemplates={entryTemplates}
           onSubmit={async ({ name, selectedItems }) => {
             await scheduleTemplateApi.createDayTemplate({
@@ -43,7 +45,7 @@ export function CreateDayTemplateDialog({
                 position: slot,
               })),
             });
-            toast.success("Шаблон дня создан");
+            toast.success(t("templates.dayCreated"));
             onOpenChange(false);
             onCreated?.();
           }}

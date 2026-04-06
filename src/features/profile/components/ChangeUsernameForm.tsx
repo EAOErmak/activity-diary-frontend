@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { profileApi } from "@/api/userApi";
 
 import { Button } from "@/shared/components/ui/button";
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export function ChangeUsernameForm({ username, onSuccess }: Props) {
+  const { t } = useTranslation();
   const form = useForm<FormValues>({
     defaultValues: { newUsername: username },
   });
@@ -39,13 +41,13 @@ export function ChangeUsernameForm({ username, onSuccess }: Props) {
           control={form.control}
           name="newUsername"
           rules={{
-            required: "Введите username",
-            minLength: { value: 3, message: "Минимум 3 символа" },
-            maxLength: { value: 64, message: "Максимум 64 символа" },
+            required: t("auth.validation.usernameRequired"),
+            minLength: { value: 3, message: t("auth.validation.min3Chars") },
+            maxLength: { value: 64, message: t("profile.validation.usernameMaxLength") },
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Новый username</FormLabel>
+              <FormLabel>{t("profile.newUsername")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -55,7 +57,7 @@ export function ChangeUsernameForm({ username, onSuccess }: Props) {
         />
 
         <Button variant="primary" className="w-full" type="submit">
-          Сменить username
+          {t("profile.changeUsername")}
         </Button>
       </form>
     </Form>

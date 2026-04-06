@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import api from "@/api/http/axiosInstance";
+import i18n from "@/shared/i18n/config";
 import type { ApiResponse } from "@/shared/types/api";
 import type {
   FoodUpsertDto,
@@ -45,7 +46,7 @@ export async function getGeneralFoods(
 
     return data.data;
   } catch (error) {
-    throw toFoodApiError(error, "Не удалось загрузить общую базу продуктов.");
+    throw toFoodApiError(error, i18n.t("errors.foodBaseLoad"));
   }
 }
 
@@ -59,7 +60,7 @@ export async function getGeneralFoodById(
 
     return data.data;
   } catch (error) {
-    throw toFoodApiError(error, "Не удалось загрузить продукт.");
+    throw toFoodApiError(error, i18n.t("errors.foodLoad"));
   }
 }
 
@@ -76,7 +77,7 @@ export async function getUserFoods(
 
     return data.data;
   } catch (error) {
-    throw toFoodApiError(error, "Не удалось загрузить ваши продукты.");
+    throw toFoodApiError(error, i18n.t("errors.userFoodsLoad"));
   }
 }
 
@@ -90,7 +91,7 @@ export async function getUserFoodById(
 
     return data.data;
   } catch (error) {
-    throw toFoodApiError(error, "Не удалось загрузить продукт пользователя.");
+    throw toFoodApiError(error, i18n.t("errors.userFoodLoad"));
   }
 }
 
@@ -105,7 +106,7 @@ export async function createUserFood(
 
     return data.data;
   } catch (error) {
-    throw toFoodApiError(error, "Не удалось создать продукт.");
+    throw toFoodApiError(error, i18n.t("errors.foodCreate"));
   }
 }
 
@@ -121,7 +122,7 @@ export async function updateUserFood(
 
     return data.data;
   } catch (error) {
-    throw toFoodApiError(error, "Не удалось обновить продукт.");
+    throw toFoodApiError(error, i18n.t("errors.foodUpdate"));
   }
 }
 
@@ -129,6 +130,6 @@ export async function deleteUserFood(id: number): Promise<void> {
   try {
     await api.delete(`/user-foods/${id}`);
   } catch (error) {
-    throw toFoodApiError(error, "Не удалось удалить продукт.");
+    throw toFoodApiError(error, i18n.t("errors.foodDelete"));
   }
 }

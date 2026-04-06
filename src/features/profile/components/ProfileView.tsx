@@ -1,4 +1,5 @@
 import type { UserDto } from "@/shared/types/user";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 
@@ -8,6 +9,13 @@ type Props = {
 };
 
 export function ProfileView({ user, onEdit }: Props) {
+  const { t } = useTranslation();
+  const roleLabels = {
+    USER: t("profile.roles.user"),
+    PREMIUM: t("profile.roles.premium"),
+    ADMIN: t("profile.roles.admin"),
+  } as const;
+
   return (
     <div className="space-y-6">
       {/* Username */}
@@ -20,31 +28,31 @@ export function ProfileView({ user, onEdit }: Props) {
 
       {/* Full name */}
       <div>
-        <p className="text-sm text-muted-foreground">Полное имя</p>
+        <p className="text-sm text-muted-foreground">{t("profile.fullName")}</p>
         <p className="text-base font-medium">{user.fullName}</p>
       </div>
 
       {/* Role */}
       <div>
-        <p className="text-sm text-muted-foreground">Роль</p>
+        <p className="text-sm text-muted-foreground">{t("profile.role")}</p>
         <Badge variant={user.role === "ADMIN" ? "destructive" : "secondary"}>
-          {user.role}
+          {roleLabels[user.role] ?? user.role}
         </Badge>
       </div>
 
       {/* Status */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Статус аккаунта</p>
+          <p className="text-sm text-muted-foreground">{t("profile.accountStatus")}</p>
           <p className="text-base font-medium">
-            {user.enabled ? "Активен" : "Отключён"}
+            {user.enabled ? t("profile.active") : t("profile.disabled")}
           </p>
         </div>
       </div>
 
       {onEdit && (
         <Button className="w-full" onClick={onEdit}>
-          Редактировать профиль
+          {t("profile.editButton")}
         </Button>
       )}
     </div>

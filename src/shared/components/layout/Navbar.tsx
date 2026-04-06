@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/components/ui/button";
 import { useTheme } from "@/theme-provider";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import { LanguageToggle } from "@/language-toggle";
 
 import {
   Sheet,
@@ -13,6 +15,7 @@ import {
 import UserNavigation from "@/shared/components/navigation/UserNavigation";
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -47,12 +50,16 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-4">
+          <LanguageToggle />
+
           {/* THEME TOGGLE */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
             className="hover:bg-surfaceMuted"
+            aria-label={t("toggles.theme")}
+            title={t("toggles.theme")}
           >
             {theme === "dark" ? (
               <Sun className="h-5 w-5" />

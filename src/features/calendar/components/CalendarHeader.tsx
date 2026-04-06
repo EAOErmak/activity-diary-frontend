@@ -1,4 +1,5 @@
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 import WeekNav from "@/features/calendar/components/WeekNav";
 import { Card } from "@/shared/components/ui/card";
 
@@ -15,6 +16,7 @@ export function CalendarHeader({
   onNext,
   onCreate,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <Card className="
       flex items-center justify-between
@@ -23,7 +25,7 @@ export function CalendarHeader({
       <WeekNav label={weekLabel} onPrev={onPrev} onNext={onNext} />
 
       <Button variant="primary" onClick={onCreate}>
-        + Create
+        {t("calendar.createEntry")}
       </Button>
     </Card>
   );

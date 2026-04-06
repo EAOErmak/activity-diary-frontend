@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/components/ui/card";
 import { Separator } from "@/shared/components/ui/separator";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { UpdateProfileForm } from "@/features/profile/components/UpdateProfileForm";
@@ -9,13 +10,14 @@ import { ChangePasswordForm } from "@/features/profile/components/ChangePassword
 import { useProfile } from "../hooks/useProfile";
 
 export default function ProfileEditPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, loading, error } = useProfile();
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        Загрузка…
+        {t("profile.genericLoading")}
       </div>
     );
   }
@@ -23,7 +25,7 @@ export default function ProfileEditPage() {
   if (error || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-destructive">
-        Не удалось загрузить профиль
+        {t("profile.loadError")}
       </div>
     );
   }
@@ -32,13 +34,13 @@ export default function ProfileEditPage() {
     <div className="min-h-screen flex items-center justify-center bg-page p-4">
       <Card className="w-full max-w-lg border border-border/60 shadow-lg">
         <CardHeader className="space-y-2">
-          <CardTitle>Редактирование профиля</CardTitle>
+          <CardTitle>{t("profile.editTitle")}</CardTitle>
           <Button
             variant="ghost"
             className="w-fit px-0"
             onClick={() => navigate("/profile")}
           >
-            ← Назад к профилю
+            {`← ${t("profile.backToProfile")}`}
           </Button>
         </CardHeader>
 

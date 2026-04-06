@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import LoginForm from "@/features/auth/components/LoginForm";
 import { loginRequest } from "@/api/authApi";
@@ -13,6 +14,7 @@ import {
 } from "@/shared/components/ui/card";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuthData = useAuthStore((s) => s.setAuthData);
 
@@ -44,7 +46,7 @@ export default function LoginPage() {
       setAuthData(payload);
       navigate("/diary");
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Ошибка логина");
+      alert(err?.response?.data?.message || t("auth.loginError"));
     }
   }
 
@@ -52,9 +54,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-page p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
-          <CardTitle>Вход</CardTitle>
+          <CardTitle>{t("auth.loginTitle")}</CardTitle>
           <CardDescription>
-            Войдите в свой аккаунт
+            {t("auth.loginSubtitle")}
           </CardDescription>
         </CardHeader>
 

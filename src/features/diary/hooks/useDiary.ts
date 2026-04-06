@@ -1,4 +1,5 @@
 import { diaryApi } from "@/api/diaryApi";
+import i18n from "@/shared/i18n/config";
 import { useDiaryRepository } from "@/shared/repository/diaryRepository";
 import type {
   DiaryEntryCreate,
@@ -22,7 +23,7 @@ export function useDiaryActions() {
       firstTag: created.firstTag ?? null,
     });
     window.dispatchEvent(new Event("diary:changed"));
-    toast.success("Запись создана");
+    toast.success(i18n.t("diary.entryCreated"));
 
     return created;
   }

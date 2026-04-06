@@ -1,5 +1,6 @@
 import { Button } from "@/shared/components/ui/button";
 import { useFormContext, useFieldArray } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { DiaryMetricItem } from "./DiaryMetricItem";
 import { DiaryEntryFormValues } from "../DiaryEntryForm";
 
@@ -12,6 +13,7 @@ export function DiaryMetricsSection({
   metricTypes,
   copyFirstMetricOnAppend = false,
 }: Props) {
+  const { t } = useTranslation();
   const { control, getValues } = useFormContext<DiaryEntryFormValues>();
 
   const { fields, append, remove } = useFieldArray({
@@ -62,7 +64,7 @@ export function DiaryMetricsSection({
         variant="form"
         onClick={() => append(buildMetricDraft())}
       >
-        + Добавить метрику
+        {t("diary.addMetric")}
       </Button>
     </div>
   );

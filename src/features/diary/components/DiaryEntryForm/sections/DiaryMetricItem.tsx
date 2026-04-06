@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useMetricUnits } from "@/shared/hooks/useMetricUnits";
 
 type Props = {
@@ -29,6 +30,7 @@ export function DiaryMetricItem({
   onRemove,
   canRemove,
 }: Props) {
+  const { t } = useTranslation();
   const form = useFormContext();
   const metricTypeId = useWatch({
     control: form.control,
@@ -98,12 +100,12 @@ export function DiaryMetricItem({
 
   const unitPlaceholder =
     selectedMetricTypeId == null
-      ? "Сначала выберите метрику"
+      ? t("diary.selectMetricFirst")
       : isUnitsLoading
-        ? "Загрузка..."
+        ? t("diary.unitsLoading")
         : units.length === 0
-          ? "Нет доступных ед."
-          : "Ед.";
+          ? t("diary.noUnitsShort")
+          : t("diary.unitShort");
 
   return (
     <div className="bg-metricSurface rounded-xl p-3 space-y-3">
@@ -122,7 +124,7 @@ export function DiaryMetricItem({
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Тип метрики" />
+                    <SelectValue placeholder={t("diary.metricTypePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {metricTypes.map((m) => (
@@ -144,7 +146,7 @@ export function DiaryMetricItem({
             variant="ghost"
             className="text-muted-foreground hover:text-destructive"
             onClick={onRemove}
-            aria-label="Удалить метрику"
+            aria-label={t("diary.removeMetric")}
           >
             ✕
           </Button>
@@ -173,14 +175,14 @@ export function DiaryMetricItem({
                       disabled={selectedMetricTypeId == null || isUnitsLoading}
                     >
                       <SelectTrigger title={unitPlaceholder}>
-                        <SelectValue placeholder="Ед." />
+                        <SelectValue placeholder={t("diary.unitShort")} />
                       </SelectTrigger>
                       <SelectContent>
                         {selectedMetricTypeId != null &&
                           !isUnitsLoading &&
                           units.length === 0 && (
                             <SelectItem value="no-units" disabled>
-                              Нет доступных единиц
+                              {t("diary.noUnitsAvailable")}
                             </SelectItem>
                           )}
                         {units.map((u) => (
@@ -239,7 +241,7 @@ export function DiaryMetricItem({
                 next.splice(valueIndex, 1);
                 form.setValue(`metrics.${index}.values`, next);
               }}
-              aria-label="Удалить значение метрики"
+              aria-label={t("diary.removeMetricValue")}
             >
               ✕
             </Button>
@@ -259,7 +261,7 @@ export function DiaryMetricItem({
           ]);
         }}
       >
-        + Добавить значение
+        {t("diary.addMetricValue")}
       </Button>
     </div>
   );

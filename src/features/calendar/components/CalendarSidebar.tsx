@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import MiniCalendar from "@/features/calendar/components/MiniCalendar";
 import { Card } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function CalendarSidebar({ onSelectDay, tags, onTagsChange }: Props) {
+  const { t } = useTranslation();
   const [input, setInput] = useState("");
 
   const addItem = () => {
@@ -32,8 +34,8 @@ export function CalendarSidebar({ onSelectDay, tags, onTagsChange }: Props) {
       </Card>
 
       <Card className="p-4">
-        <h3 className="text-sm font-medium mb-3">Список</h3>
-        <Label className="mb-2 block text-xs text-mutedForeground">Новая запись</Label>
+        <h3 className="text-sm font-medium mb-3">{t("calendar.tagsTitle")}</h3>
+        <Label className="mb-2 block text-xs text-mutedForeground">{t("calendar.newItemLabel")}</Label>
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -43,7 +45,7 @@ export function CalendarSidebar({ onSelectDay, tags, onTagsChange }: Props) {
               addItem();
             }
           }}
-          placeholder="Введите слово и нажмите Enter"
+          placeholder={t("calendar.tagInputPlaceholder")}
         />
 
         {tags.length > 0 && (
@@ -61,7 +63,7 @@ export function CalendarSidebar({ onSelectDay, tags, onTagsChange }: Props) {
                   }
                   className="text-xs text-mutedForeground hover:text-destructive"
                 >
-                  Удалить
+                  {t("calendar.removeTag")}
                 </button>
               </li>
             ))}

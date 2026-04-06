@@ -1,10 +1,19 @@
+import i18n from "@/shared/i18n/config";
 import type { UiStatus } from "@/shared/lib/uiStatus";
 
 export type DisplayStatus = UiStatus;
 
-export const STATUS_LABELS: Record<DisplayStatus, string> = {
-  PLANNED: "Запланировано",
-  ACTIVE: "В процессе",
-  FINISHED: "Завершено",
-  FAILED: "Провал",
-};
+export function getStatusLabel(status: DisplayStatus): string {
+  switch (status) {
+    case "PLANNED":
+      return i18n.t("diary.status.planned");
+    case "ACTIVE":
+      return i18n.t("diary.status.active");
+    case "FINISHED":
+      return i18n.t("diary.status.finished");
+    case "FAILED":
+      return i18n.t("diary.status.failed");
+    default:
+      return status;
+  }
+}

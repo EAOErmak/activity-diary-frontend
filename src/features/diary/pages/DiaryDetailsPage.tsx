@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { diaryApi } from "@/api/diaryApi";
 import { Button } from "@/shared/components/ui/button";
@@ -8,31 +9,11 @@ import ReactECharts from "echarts-for-react";
 
 import type { DiaryEntry } from "@/shared/types/diary";
 import { getUiStatus, STATUS_STYLES, type UiStatus } from "@/shared/lib/uiStatus";
+import { getIntlLocale } from "@/shared/i18n/locale";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
 
-/* ================================
-   UI LABELS
-================================ */
-
-export const UI_STATUS_LABELS_LEGACY: Record<string, string> = {
-  PLANNED: "Запланировано",
-  ACTIVE: "Активно",
-  WIN: "Успех",
-  LOSE: "Провал",
-};
-
-const UI_STATUS_LABELS: Record<UiStatus, string> = {
-  PLANNED: "Запланировано",
-  ACTIVE: "Активно",
-  FINISHED: "Завершено",
-  FAILED: "Провал",
-};
-
-/* ================================
-   PAGE
-================================ */
-
 export default function DiaryDetailsPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -62,7 +43,7 @@ export default function DiaryDetailsPage() {
 
   async function handleDelete() {
     if (!entry) return;
-    const ok = confirm("Удалить запись? Действие нельзя отменить.");
+    const ok = confirm(t("diary.deleteConfirm"));
     if (!ok) return;
     await diaryApi.deleteEntry(entry.id);
     window.dispatchEvent(new Event("diary:changed"));
@@ -76,7 +57,7 @@ export default function DiaryDetailsPage() {
   if (loading) {
     return (
       <p className="text-center text-foreground mt-20">
-        Загрузка...
+        {t("common.loading")}
       </p>
     );
   }
@@ -84,7 +65,7 @@ export default function DiaryDetailsPage() {
   if (error) {
     return (
       <p className="text-center text-destructive mt-20">
-        Ошибка: {error}
+        {`${t("common.error")}: ${error}`}
       </p>
     );
   }
@@ -92,7 +73,7 @@ export default function DiaryDetailsPage() {
   if (!entry) {
     return (
       <p className="text-center text-mutedForeground mt-20">
-        Запись не найдена
+        {t("diary.entryNotFound")}
       </p>
     );
   }
@@ -105,7 +86,13 @@ export default function DiaryDetailsPage() {
     firstTag: entry.firstTag ?? null,
   });
   const canEdit = entry.status !== "DELETED";
-  const title = entry.firstTag ?? "Запись";
+  const title = entry.firstTag ?? t("diary.entryTitleFallback");
+  const uiStatusLabels: Record<UiStatus, string> = {
+    PLANNED: t("diary.status.planned"),
+    ACTIVE: t("diary.status.activeShort"),
+    FINISHED: t("diary.status.finished"),
+    FAILED: t("diary.status.failed"),
+  };
 
   const readCssVar = (name: string) => {
     if (typeof window === "undefined") return "";
@@ -188,7 +175,7 @@ export default function DiaryDetailsPage() {
     { metricTypeName: string; unitLabel: string; values: { value: number; unitName?: string }[] }[]
   >((acc, m) => {
     for (const v of m.values) {
-      const unitLabel = v.unitName ?? "Unit";
+      const unitLabel = v.unitName ?? t("diary.unitShort");
       const key = `${m.metricTypeName}__${unitLabel}`;
       const existing = acc.find(
         (g) => g.metricTypeName + "__" + g.unitLabel === key
@@ -240,8 +227,10 @@ export default function DiaryDetailsPage() {
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary" />
             {entry.whenStarted
-              ? `Начато: ${new Date(entry.whenStarted).toLocaleString()}`
-              : "Дата не указана"}
+              ? t("diary.startedAt", {
+                  date: new Date(entry.whenStarted).toLocaleString(getIntlLocale()),
+                })
+              : t("diary.dateNotSpecified")}
           </div>
 
           <div className="flex items-center gap-2">
@@ -251,7 +240,7 @@ export default function DiaryDetailsPage() {
                 STATUS_STYLES[uiStatus]
               }`}
             >
-              {UI_STATUS_LABELS[uiStatus]}
+              {uiStatusLabels[uiStatus]}
             </span>
           </div>
         </div>
@@ -259,7 +248,7 @@ export default function DiaryDetailsPage() {
         {/* COMMENT */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-primary mb-2">
-            Комментарий
+            {t("diary.comment")}
           </h3>
           {entry.description ? (
             <p className="text-foreground">
@@ -267,7 +256,7 @@ export default function DiaryDetailsPage() {
             </p>
           ) : (
             <p className="text-mutedForeground italic">
-              Комментарий отсутствует
+              {t("diary.commentMissing")}
             </p>
           )}
         </div>
@@ -275,7 +264,7 @@ export default function DiaryDetailsPage() {
         {/* METRICS */}
         <div>
           <h3 className="text-lg font-semibold text-primary mb-3">
-            Активности
+            {t("diary.activities")}
           </h3>
 
           {entry.metrics?.length ? (
@@ -299,13 +288,13 @@ export default function DiaryDetailsPage() {
                 ))
               ) : (
                 <li className="text-mutedForeground text-sm">
-                  No values
+                  {t("diary.noMetricValues")}
                 </li>
               )}
             </ul>
           ) : (
             <p className="text-mutedForeground italic">
-              Активности не указаны
+              {t("diary.activitiesMissing")}
             </p>
           )}
         </div>
@@ -318,7 +307,7 @@ export default function DiaryDetailsPage() {
               className="mt-6"
             >
               <Trash2 className="w-4 h-4" />
-              Удалить
+              {t("common.delete")}
             </Button>
           )}
 
@@ -329,7 +318,7 @@ export default function DiaryDetailsPage() {
               className="mt-6"
             >
               <Edit3 className="w-4 h-4" />
-              Редактировать
+              {t("common.edit")}
             </Button>
           )}
         </div>

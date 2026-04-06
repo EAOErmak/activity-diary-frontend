@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -56,15 +57,19 @@ const EMPTY_SELECTED_ITEMS: ScheduleTemplateSelectedItem[] = [];
 
 export default function DayTemplateForm({
   title,
-  submitLabel = "Сохранить",
-  namePlaceholder = "Например: День тренировок",
-  itemPlaceholder = "Выберите шаблон записи",
+  submitLabel,
+  namePlaceholder,
+  itemPlaceholder,
   emptyOptionsHint,
   entryTemplates,
   initialName = "",
   initialSelectedItems = EMPTY_SELECTED_ITEMS,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation();
+  const resolvedSubmitLabel = submitLabel ?? t("common.save");
+  const resolvedNamePlaceholder = namePlaceholder ?? t("templates.dayNamePlaceholder");
+  const resolvedItemPlaceholder = itemPlaceholder ?? t("templates.dayItemPlaceholder");
   const defaultValues = useMemo<DayTemplateFormValues>(() => {
     const items = [...initialSelectedItems]
       .sort((a, b) => a.slot - b.slot)
@@ -104,7 +109,7 @@ export default function DayTemplateForm({
         <CardHeader className="pb-4">
           <CardTitle>{title}</CardTitle>
           <CardDescription>
-            Выберите шаблоны записей, которые войдут в шаблон дня.
+            {t("templates.dayDescription")}
           </CardDescription>
         </CardHeader>
 
@@ -116,7 +121,7 @@ export default function DayTemplateForm({
                 if (!name) {
                   form.setError("name", {
                     type: "required",
-                    message: "Название обязательно",
+                    message: t("templates.nameRequired"),
                   });
                   return;
                 }
@@ -138,7 +143,7 @@ export default function DayTemplateForm({
                 if (selectedItems.length === 0) {
                   form.setError("items", {
                     type: "required",
-                    message: "Добавьте минимум одну запись",
+                    message: t("templates.dayAtLeastOne"),
                   });
                   return;
                 }
@@ -154,10 +159,10 @@ export default function DayTemplateForm({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Название</FormLabel>
+                      <FormLabel>{t("templates.nameLabel")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={namePlaceholder}
+                          placeholder={resolvedNamePlaceholder}
                           maxLength={120}
                           {...field}
                         />
@@ -171,9 +176,9 @@ export default function DayTemplateForm({
               <div className="space-y-3 rounded-2xl border border-transparent bg-input p-3.5 transition-colors hover:border-border/60 focus-within:border-border/60 sm:p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <div className="text-sm font-medium">Записи дня</div>
+                    <div className="text-sm font-medium">{t("templates.dayItemsTitle")}</div>
                     <div className="text-xs text-muted-foreground">
-                      Порядок определяет последовательность отображения.
+                      {t("templates.dayItemsHint")}
                     </div>
                   </div>
 
@@ -185,20 +190,19 @@ export default function DayTemplateForm({
                     disabled={!hasOptions}
                     onClick={() => append({ templateId: null })}
                   >
-                    Добавить запись
+                    {t("templates.addDayItem")}
                   </Button>
                 </div>
 
                 {!hasOptions && (
                   <div className="text-sm text-muted-foreground">
-                    {emptyOptionsHint ??
-                      "Сначала создайте хотя бы один шаблон записи."}
+                    {emptyOptionsHint ?? t("templates.dayEmptyOptionsHint")}
                   </div>
                 )}
 
                 {fields.length === 0 && hasOptions && (
                   <div className="text-sm text-muted-foreground">
-                    Добавьте записи, которые будут входить в шаблон дня.
+                    {t("templates.dayEmptyHint")}
                   </div>
                 )}
 
@@ -239,7 +243,7 @@ export default function DayTemplateForm({
                                       : "border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus:border-border/60"
                                   }
                                 >
-                                  <SelectValue placeholder={itemPlaceholder} />
+                                  <SelectValue placeholder={resolvedItemPlaceholder} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {entryTemplates.map((option) => (
@@ -264,7 +268,7 @@ export default function DayTemplateForm({
                         className="border border-transparent bg-surface hover:bg-surface hover:border-border/60 focus-visible:border-border/60 sm:shrink-0"
                         onClick={() => remove(index)}
                       >
-                        Удалить
+                        {t("common.delete")}
                       </Button>
                     </div>
                   </div>
@@ -281,7 +285,7 @@ export default function DayTemplateForm({
                   className="w-full sm:w-auto sm:min-w-[12rem]"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Сохранение..." : submitLabel}
+                  {isSubmitting ? t("common.saving") : resolvedSubmitLabel}
                 </Button>
               </CardFooter>
             </form>

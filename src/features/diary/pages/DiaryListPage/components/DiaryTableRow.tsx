@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { DiaryEntryView } from "@/shared/types/diary"
 import { useNavigate, useLocation } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shared/components/ui/button"
 import { 
   Pencil,
@@ -27,7 +28,8 @@ import {
   STATUS_STYLES,
   STATUS_LEFT_BAR,
 } from "@/shared/lib/uiStatus"
-import { STATUS_LABELS } from "../statusConfig"
+import { getIntlLocale } from "@/shared/i18n/locale"
+import { getStatusLabel } from "../statusConfig"
 
 type Props = {
   entry: DiaryEntryView;
@@ -37,13 +39,14 @@ type Props = {
 };
 
 export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
+  const { t } = useTranslation()
   const nav = useNavigate()
   const uiStatus = getUiStatus(entry)
   const location = useLocation()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const canEdit = entry.status !== "DELETED";
   const canDelete = entry.status !== "DELETED" && !isDeleting;
-  const entryLabel = entry.firstTag?.trim() || `Entry #${entry.id}`
+  const entryLabel = entry.firstTag?.trim() || t("diary.entryWithId", { id: String(entry.id) })
 
   const handleDeleteConfirm = async () => {
     try {
@@ -69,7 +72,7 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
       {/* DATE */}
       <TableCell className="text-mutedForeground">
         {entry.whenStarted
-          ? new Date(entry.whenStarted).toLocaleDateString()
+          ? new Date(entry.whenStarted).toLocaleDateString(getIntlLocale())
           : "—"}
       </TableCell>
 
@@ -81,7 +84,7 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
             ${STATUS_STYLES[uiStatus]}
           `}
         >
-          {STATUS_LABELS[uiStatus]}
+          {getStatusLabel(uiStatus)}
         </span>
       </TableCell>
 
@@ -122,8 +125,8 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
               variant="primary"
               disabled={!canDelete}
               className={!canDelete ? "opacity-60 cursor-not-allowed" : ""}
-              aria-label={`Delete entry ${entry.id}`}
-              title={canDelete ? "Delete entry" : "Entry cannot be deleted"}
+              aria-label={t("diary.deleteAria", { id: String(entry.id) })}
+              title={canDelete ? t("diary.deleteEntry") : t("diary.deleteUnavailable")}
             >
               <Trash2 />
             </Button>
@@ -138,11 +141,10 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
           >
             <AlertDialogHeader className="px-5 py-3 text-left">
               <AlertDialogTitle className="text-[1.45rem] leading-tight text-foreground">
-                Are you absolutely sure?
+                {t("diary.deleteDialogTitle")}
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm leading-6 text-muted-foreground">
-                This action cannot be undone. This will permanently delete "{entryLabel}" from
-                your diary.
+                {t("diary.deleteDialogDescription", { label: entryLabel })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="border-t border-border bg-surfaceMuted/70 px-5 py-2.5 sm:flex-row sm:justify-end sm:space-x-2.5">
@@ -150,14 +152,14 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
                 disabled={isDeleting}
                 className="mt-0 !h-10 border border-border bg-input px-4 text-foreground hover:bg-[hsl(var(--input-hover))] hover:text-foreground"
               >
-                Cancel
+                {t("common.cancel")}
               </AlertDialogCancel>
               <AlertDialogAction
                 disabled={isDeleting}
                 onClick={handleDeleteConfirm}
                 className="!h-10 bg-primary px-4 text-primary-foreground hover:bg-primary/90"
               >
-                {isDeleting ? "Deleting..." : "Continue"}
+                {isDeleting ? t("common.deleting") : t("common.continue")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

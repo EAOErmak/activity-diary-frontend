@@ -10,49 +10,51 @@ import {
   UtensilsCrossed,
   Users,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { LanguageToggle } from "@/language-toggle";
 import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { useTheme } from "@/theme-provider";
 
-const NAV_ITEMS = [
-  {
-    to: "/admin",
-    label: "Обзор",
-    icon: LayoutDashboard,
-  },
-  {
-    to: "/admin/users",
-    label: "Пользователи",
-    icon: Users,
-  },
-  {
-    to: "/admin/dictionary",
-    label: "Словари",
-    icon: BookOpen,
-  },
-  {
-    to: "/admin/foods",
-    label: "Еда",
-    icon: UtensilsCrossed,
-  },
-  {
-    to: "/admin/metric-links",
-    label: "Metric Links",
-    icon: Link2,
-  },
-  {
-    to: "/admin/tags",
-    label: "Теги",
-    icon: Tags,
-  },
-] as const;
-
 export default function AdminPanelLayout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const navItems = [
+    {
+      to: "/admin",
+      label: t("admin.overview"),
+      icon: LayoutDashboard,
+    },
+    {
+      to: "/admin/users",
+      label: t("admin.users"),
+      icon: Users,
+    },
+    {
+      to: "/admin/dictionary",
+      label: t("admin.dictionaries"),
+      icon: BookOpen,
+    },
+    {
+      to: "/admin/foods",
+      label: t("admin.foods"),
+      icon: UtensilsCrossed,
+    },
+    {
+      to: "/admin/metric-links",
+      label: t("admin.metricLinks"),
+      icon: Link2,
+    },
+    {
+      to: "/admin/tags",
+      label: t("admin.tags"),
+      icon: Tags,
+    },
+  ] as const;
 
   function isActivePath(path: string) {
     if (path === "/admin") {
@@ -78,30 +80,35 @@ export default function AdminPanelLayout() {
 
                 <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.24em] text-sidebar-foreground/60">
-                    Admin
+                    {t("admin.panelBadge")}
                   </p>
                   <h1 className="truncate text-lg font-semibold">
-                    Control Panel
+                    {t("admin.panelTitle")}
                   </h1>
                 </div>
               </div>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="shrink-0 rounded-2xl text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              >
-                {theme === "dark" ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <LanguageToggle />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="shrink-0 rounded-2xl text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  aria-label={t("toggles.theme")}
+                  title={t("toggles.theme")}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-5 w-5" />
+                  ) : (
+                    <Moon className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             <nav className="flex flex-col gap-2">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActivePath(item.to);
 
@@ -127,11 +134,8 @@ export default function AdminPanelLayout() {
 
             <div className="mt-auto space-y-4 pt-6">
               <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent/50 p-4">
-                <p className="text-sm font-medium">Тема админки</p>
-                <p className="mt-1 text-xs text-sidebar-foreground/70">
-                  Использует те же CSS-токены и переключатель темы, что и
-                  остальная часть сайта.
-                </p>
+                <p className="text-sm font-medium">{t("admin.themeCardTitle")}</p>
+                <p className="mt-1 text-xs text-sidebar-foreground/70">{t("admin.themeCardDescription")}</p>
               </div>
 
               <Button
@@ -140,7 +144,7 @@ export default function AdminPanelLayout() {
                 onClick={() => navigate("/diary", { replace: true })}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Вернуться к дневнику
+                {t("admin.backToDiary")}
               </Button>
             </div>
           </div>
