@@ -11,13 +11,14 @@ export const normalizeChartType = (chartType: string): ChartType =>
   ] ?? (chartType as ChartType);
 
 export const CHART_TYPE_LABELS: Record<string, string> = {
-  CALORIES_PER_DAY: "Калории по дням",
-  PFC_PER_DAY: "БЖУ по дням",
-  CALORIES_PER_EATING: "Калории по приемам пищи",
-  PFC_PER_EATING: "БЖУ по приемам пищи",
-  TRAINING_COMPUTED: "Прогресс тренировок",
-  TRAINING_METRICS: "Прогресс по метрикам",
-  TRAINING_RAW: "Детальный прогресс тренировок",
+  CALORIES_PER_DAY: "CALORIES_PER_DAY",
+  PFC_PER_DAY: "PFC_PER_DAY",
+  CALORIES_PER_DIARY: "CALORIES_PER_DIARY",
+  PFC_PER_DIARY: "PFC_PER_DIARY",
+  PFC_PER_METRIC: "PFC_PER_METRIC",
+  TRAINING_COMPUTED: "TRAINING_COMPUTED",
+  TRAINING_METRICS: "TRAINING_METRICS",
+  TRAINING_RAW: "TRAINING_RAW",
 };
 
 export const ALL_CHART_TYPES: ChartType[] = Object.keys(CHART_TYPE_LABELS).map(

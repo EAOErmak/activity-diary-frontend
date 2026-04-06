@@ -25,11 +25,15 @@ type AnalyticsAlertState = {
   description: string;
 };
 
-const buildDefaultFromDate = () => {
+const buildDateWithDayOffset = (offsetDays: number) => {
   const date = new Date();
-  date.setMonth(date.getMonth() - 1);
+  date.setDate(date.getDate() + offsetDays);
   return date;
 };
+
+const buildDefaultFromDate = () => buildDateWithDayOffset(-15);
+
+const buildDefaultToDate = () => buildDateWithDayOffset(15);
 
 export default function DashboardPageV3() {
   const [tagQuery, setTagQuery] = useState("");
@@ -38,7 +42,7 @@ export default function DashboardPageV3() {
   const [fromDate, setFromDate] = useState<Date | undefined>(
     buildDefaultFromDate()
   );
-  const [toDate, setToDate] = useState<Date | undefined>(new Date());
+  const [toDate, setToDate] = useState<Date | undefined>(buildDefaultToDate());
   const [alertState, setAlertState] = useState<AnalyticsAlertState | null>(null);
   const deferredTagQuery = useDeferredValue(tagQuery);
   const lastAlertKeyRef = useRef<string | null>(null);
@@ -265,7 +269,7 @@ export default function DashboardPageV3() {
             setSelectedTagId(null);
             setChartType(null);
             setFromDate(buildDefaultFromDate());
-            setToDate(new Date());
+            setToDate(buildDefaultToDate());
           }}
         />
 
