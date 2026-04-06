@@ -142,7 +142,7 @@ export default function FoodPage() {
     () =>
       generalFoods.length === 1
         ? t("food.oneProduct")
-        : t("food.manyProducts", { count: String(generalFoods.length) }),
+        : t("food.manyProducts", { count: generalFoods.length }),
     [generalFoods.length, t]
   );
 
@@ -150,7 +150,7 @@ export default function FoodPage() {
     () =>
       userFoods.length === 1
         ? t("food.oneProduct")
-        : t("food.manyProducts", { count: String(userFoods.length) }),
+        : t("food.manyProducts", { count: userFoods.length }),
     [t, userFoods.length]
   );
 
