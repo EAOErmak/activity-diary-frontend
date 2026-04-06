@@ -86,7 +86,6 @@ type TimeSelectControlProps = {
 };
 
 function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const hourRef = useRef<HTMLDivElement | null>(null);
   const minuteRef = useRef<HTMLDivElement | null>(null);
   const valueRef = useRef(value);
@@ -99,9 +98,6 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
   }, [value]);
 
   useEffect(() => {
-    const element = containerRef.current;
-    if (!element) return;
-
     const updateValueByPart = (
       event: WheelEvent,
       part: "hours" | "minutes"
@@ -123,10 +119,6 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
       onChange(nextValue);
     };
 
-    const handleWheel = (event: WheelEvent) => {
-      updateValueByPart(event, "minutes");
-    };
-
     const handleHourWheel = (event: WheelEvent) => {
       updateValueByPart(event, "hours");
     };
@@ -135,7 +127,6 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
       updateValueByPart(event, "minutes");
     };
 
-    element.addEventListener("wheel", handleWheel, { passive: false });
     hourRef.current?.addEventListener("wheel", handleHourWheel, {
       passive: false,
     });
@@ -144,14 +135,13 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
     });
 
     return () => {
-      element.removeEventListener("wheel", handleWheel);
       hourRef.current?.removeEventListener("wheel", handleHourWheel);
       minuteRef.current?.removeEventListener("wheel", handleMinuteWheel);
     };
   }, [onChange]);
 
   return (
-    <div ref={containerRef} className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2.5">
       <Select
         value={selectedHour}
         onValueChange={(nextHour) => {
