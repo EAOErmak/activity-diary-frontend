@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { ArrowLeft, UserPlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { AdminUserCreateForm } from "@/features/admin/users/components/AdminUserCreateForm";
 import { Badge } from "@/shared/components/ui/badge";
@@ -13,19 +14,20 @@ import {
 } from "@/shared/components/ui/card";
 
 export default function AdminUserCreateShadcnPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-3">
         <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-          Создание пользователя
+          {t("admin.userCreatePage.badge")}
         </Badge>
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            Новый пользователь
+            {t("admin.userCreatePage.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Форма использует те же общие UI-компоненты и theme tokens, что и
-            остальная админ-панель.
+            {t("admin.userCreatePage.subtitle")}
           </p>
         </div>
       </div>
@@ -36,9 +38,9 @@ export default function AdminUserCreateShadcnPage() {
             <UserPlus className="h-5 w-5" />
           </div>
           <div className="space-y-1">
-            <CardTitle>Данные аккаунта</CardTitle>
+            <CardTitle>{t("admin.userCreatePage.accountDataTitle")}</CardTitle>
             <CardDescription>
-              Создание нового пользователя администратором.
+              {t("admin.userCreatePage.accountDataDescription")}
             </CardDescription>
           </div>
         </CardHeader>
@@ -50,7 +52,7 @@ export default function AdminUserCreateShadcnPage() {
       <Button asChild variant="surface">
         <Link to="/admin/users">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Назад к списку пользователей
+          {t("admin.userCreatePage.backToUsers")}
         </Link>
       </Button>
     </div>

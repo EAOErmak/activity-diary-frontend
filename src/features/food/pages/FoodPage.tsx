@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Database, Plus, Search, UserRound, UtensilsCrossed } from "lucide-react";
+import { Database, Plus, Search, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { getIntlLocale } from "@/shared/i18n/locale";
 import type {
   FoodDictionaryOption,
   FoodUpsertDto,
@@ -38,20 +39,21 @@ import type {
   UserFoodResponseDto,
 } from "@/shared/types/food";
 
-function formatMacro(value: number) {
-  return new Intl.NumberFormat("ru-RU", {
+function formatMacro(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
-function sortFoodOptions(options: FoodDictionaryOption[]) {
-  return [...options].sort((left, right) => left.label.localeCompare(right.label, "ru"));
+function sortFoodOptions(options: FoodDictionaryOption[], locale: string) {
+  return [...options].sort((left, right) => left.label.localeCompare(right.label, locale));
 }
 
 function buildUserFoodOptions(
   generalFoods: GeneralFoodResponseDto[],
-  userFoods: UserFoodResponseDto[]
+  userFoods: UserFoodResponseDto[],
+  locale: string
 ) {
   const byDictionaryId = new Map<number, FoodDictionaryOption>();
 
@@ -64,11 +66,12 @@ function buildUserFoodOptions(
     }
   }
 
-  return sortFoodOptions(Array.from(byDictionaryId.values()));
+  return sortFoodOptions(Array.from(byDictionaryId.values()), locale);
 }
 
 export default function FoodPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [activeTab, setActiveTab] = useState("general");
   const [generalQuery, setGeneralQuery] = useState("");
   const [userQuery, setUserQuery] = useState("");
@@ -101,7 +104,7 @@ export default function FoodPage() {
     } finally {
       setIsLoadingGeneralFoods(false);
     }
-  }, [deferredGeneralQuery]);
+  }, [deferredGeneralQuery, t]);
 
   const loadUserFoods = useCallback(async (query = deferredUserQuery) => {
     try {
@@ -119,7 +122,7 @@ export default function FoodPage() {
     } finally {
       setIsLoadingUserFoods(false);
     }
-  }, [deferredUserQuery]);
+  }, [deferredUserQuery, t]);
 
   useEffect(() => {
     void loadGeneralFoods(deferredGeneralQuery);
@@ -135,8 +138,8 @@ export default function FoodPage() {
       getUserFoods(query),
     ]);
 
-    return buildUserFoodOptions(general, user);
-  }, []);
+    return buildUserFoodOptions(general, user, locale);
+  }, [locale]);
 
   const generalResultLabel = useMemo(
     () =>
@@ -277,14 +280,14 @@ export default function FoodPage() {
                             <div className="space-y-1">
                               <p className="font-medium">{food.dictionaryItemLabel}</p>
                               <p className="text-sm text-muted-foreground">
-                                dictionaryItemId: {food.dictionaryItemId}
+                                {t("food.dictionaryItemId", { id: String(food.dictionaryItemId) })}
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">{formatMacro(food.protein)}</TableCell>
-                          <TableCell className="text-right">{formatMacro(food.fat)}</TableCell>
-                          <TableCell className="text-right">{formatMacro(food.carbs)}</TableCell>
-                          <TableCell className="text-right">{formatMacro(food.callories)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.protein, locale)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.fat, locale)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.carbs, locale)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.callories, locale)}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -373,14 +376,14 @@ export default function FoodPage() {
                             <div className="space-y-1">
                               <p className="font-medium">{food.dictionaryItemLabel}</p>
                               <p className="text-sm text-muted-foreground">
-                                dictionaryItemId: {food.dictionaryItemId}
+                                {t("food.dictionaryItemId", { id: String(food.dictionaryItemId) })}
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">{formatMacro(food.protein)}</TableCell>
-                          <TableCell className="text-right">{formatMacro(food.fat)}</TableCell>
-                          <TableCell className="text-right">{formatMacro(food.carbs)}</TableCell>
-                          <TableCell className="text-right">{formatMacro(food.callories)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.protein, locale)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.fat, locale)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.carbs, locale)}</TableCell>
+                          <TableCell className="text-right">{formatMacro(food.callories, locale)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button

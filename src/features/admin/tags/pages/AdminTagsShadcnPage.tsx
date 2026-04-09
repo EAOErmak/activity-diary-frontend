@@ -1,5 +1,6 @@
-import { type FormEvent, useEffect, useState } from "react";
+﻿import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Plus, Search, Tags } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
@@ -55,25 +56,6 @@ const TAG_STATUSES = ["PROPOSED", "APPROVED", "REJECTED", "DEPRECATED"] as const
 
 type TagStatus = (typeof TAG_STATUSES)[number];
 
-const STATUS_META: Record<TagStatus, { label: string; badgeClassName: string }> = {
-  PROPOSED: {
-    label: "Ожидает",
-    badgeClassName: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-  },
-  APPROVED: {
-    label: "Одобрен",
-    badgeClassName: "border-primary/30 bg-primary/10 text-primary",
-  },
-  REJECTED: {
-    label: "Отклонен",
-    badgeClassName: "border-destructive/30 bg-destructive/10 text-destructive",
-  },
-  DEPRECATED: {
-    label: "Устаревший",
-    badgeClassName: "border-slate-500/30 bg-slate-500/10 text-slate-200",
-  },
-};
-
 function getTagStatus(tag: Tag): TagStatus {
   const status = tag.status;
 
@@ -85,6 +67,7 @@ function getTagStatus(tag: Tag): TagStatus {
 }
 
 export default function AdminTagsShadcnPage() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [page, setPage] = useState(0);
@@ -93,6 +76,28 @@ export default function AdminTagsShadcnPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  const statusMeta = useMemo(
+    () => ({
+      PROPOSED: {
+        label: t("admin.tagsPage.statusProposed"),
+        badgeClassName: "border-amber-500/30 bg-amber-500/10 text-amber-200",
+      },
+      APPROVED: {
+        label: t("admin.tagsPage.statusApproved"),
+        badgeClassName: "border-primary/30 bg-primary/10 text-primary",
+      },
+      REJECTED: {
+        label: t("admin.tagsPage.statusRejected"),
+        badgeClassName: "border-destructive/30 bg-destructive/10 text-destructive",
+      },
+      DEPRECATED: {
+        label: t("admin.tagsPage.statusDeprecated"),
+        badgeClassName: "border-slate-500/30 bg-slate-500/10 text-slate-200",
+      },
+    }),
+    [t]
+  );
 
   useEffect(() => {
     void load();
@@ -117,7 +122,7 @@ export default function AdminTagsShadcnPage() {
 
     const name = newTagName.trim();
     if (!name) {
-      toast.error("Введите название тега.");
+      toast.error(t("admin.tagsPage.tagNameRequired"));
       return;
     }
 
@@ -127,7 +132,7 @@ export default function AdminTagsShadcnPage() {
       setNewTagName("");
       setQuery("");
       setPage(0);
-      toast.success(`Тег "${createdTag.name}" создан.`);
+      toast.success(t("admin.tagsPage.tagCreated", { name: createdTag.name }));
       await load(0, "");
     } finally {
       setIsCreating(false);
@@ -136,9 +141,9 @@ export default function AdminTagsShadcnPage() {
 
   function requestApprove(tag: Tag) {
     setPendingAction({
-      title: "Одобрить тег?",
-      description: `Тег "${tag.name}" будет переведен в статус "Одобрен".`,
-      confirmLabel: "Одобрить",
+      title: t("admin.tagsPage.approveTitle"),
+      description: t("admin.tagsPage.approveDescription", { name: tag.name }),
+      confirmLabel: t("admin.tagsPage.approveConfirm"),
       run: async () => {
         await approveTag(tag.id);
         await load();
@@ -148,9 +153,9 @@ export default function AdminTagsShadcnPage() {
 
   function requestReject(tag: Tag) {
     setPendingAction({
-      title: "Отклонить тег?",
-      description: `Тег "${tag.name}" будет переведен в статус "Отклонен".`,
-      confirmLabel: "Отклонить",
+      title: t("admin.tagsPage.rejectTitle"),
+      description: t("admin.tagsPage.rejectDescription", { name: tag.name }),
+      confirmLabel: t("admin.tagsPage.rejectConfirm"),
       tone: "danger",
       run: async () => {
         await rejectTag(tag.id);
@@ -161,9 +166,9 @@ export default function AdminTagsShadcnPage() {
 
   function requestDeprecate(tag: Tag) {
     setPendingAction({
-      title: "Сделать тег устаревшим?",
-      description: `Тег "${tag.name}" будет помечен как устаревший.`,
-      confirmLabel: "Пометить",
+      title: t("admin.tagsPage.deprecateTitle"),
+      description: t("admin.tagsPage.deprecateDescription", { name: tag.name }),
+      confirmLabel: t("admin.tagsPage.deprecateConfirm"),
       run: async () => {
         await deprecateTag(tag.id);
         await load();
@@ -188,18 +193,19 @@ export default function AdminTagsShadcnPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Теги</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("admin.tagsPage.title")}
+        </h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Модерация пользовательских тегов и управление их жизненным циклом.
+          {t("admin.tagsPage.subtitle")}
         </p>
       </div>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Создать тег</CardTitle>
+          <CardTitle>{t("admin.tagsPage.createTitle")}</CardTitle>
           <CardDescription>
-            Новый тег будет создан через административный endpoint и сразу
-            появится в общем списке.
+            {t("admin.tagsPage.createDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -210,12 +216,12 @@ export default function AdminTagsShadcnPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Plus className="h-4 w-4" />
-                Название тега
+                {t("admin.tagsPage.tagNameLabel")}
               </div>
               <Input
                 value={newTagName}
                 onChange={(event) => setNewTagName(event.target.value)}
-                placeholder="Введите название тега..."
+                placeholder={t("admin.tagsPage.tagNamePlaceholder")}
                 maxLength={255}
                 disabled={isCreating}
                 className="max-w-xl"
@@ -224,7 +230,9 @@ export default function AdminTagsShadcnPage() {
 
             <Button type="submit" disabled={isCreating}>
               <Plus className="mr-2 h-4 w-4" />
-              {isCreating ? "Создание..." : "Создать"}
+              {isCreating
+                ? t("admin.tagsPage.creatingButton")
+                : t("admin.tagsPage.createButton")}
             </Button>
           </form>
         </CardContent>
@@ -232,16 +240,16 @@ export default function AdminTagsShadcnPage() {
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Поиск и состояние списка</CardTitle>
+          <CardTitle>{t("admin.tagsPage.searchTitle")}</CardTitle>
           <CardDescription>
-            Поиск по названию тега и быстрый обзор найденных результатов.
+            {t("admin.tagsPage.searchDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Search className="h-4 w-4" />
-              Поиск
+              {t("common.search")}
             </div>
             <Input
               value={query}
@@ -249,22 +257,22 @@ export default function AdminTagsShadcnPage() {
                 setQuery(event.target.value);
                 setPage(0);
               }}
-              placeholder="Поиск по тегам..."
+              placeholder={t("admin.tagsPage.searchPlaceholder")}
               className="max-w-xl"
             />
           </div>
 
           <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-            Найдено: {tags.length}
+            {t("admin.tagsPage.foundCount", { count: tags.length })}
           </Badge>
         </CardContent>
       </Card>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Список тегов</CardTitle>
+          <CardTitle>{t("admin.tagsPage.listTitle")}</CardTitle>
           <CardDescription>
-            Статус и действия для каждого тега подтверждаются отдельно.
+            {t("admin.tagsPage.listDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -272,27 +280,28 @@ export default function AdminTagsShadcnPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-20">ID</TableHead>
-                <TableHead>Тег</TableHead>
-                <TableHead className="w-40">Статус</TableHead>
-                <TableHead className="w-[280px]">Действия</TableHead>
+                <TableHead>{t("admin.tagsPage.tagColumn")}</TableHead>
+                <TableHead className="w-40">{t("admin.tagsPage.statusColumn")}</TableHead>
+                <TableHead className="w-[280px]">{t("admin.tagsPage.actionsColumn")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    Загрузка...
+                    {t("admin.tagsPage.loading")}
                   </TableCell>
                 </TableRow>
               ) : tags.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    Теги не найдены
+                    {t("admin.tagsPage.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
                 tags.map((tag) => {
                   const status = getTagStatus(tag);
+                  const meta = statusMeta[status];
 
                   return (
                     <TableRow key={tag.id}>
@@ -306,9 +315,9 @@ export default function AdminTagsShadcnPage() {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={`rounded-full font-medium ${STATUS_META[status].badgeClassName}`}
+                          className={`rounded-full font-medium ${meta.badgeClassName}`}
                         >
-                          {STATUS_META[status].label}
+                          {meta.label}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -319,7 +328,7 @@ export default function AdminTagsShadcnPage() {
                             disabled={status === "APPROVED" || isMutating}
                             onClick={() => requestApprove(tag)}
                           >
-                            Одобрить
+                            {t("admin.tagsPage.approveConfirm")}
                           </Button>
                           <Button
                             size="sm"
@@ -327,7 +336,7 @@ export default function AdminTagsShadcnPage() {
                             onClick={() => requestReject(tag)}
                             className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
                           >
-                            Отклонить
+                            {t("admin.tagsPage.rejectConfirm")}
                           </Button>
                           <Button
                             size="sm"
@@ -335,7 +344,7 @@ export default function AdminTagsShadcnPage() {
                             disabled={status === "DEPRECATED" || isMutating}
                             onClick={() => requestDeprecate(tag)}
                           >
-                            Устаревший
+                            {t("admin.tagsPage.deprecateConfirm")}
                           </Button>
                         </div>
                       </TableCell>
@@ -349,7 +358,7 @@ export default function AdminTagsShadcnPage() {
           {data && (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
-                Страница {data.number + 1}
+                {t("admin.tagsPage.pageLabel", { page: String(data.number + 1) })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -358,7 +367,7 @@ export default function AdminTagsShadcnPage() {
                   onClick={() => setPage((current) => Math.max(0, current - 1))}
                   disabled={data.first || loading}
                 >
-                  Назад
+                  {t("admin.tagsPage.previous")}
                 </Button>
                 <Button
                   variant="surface"
@@ -366,7 +375,7 @@ export default function AdminTagsShadcnPage() {
                   onClick={() => setPage((current) => current + 1)}
                   disabled={data.last || loading}
                 >
-                  Вперед
+                  {t("admin.tagsPage.next")}
                 </Button>
               </div>
             </div>
@@ -385,7 +394,7 @@ export default function AdminTagsShadcnPage() {
         }}
         title={pendingAction?.title ?? ""}
         description={pendingAction?.description ?? ""}
-        confirmLabel={pendingAction?.confirmLabel ?? "Подтвердить"}
+        confirmLabel={pendingAction?.confirmLabel ?? t("common.continue")}
         tone={pendingAction?.tone ?? "primary"}
         loading={isMutating}
         onConfirm={handleConfirmAction}

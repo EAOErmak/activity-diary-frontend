@@ -72,7 +72,7 @@ export default function AdminPanelLayout() {
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-72 md:shrink-0 md:border-b-0 md:border-r">
           <div className="flex h-full flex-col p-4 sm:p-6">
-            <div className="mb-6 flex items-start justify-between gap-3">
+            <div className="mb-6 flex items-start gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground">
                   <Shield className="h-6 w-6" />
@@ -86,24 +86,6 @@ export default function AdminPanelLayout() {
                     {t("admin.panelTitle")}
                   </h1>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <LanguageToggle />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleTheme}
-                  className="shrink-0 rounded-2xl text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  aria-label={t("toggles.theme")}
-                  title={t("toggles.theme")}
-                >
-                  {theme === "dark" ? (
-                    <Sun className="h-5 w-5" />
-                  ) : (
-                    <Moon className="h-5 w-5" />
-                  )}
-                </Button>
               </div>
             </div>
 
@@ -133,9 +115,22 @@ export default function AdminPanelLayout() {
             </nav>
 
             <div className="mt-auto space-y-4 pt-6">
-              <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent/50 p-4">
-                <p className="text-sm font-medium">{t("admin.themeCardTitle")}</p>
-                <p className="mt-1 text-xs text-sidebar-foreground/70">{t("admin.themeCardDescription")}</p>
+              <div className="mx-auto flex w-fit items-center gap-2 rounded-3xl border border-border bg-background/90 p-2 shadow-sm">
+                <LanguageToggle />
+                <Button
+                  variant="surface"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="h-10 w-10 shrink-0 rounded-2xl"
+                  aria-label={t("toggles.theme")}
+                  title={t("toggles.theme")}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-5 w-5" />
+                  ) : (
+                    <Moon className="h-5 w-5" />
+                  )}
+                </Button>
               </div>
 
               <Button

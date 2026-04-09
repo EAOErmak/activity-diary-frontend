@@ -1,6 +1,15 @@
+﻿import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
-import { adminUsersApi } from "@/api/admin/adminUsersApi";
 
+import { adminUsersApi } from "@/api/admin/adminUsersApi";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/shared/components/ui/form";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -10,14 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/shared/components/ui/form";
 
 type FormValues = {
   username: string;
@@ -28,6 +29,7 @@ type FormValues = {
 };
 
 export function AdminUserCreateForm() {
+  const { t } = useTranslation();
   const form = useForm<FormValues>({
     defaultValues: {
       username: "",
@@ -54,16 +56,15 @@ export function AdminUserCreateForm() {
           reset();
         })}
       >
-        {/* Username / Email */}
         <FormField
           control={control}
           name="username"
           rules={{
-            required: "Обязательное поле",
+            required: t("admin.userCreateForm.requiredField"),
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>{t("auth.username")}</FormLabel>
               <FormControl>
                 <Input placeholder="username" {...field} />
               </FormControl>
@@ -72,18 +73,23 @@ export function AdminUserCreateForm() {
           )}
         />
 
-        {/* Password */}
         <FormField
           control={control}
           name="password"
           rules={{
-            required: "Введите пароль",
-            minLength: { value: 8, message: "Минимум 8 символов" },
-            maxLength: { value: 64, message: "Максимум 64 символа" },
+            required: t("admin.userCreateForm.passwordRequired"),
+            minLength: {
+              value: 8,
+              message: t("admin.userCreateForm.passwordMin"),
+            },
+            maxLength: {
+              value: 64,
+              message: t("admin.userCreateForm.passwordMax"),
+            },
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Пароль</FormLabel>
+              <FormLabel>{t("auth.password")}</FormLabel>
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
@@ -92,23 +98,24 @@ export function AdminUserCreateForm() {
           )}
         />
 
-        {/* Full name */}
         <FormField
           control={control}
           name="fullName"
           rules={{ maxLength: 128 }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Полное имя</FormLabel>
+              <FormLabel>{t("auth.fullName")}</FormLabel>
               <FormControl>
-                <Input placeholder="Иван Иванов" {...field} />
+                <Input
+                  placeholder={t("admin.userCreateForm.fullNamePlaceholder")}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Email (optional, separate) */}
         <FormField
           control={control}
           name="email"
@@ -116,12 +123,12 @@ export function AdminUserCreateForm() {
             maxLength: 128,
             pattern: {
               value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: "Некорректный email",
+              message: t("admin.userCreateForm.emailInvalid"),
             },
           }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email (опционально)</FormLabel>
+              <FormLabel>{t("admin.userCreateForm.emailOptional")}</FormLabel>
               <FormControl>
                 <Input placeholder="contact@example.com" {...field} />
               </FormControl>
@@ -130,26 +137,22 @@ export function AdminUserCreateForm() {
           )}
         />
 
-        {/* Role */}
         <FormField
           control={control}
           name="role"
           rules={{ required: true }}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Роль</FormLabel>
+              <FormLabel>{t("admin.usersPage.roleLabel")}</FormLabel>
               <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
+                <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите роль" />
+                    <SelectValue placeholder={t("admin.userCreateForm.rolePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USER">USER</SelectItem>
-                    <SelectItem value="PREMIUM">PREMIUM</SelectItem>
-                    <SelectItem value="ADMIN">ADMIN</SelectItem>
+                    <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
+                    <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
+                    <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -158,12 +161,10 @@ export function AdminUserCreateForm() {
           )}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Создание..." : "Создать пользователя"}
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting
+            ? t("admin.userCreateForm.submitting")
+            : t("admin.userCreateForm.submit")}
         </Button>
       </form>
     </Form>

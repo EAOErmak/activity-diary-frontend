@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Link2, Plus, Ruler, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { adminMetricLinksApi } from "@/api/admin/adminMetricLinksApi";
@@ -29,24 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { getIntlLocale } from "@/shared/i18n/locale";
 import type { DictionaryResponse } from "@/shared/types/adminDictionary";
 import type { MetricLinkResponse } from "@/shared/types/adminMetricLink";
 
-function sortDictionaryItems(items: DictionaryResponse[]) {
-  return [...items].sort((left, right) => {
-    if (left.active !== right.active) {
-      return left.active ? -1 : 1;
-    }
-
-    return left.label.localeCompare(right.label, "ru");
-  });
-}
-
-function formatDictionaryOption(item: DictionaryResponse) {
-  return item.active ? item.label : `${item.label} (inactive)`;
-}
-
 export default function AdminMetricLinksShadcnPage() {
+  const { t, i18n } = useTranslation();
+  const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [metricNames, setMetricNames] = useState<DictionaryResponse[]>([]);
   const [metricUnits, setMetricUnits] = useState<DictionaryResponse[]>([]);
   const [linkedUnits, setLinkedUnits] = useState<MetricLinkResponse[]>([]);
@@ -57,6 +47,22 @@ export default function AdminMetricLinksShadcnPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<MetricLinkResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  function sortDictionaryItems(items: DictionaryResponse[]) {
+    return [...items].sort((left, right) => {
+      if (left.active !== right.active) {
+        return left.active ? -1 : 1;
+      }
+
+      return left.label.localeCompare(right.label, locale);
+    });
+  }
+
+  function formatDictionaryOption(item: DictionaryResponse) {
+    return item.active
+      ? item.label
+      : `${item.label} (${t("admin.metricLinksPage.inactiveSuffix")})`;
+  }
 
   useEffect(() => {
     void loadDictionaries();
@@ -132,7 +138,7 @@ export default function AdminMetricLinksShadcnPage() {
       });
     } catch (error) {
       console.error(error);
-      toast.error("Не удалось загрузить словари для связей метрик.");
+      toast.error(t("admin.metricLinksPage.dictionariesLoadError"));
     } finally {
       setIsLoadingDictionaries(false);
     }
@@ -146,7 +152,7 @@ export default function AdminMetricLinksShadcnPage() {
     } catch (error) {
       console.error(error);
       setLinkedUnits([]);
-      toast.error("Не удалось загрузить связи для выбранной метрики.");
+      toast.error(t("admin.metricLinksPage.linksLoadError"));
     } finally {
       setIsLoadingLinks(false);
     }
@@ -154,12 +160,12 @@ export default function AdminMetricLinksShadcnPage() {
 
   async function handleCreate() {
     if (selectedMetricNameId == null) {
-      toast.error("Выберите metric name.");
+      toast.error(t("admin.metricLinksPage.metricRequired"));
       return;
     }
 
     if (selectedMetricUnitId == null) {
-      toast.error("Выберите unit для связи.");
+      toast.error(t("admin.metricLinksPage.unitRequired"));
       return;
     }
 
@@ -171,7 +177,7 @@ export default function AdminMetricLinksShadcnPage() {
       });
       setSelectedMetricUnitId(null);
       await loadLinks(selectedMetricNameId);
-      toast.success("Связь создана.");
+      toast.success(t("admin.metricLinksPage.linkCreated"));
     } catch {
       // axios interceptor already shows the backend error
     } finally {
@@ -192,7 +198,7 @@ export default function AdminMetricLinksShadcnPage() {
       );
       setPendingDelete(null);
       await loadLinks(selectedMetricNameId);
-      toast.success("Связь удалена.");
+      toast.success(t("admin.metricLinksPage.linkDeleted"));
     } catch {
       // axios interceptor already shows the backend error
     } finally {
@@ -204,28 +210,28 @@ export default function AdminMetricLinksShadcnPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-          Metric Links
+          {t("admin.metricLinksPage.badge")}
         </Badge>
-        <h1 className="text-3xl font-bold tracking-tight">Связи метрик</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("admin.metricLinksPage.title")}
+        </h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Настройте, какие единицы измерения доступны для каждого metric name в
-          формах создания и редактирования записей, шаблонов и goals.
+          {t("admin.metricLinksPage.subtitle")}
         </p>
       </div>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Выбор метрики</CardTitle>
+          <CardTitle>{t("admin.metricLinksPage.selectMetricTitle")}</CardTitle>
           <CardDescription>
-            Сначала выберите metric name, для которого нужно управлять списком
-            разрешенных units.
+            {t("admin.metricLinksPage.selectMetricDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <BookOpen className="h-4 w-4" />
-              Metric name
+              {t("admin.metricLinksPage.metricNameLabel")}
             </div>
             <Select
               value={selectedMetricNameId != null ? String(selectedMetricNameId) : ""}
@@ -236,8 +242,8 @@ export default function AdminMetricLinksShadcnPage() {
                 <SelectValue
                   placeholder={
                     isLoadingDictionaries
-                      ? "Загрузка metric names..."
-                      : "Выберите metric name"
+                      ? t("admin.metricLinksPage.metricNameLoading")
+                      : t("admin.metricLinksPage.metricNamePlaceholder")
                   }
                 />
               </SelectTrigger>
@@ -252,24 +258,25 @@ export default function AdminMetricLinksShadcnPage() {
           </div>
 
           <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-            Связей: {linkedUnits.length}
+            {t("admin.metricLinksPage.linksCount", {
+              count: linkedUnits.length,
+            })}
           </Badge>
         </CardContent>
       </Card>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Добавить связь</CardTitle>
+          <CardTitle>{t("admin.metricLinksPage.addLinkTitle")}</CardTitle>
           <CardDescription>
-            Новая связь определяет, какие units вернет backend для выбранного
-            metric name.
+            {t("admin.metricLinksPage.addLinkDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Ruler className="h-4 w-4" />
-              Unit
+              {t("admin.metricLinksPage.unitLabel")}
             </div>
             <Select
               value={selectedMetricUnitId != null ? String(selectedMetricUnitId) : ""}
@@ -285,10 +292,10 @@ export default function AdminMetricLinksShadcnPage() {
                 <SelectValue
                   placeholder={
                     selectedMetricNameId == null
-                      ? "Сначала выберите metric name"
+                      ? t("admin.metricLinksPage.unitPlaceholderSelectMetric")
                       : availableUnits.length === 0
-                        ? "Все units уже связаны"
-                        : "Выберите unit"
+                        ? t("admin.metricLinksPage.unitPlaceholderAllLinked")
+                        : t("admin.metricLinksPage.unitPlaceholderSelect")
                   }
                 />
               </SelectTrigger>
@@ -311,7 +318,9 @@ export default function AdminMetricLinksShadcnPage() {
             }
           >
             <Plus className="mr-2 h-4 w-4" />
-            {isCreating ? "Создание..." : "Создать связь"}
+            {isCreating
+              ? t("admin.metricLinksPage.creatingLink")
+              : t("admin.metricLinksPage.createLink")}
           </Button>
         </CardContent>
       </Card>
@@ -319,11 +328,13 @@ export default function AdminMetricLinksShadcnPage() {
       <Card className="border border-border bg-surface">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <CardTitle>Текущие связи</CardTitle>
+            <CardTitle>{t("admin.metricLinksPage.currentLinksTitle")}</CardTitle>
             <CardDescription>
               {selectedMetricName
-                ? `Units, доступные для "${selectedMetricName.label}".`
-                : "Выберите metric name, чтобы увидеть связанные units."}
+                ? t("admin.metricLinksPage.currentLinksDescriptionSelected", {
+                    name: selectedMetricName.label,
+                  })
+                : t("admin.metricLinksPage.currentLinksDescriptionEmpty")}
             </CardDescription>
           </div>
           <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
@@ -336,28 +347,30 @@ export default function AdminMetricLinksShadcnPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-20">ID</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead className="w-40">Status</TableHead>
-                <TableHead className="w-32 text-right">Action</TableHead>
+                <TableHead>{t("admin.metricLinksPage.unitColumn")}</TableHead>
+                <TableHead className="w-40">{t("admin.metricLinksPage.statusColumn")}</TableHead>
+                <TableHead className="w-32 text-right">
+                  {t("admin.metricLinksPage.actionColumn")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {selectedMetricNameId == null ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    Выберите metric name.
+                    {t("admin.metricLinksPage.noMetricSelected")}
                   </TableCell>
                 </TableRow>
               ) : isLoadingLinks ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    Загрузка связей...
+                    {t("admin.metricLinksPage.loadingLinks")}
                   </TableCell>
                 </TableRow>
               ) : linkedUnitsWithMeta.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    Для этой метрики пока нет связанных units.
+                    {t("admin.metricLinksPage.emptyLinks")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -367,7 +380,9 @@ export default function AdminMetricLinksShadcnPage() {
                     <TableCell>
                       <div className="space-y-1">
                         <p className="font-medium">{unit.label}</p>
-                        <p className="text-sm text-muted-foreground">metricUnitId</p>
+                        <p className="text-sm text-muted-foreground">
+                          {t("admin.metricLinksPage.unitMeta")}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -379,7 +394,9 @@ export default function AdminMetricLinksShadcnPage() {
                             : "rounded-full border-primary/30 text-primary"
                         }
                       >
-                        {unit.dictionaryUnit?.active === false ? "Inactive" : "Active"}
+                        {unit.dictionaryUnit?.active === false
+                          ? t("admin.metricLinksPage.inactiveStatus")
+                          : t("admin.metricLinksPage.activeStatus")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -390,7 +407,7 @@ export default function AdminMetricLinksShadcnPage() {
                         onClick={() => setPendingDelete(unit)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Удалить
+                        {t("admin.metricLinksPage.deleteConfirm")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -408,13 +425,19 @@ export default function AdminMetricLinksShadcnPage() {
             setPendingDelete(null);
           }
         }}
-        title="Удалить связь?"
+        title={t("admin.metricLinksPage.deleteTitle")}
         description={
           pendingDelete == null
             ? ""
-            : `Unit "${pendingDelete.label}" больше не будет доступен для выбранного metric name.`
+            : t("admin.metricLinksPage.deleteDescription", {
+                label: pendingDelete.label,
+              })
         }
-        confirmLabel={isDeleting ? "Удаление..." : "Удалить связь"}
+        confirmLabel={
+          isDeleting
+            ? t("common.deleting")
+            : t("admin.metricLinksPage.deleteConfirm")
+        }
         loading={isDeleting}
         tone="danger"
         onConfirm={handleDelete}
