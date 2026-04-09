@@ -51,7 +51,7 @@ export function DiaryListFilters(props: Props) {
   };
 
   return (
-    <Card className="max-w-6xl mx-auto mb-10">
+    <Card className="max-w-6xl mx-auto mb-8">
       <CardContent className="flex flex-col sm:flex-row gap-6 pt-2 pb-6">
         
         {/* STATUS */}
