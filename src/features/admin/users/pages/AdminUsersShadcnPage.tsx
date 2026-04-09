@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Lock, Search, ShieldCheck, Unlock, UserPlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
@@ -35,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { getIntlLocale } from "@/shared/i18n/locale";
 import { useAuthStore } from "@/shared/store/authStore";
 import type { AdminUserDto } from "@/shared/types/adminUser";
 
@@ -64,6 +66,8 @@ const ROLE_BADGE_CLASS: Record<AdminUserDto["role"], string> = {
 };
 
 export default function AdminUsersShadcnPage() {
+  const { t, i18n } = useTranslation();
+  const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [users, setUsers] = useState<AdminUserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
@@ -89,6 +93,12 @@ export default function AdminUsersShadcnPage() {
     }
   }
 
+  function getRoleLabel(role: AdminUserDto["role"]) {
+    if (role === "ADMIN") return t("admin.roles.admin");
+    if (role === "PREMIUM") return t("admin.roles.premium");
+    return t("admin.roles.user");
+  }
+
   function requireNotSelf(message: string, userId: number) {
     if (userId !== currentUserId) return true;
 
@@ -100,16 +110,19 @@ export default function AdminUsersShadcnPage() {
     user: AdminUserDto,
     nextRole: AdminUserDto["role"]
   ) {
-    if (!requireNotSelf("Нельзя изменить роль самому себе.", user.id)) {
+    if (!requireNotSelf(t("admin.usersPage.selfRoleError"), user.id)) {
       return;
     }
 
     if (user.role === nextRole) return;
 
     setPendingAction({
-      title: "Изменить роль пользователя?",
-      description: `Пользователь ${user.username} получит роль ${nextRole}.`,
-      confirmLabel: "Изменить роль",
+      title: t("admin.usersPage.roleChangeTitle"),
+      description: t("admin.usersPage.roleChangeDescription", {
+        username: user.username,
+        role: getRoleLabel(nextRole),
+      }),
+      confirmLabel: t("admin.usersPage.roleChangeConfirm"),
       run: async () => {
         await updateUserRole(user.id, { role: nextRole });
         await load();
@@ -118,17 +131,26 @@ export default function AdminUsersShadcnPage() {
   }
 
   function requestToggleEnabled(user: AdminUserDto) {
-    if (!requireNotSelf("Нельзя отключить самого себя.", user.id)) {
+    if (!requireNotSelf(t("admin.usersPage.selfDisableError"), user.id)) {
       return;
     }
 
-    const actionText = user.enabled ? "отключить" : "включить";
+    const enabling = !user.enabled;
 
     setPendingAction({
-      title: `${user.enabled ? "Отключить" : "Включить"} пользователя?`,
-      description: `Подтвердите, что хотите ${actionText} пользователя ${user.username}.`,
-      confirmLabel: user.enabled ? "Отключить" : "Включить",
-      tone: user.enabled ? "danger" : "primary",
+      title: enabling
+        ? t("admin.usersPage.enableTitle")
+        : t("admin.usersPage.disableTitle"),
+      description: t("admin.usersPage.toggleEnabledDescription", {
+        action: enabling
+          ? t("admin.usersPage.enableAction")
+          : t("admin.usersPage.disableAction"),
+        username: user.username,
+      }),
+      confirmLabel: enabling
+        ? t("admin.usersPage.enableConfirm")
+        : t("admin.usersPage.disableConfirm"),
+      tone: enabling ? "primary" : "danger",
       run: async () => {
         await toggleUserEnabled(user.id, !user.enabled);
         await load();
@@ -137,17 +159,26 @@ export default function AdminUsersShadcnPage() {
   }
 
   function requestToggleLock(user: AdminUserDto) {
-    if (!requireNotSelf("Нельзя заблокировать самого себя.", user.id)) {
+    if (!requireNotSelf(t("admin.usersPage.selfLockError"), user.id)) {
       return;
     }
 
-    const actionText = user.accountLocked ? "разблокировать" : "заблокировать";
+    const unlocking = user.accountLocked;
 
     setPendingAction({
-      title: `${user.accountLocked ? "Разблокировать" : "Заблокировать"} пользователя?`,
-      description: `Подтвердите, что хотите ${actionText} пользователя ${user.username}.`,
-      confirmLabel: user.accountLocked ? "Разблокировать" : "Заблокировать",
-      tone: user.accountLocked ? "primary" : "danger",
+      title: unlocking
+        ? t("admin.usersPage.unlockTitle")
+        : t("admin.usersPage.lockTitle"),
+      description: t("admin.usersPage.toggleLockDescription", {
+        action: unlocking
+          ? t("admin.usersPage.unlockAction")
+          : t("admin.usersPage.lockAction"),
+        username: user.username,
+      }),
+      confirmLabel: unlocking
+        ? t("admin.usersPage.unlockConfirm")
+        : t("admin.usersPage.lockConfirm"),
+      tone: unlocking ? "primary" : "danger",
       run: async () => {
         await toggleUserLocked(user.id, !user.accountLocked);
         await load();
@@ -191,79 +222,87 @@ export default function AdminUsersShadcnPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Пользователи</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("admin.usersPage.title")}
+          </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Управление аккаунтами, ролями и состоянием доступа пользователей.
+            {t("admin.usersPage.subtitle")}
           </p>
         </div>
 
         <Button asChild className="w-full sm:w-auto">
           <Link to="/admin/users/create">
             <UserPlus className="mr-2 h-4 w-4" />
-            Создать пользователя
+            {t("admin.usersPage.createUser")}
           </Link>
         </Button>
       </div>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Фильтры</CardTitle>
+          <CardTitle>{t("admin.usersPage.filtersTitle")}</CardTitle>
           <CardDescription>
-            Поиск по username и имени, фильтрация по роли и статусу.
+            {t("admin.usersPage.filtersDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_200px_200px_auto] lg:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Search className="h-4 w-4" />
-              Поиск
+              {t("admin.usersPage.searchLabel")}
             </div>
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Поиск по username или имени..."
+              placeholder={t("admin.usersPage.searchPlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Роль</p>
+            <p className="text-sm text-muted-foreground">
+              {t("admin.usersPage.roleLabel")}
+            </p>
             <Select
               value={roleFilter}
               onValueChange={(value) => setRoleFilter(value as RoleFilter)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Все роли" />
+                <SelectValue placeholder={t("admin.usersPage.rolePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Все роли</SelectItem>
-                <SelectItem value="ADMIN">ADMIN</SelectItem>
-                <SelectItem value="USER">USER</SelectItem>
-                <SelectItem value="PREMIUM">PREMIUM</SelectItem>
+                <SelectItem value="ALL">{t("admin.usersPage.allRoles")}</SelectItem>
+                <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
+                <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
+                <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Статус</p>
+            <p className="text-sm text-muted-foreground">
+              {t("admin.usersPage.statusLabel")}
+            </p>
             <Select
               value={statusFilter}
               onValueChange={(value) => setStatusFilter(value as StatusFilter)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Все статусы" />
+                <SelectValue placeholder={t("admin.usersPage.statusPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Все статусы</SelectItem>
-                <SelectItem value="ENABLED">Активные</SelectItem>
-                <SelectItem value="DISABLED">Отключенные</SelectItem>
-                <SelectItem value="LOCKED">Заблокированные</SelectItem>
+                <SelectItem value="ALL">{t("admin.usersPage.allStatuses")}</SelectItem>
+                <SelectItem value="ENABLED">{t("admin.usersPage.active")}</SelectItem>
+                <SelectItem value="DISABLED">{t("admin.usersPage.disabled")}</SelectItem>
+                <SelectItem value="LOCKED">{t("admin.usersPage.locked")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex justify-start lg:justify-end">
             <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-              Найдено: {filteredUsers.length}
+              {t("admin.usersPage.foundCount", {
+                count: filteredUsers.length,
+              })}
             </Badge>
           </div>
         </CardContent>
@@ -271,9 +310,9 @@ export default function AdminUsersShadcnPage() {
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Список пользователей</CardTitle>
+          <CardTitle>{t("admin.usersPage.listTitle")}</CardTitle>
           <CardDescription>
-            Изменения ролей и статусов подтверждаются отдельно.
+            {t("admin.usersPage.listDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -281,24 +320,26 @@ export default function AdminUsersShadcnPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-20">ID</TableHead>
-                <TableHead>Пользователь</TableHead>
-                <TableHead>Роль</TableHead>
-                <TableHead>Статусы</TableHead>
-                <TableHead>Создан</TableHead>
-                <TableHead className="w-[260px]">Действия</TableHead>
+                <TableHead>{t("admin.usersPage.userColumn")}</TableHead>
+                <TableHead>{t("admin.usersPage.roleColumn")}</TableHead>
+                <TableHead>{t("admin.usersPage.statusesColumn")}</TableHead>
+                <TableHead>{t("admin.usersPage.createdColumn")}</TableHead>
+                <TableHead className="w-[260px]">
+                  {t("admin.usersPage.actionsColumn")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    Загрузка...
+                    {t("admin.usersPage.loading")}
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    Пользователи не найдены
+                    {t("admin.usersPage.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -314,7 +355,7 @@ export default function AdminUsersShadcnPage() {
                             <span className="font-medium">{user.username}</span>
                             {isSelf && (
                               <Badge variant="outline" className="rounded-full">
-                                Вы
+                                {t("admin.usersPage.you")}
                               </Badge>
                             )}
                           </div>
@@ -329,16 +370,13 @@ export default function AdminUsersShadcnPage() {
                             variant="outline"
                             className={`rounded-full ${ROLE_BADGE_CLASS[user.role]}`}
                           >
-                            {user.role}
+                            {getRoleLabel(user.role)}
                           </Badge>
                           <Select
                             value={user.role}
                             disabled={isSelf || isMutating}
                             onValueChange={(value) =>
-                              requestRoleChange(
-                                user,
-                                value as AdminUserDto["role"]
-                              )
+                              requestRoleChange(user, value as AdminUserDto["role"])
                             }
                           >
                             <SelectTrigger className="min-w-[180px]">
@@ -347,7 +385,7 @@ export default function AdminUsersShadcnPage() {
                             <SelectContent>
                               {ROLE_OPTIONS.map((role) => (
                                 <SelectItem key={role} value={role}>
-                                  {role}
+                                  {getRoleLabel(role)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -364,7 +402,9 @@ export default function AdminUsersShadcnPage() {
                                 : "rounded-full"
                             }
                           >
-                            {user.enabled ? "Активен" : "Отключен"}
+                            {user.enabled
+                              ? t("admin.usersPage.active")
+                              : t("admin.usersPage.disabled")}
                           </Badge>
                           <Badge
                             variant="outline"
@@ -374,12 +414,14 @@ export default function AdminUsersShadcnPage() {
                                 : "rounded-full"
                             }
                           >
-                            {user.accountLocked ? "Заблокирован" : "Разблокирован"}
+                            {user.accountLocked
+                              ? t("admin.usersPage.locked")
+                              : t("admin.usersPage.unlocked")}
                           </Badge>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        {new Date(user.createdAt).toLocaleDateString(locale)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-2">
@@ -390,7 +432,9 @@ export default function AdminUsersShadcnPage() {
                             onClick={() => requestToggleEnabled(user)}
                           >
                             <ShieldCheck className="mr-2 h-4 w-4" />
-                            {user.enabled ? "Отключить" : "Включить"}
+                            {user.enabled
+                              ? t("admin.usersPage.disableConfirm")
+                              : t("admin.usersPage.enableConfirm")}
                           </Button>
                           <Button
                             size="sm"
@@ -408,7 +452,9 @@ export default function AdminUsersShadcnPage() {
                             ) : (
                               <Lock className="mr-2 h-4 w-4" />
                             )}
-                            {user.accountLocked ? "Разблокировать" : "Заблокировать"}
+                            {user.accountLocked
+                              ? t("admin.usersPage.unlockConfirm")
+                              : t("admin.usersPage.lockConfirm")}
                           </Button>
                         </div>
                       </TableCell>
@@ -430,7 +476,7 @@ export default function AdminUsersShadcnPage() {
         }}
         title={pendingAction?.title ?? ""}
         description={pendingAction?.description ?? ""}
-        confirmLabel={pendingAction?.confirmLabel ?? "Подтвердить"}
+        confirmLabel={pendingAction?.confirmLabel ?? t("common.continue")}
         tone={pendingAction?.tone ?? "primary"}
         loading={isMutating}
         onConfirm={handleConfirmAction}

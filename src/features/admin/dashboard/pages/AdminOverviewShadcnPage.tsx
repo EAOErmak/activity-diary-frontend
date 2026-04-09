@@ -1,5 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Database } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { clearAdminDatabase } from "@/api/admin/adminDatabaseApi";
@@ -16,6 +17,7 @@ import {
 } from "@/shared/components/ui/card";
 
 export default function AdminOverviewShadcnPage() {
+  const { t } = useTranslation();
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isClearingDatabase, setIsClearingDatabase] = useState(false);
 
@@ -36,16 +38,14 @@ export default function AdminOverviewShadcnPage() {
     <div className="space-y-8">
       <div className="space-y-3">
         <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-          Админ-панель
+          {t("admin.overviewPage.badge")}
         </Badge>
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Обзор
+            {t("admin.overviewPage.title")}
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Серверная статистика временно скрыта, пока соответствующие
-            backend-эндпоинты не работают. На этой странице оставлена только
-            операция очистки базы данных.
+            {t("admin.overviewPage.subtitle")}
           </p>
         </div>
       </div>
@@ -56,17 +56,15 @@ export default function AdminOverviewShadcnPage() {
             <Database className="h-5 w-5" />
           </div>
           <div className="space-y-1">
-            <CardTitle>База данных</CardTitle>
+            <CardTitle>{t("admin.overviewPage.databaseTitle")}</CardTitle>
             <CardDescription>
-              Полная очистка вызывает `POST /admin/database/clear` и удаляет
-              данные из всех таблиц.
+              {t("admin.overviewPage.databaseDescription")}
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Используй эту операцию только для полного сброса среды. Отменить
-            очистку после запуска нельзя.
+            {t("admin.overviewPage.databaseWarning")}
           </p>
         </CardContent>
         <CardFooter className="justify-end">
@@ -75,7 +73,9 @@ export default function AdminOverviewShadcnPage() {
             className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
             disabled={isClearingDatabase}
           >
-            {isClearingDatabase ? "Очистка..." : "Очистить базу"}
+            {isClearingDatabase
+              ? t("admin.overviewPage.clearing")
+              : t("admin.overviewPage.clearButton")}
           </Button>
         </CardFooter>
       </Card>
@@ -83,9 +83,13 @@ export default function AdminOverviewShadcnPage() {
       <AdminConfirmationDialog
         open={isClearDialogOpen}
         onOpenChange={setIsClearDialogOpen}
-        title="Подтвердите очистку базы"
-        description="Это действие удалит данные из всех таблиц. Отменить очистку после запуска нельзя."
-        confirmLabel={isClearingDatabase ? "Очистка..." : "Удалить все данные"}
+        title={t("admin.overviewPage.confirmTitle")}
+        description={t("admin.overviewPage.confirmDescription")}
+        confirmLabel={
+          isClearingDatabase
+            ? t("admin.overviewPage.clearing")
+            : t("admin.overviewPage.confirmLabel")
+        }
         loading={isClearingDatabase}
         tone="danger"
         onConfirm={handleClearDatabase}

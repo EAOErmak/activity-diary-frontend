@@ -1,6 +1,7 @@
-import axios from "axios";
+﻿import axios from "axios";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { BarChart3, Link2, Plus, Search, Tags, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { adminTagChartTypesApi } from "@/api/admin/adminTagChartTypesApi";
@@ -31,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { getIntlLocale } from "@/shared/i18n/locale";
 import type { ApiResponse } from "@/shared/types/api";
 import {
   ALL_CHART_TYPES,
@@ -39,32 +41,6 @@ import {
 } from "@/shared/types/analytics";
 import type { AdminTagChartTypeLink } from "@/shared/types/adminTagChartType";
 import type { Tag } from "@/shared/types/tag";
-
-function sortTags(tags: Tag[]) {
-  return [...tags].sort((left, right) => left.name.localeCompare(right.name, "ru"));
-}
-
-function sortChartTypes(chartTypes: ChartType[]) {
-  return [...chartTypes].sort((left, right) => {
-    const labelCompare = getChartTypeLabel(left).localeCompare(
-      getChartTypeLabel(right),
-      "ru"
-    );
-
-    return labelCompare || left.localeCompare(right);
-  });
-}
-
-function sortTagChartTypeLinks(links: AdminTagChartTypeLink[]) {
-  return [...links].sort((left, right) => {
-    const labelCompare = getChartTypeLabel(left.chartType).localeCompare(
-      getChartTypeLabel(right.chartType),
-      "ru"
-    );
-
-    return labelCompare || left.chartType.localeCompare(right.chartType);
-  });
-}
 
 function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
@@ -87,6 +63,8 @@ function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
 }
 
 export function AdminTagChartTypesManager() {
+  const { t, i18n } = useTranslation();
+  const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
@@ -101,6 +79,32 @@ export function AdminTagChartTypesManager() {
   const [linksErrorMessage, setLinksErrorMessage] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<AdminTagChartTypeLink | null>(null);
   const deferredTagQuery = useDeferredValue(tagQuery);
+
+  function sortTags(tags: Tag[]) {
+    return [...tags].sort((left, right) => left.name.localeCompare(right.name, locale));
+  }
+
+  function sortChartTypes(chartTypes: ChartType[]) {
+    return [...chartTypes].sort((left, right) => {
+      const labelCompare = getChartTypeLabel(left).localeCompare(
+        getChartTypeLabel(right),
+        locale
+      );
+
+      return labelCompare || left.localeCompare(right);
+    });
+  }
+
+  function sortTagChartTypeLinks(linksToSort: AdminTagChartTypeLink[]) {
+    return [...linksToSort].sort((left, right) => {
+      const labelCompare = getChartTypeLabel(left.chartType).localeCompare(
+        getChartTypeLabel(right.chartType),
+        locale
+      );
+
+      return labelCompare || left.chartType.localeCompare(right.chartType);
+    });
+  }
 
   useEffect(() => {
     let isActive = true;
@@ -123,7 +127,7 @@ export function AdminTagChartTypesManager() {
 
         setAvailableTags([]);
         setTagsErrorMessage(
-          extractApiErrorMessage(error, "Не удалось загрузить список тегов.")
+          extractApiErrorMessage(error, t("admin.tagChartTypes.tagsLoadError"))
         );
       } finally {
         if (isActive) {
@@ -137,7 +141,7 @@ export function AdminTagChartTypesManager() {
     return () => {
       isActive = false;
     };
-  }, [deferredTagQuery]);
+  }, [deferredTagQuery, locale, t]);
 
   useEffect(() => {
     if (selectedTagId == null) {
@@ -170,7 +174,7 @@ export function AdminTagChartTypesManager() {
 
         setLinks([]);
         setLinksErrorMessage(
-          extractApiErrorMessage(error, "Не удалось загрузить связи tag ↔ chart type.")
+          extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
         );
       } finally {
         if (isActive) {
@@ -184,7 +188,7 @@ export function AdminTagChartTypesManager() {
     return () => {
       isActive = false;
     };
-  }, [selectedTagId]);
+  }, [selectedTagId, locale, t]);
 
   const linkedChartTypes = useMemo(
     () => new Set(links.map((link) => link.chartType)),
@@ -196,7 +200,7 @@ export function AdminTagChartTypesManager() {
       sortChartTypes(
         ALL_CHART_TYPES.filter((chartType) => !linkedChartTypes.has(chartType))
       ),
-    [linkedChartTypes]
+    [linkedChartTypes, locale]
   );
 
   useEffect(() => {
@@ -218,7 +222,7 @@ export function AdminTagChartTypesManager() {
     } catch (error) {
       setLinks([]);
       setLinksErrorMessage(
-        extractApiErrorMessage(error, "Не удалось загрузить связи tag ↔ chart type.")
+        extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
       );
     } finally {
       setIsLoadingLinks(false);
@@ -262,12 +266,12 @@ export function AdminTagChartTypesManager() {
 
   async function handleCreate() {
     if (selectedTagId == null || selectedTagName == null) {
-      toast.error("Сначала выберите тег.");
+      toast.error(t("admin.tagChartTypes.selectTagError"));
       return;
     }
 
     if (selectedChartType == null) {
-      toast.error("Выберите тип графика.");
+      toast.error(t("admin.tagChartTypes.selectChartTypeError"));
       return;
     }
 
@@ -280,11 +284,14 @@ export function AdminTagChartTypesManager() {
       setSelectedChartType(null);
       await reloadLinks(selectedTagId);
       toast.success(
-        `Тип графика "${getChartTypeLabel(selectedChartType)}" добавлен для тега "${selectedTagName}".`
+        t("admin.tagChartTypes.linkCreated", {
+          chartType: getChartTypeLabel(selectedChartType),
+          tagName: selectedTagName,
+        })
       );
     } catch (error) {
       setLinksErrorMessage(
-        extractApiErrorMessage(error, "Не удалось создать связь tag ↔ chart type.")
+        extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
       );
     } finally {
       setIsCreating(false);
@@ -305,28 +312,38 @@ export function AdminTagChartTypesManager() {
       const deletedChartType = pendingDelete.chartType;
       setPendingDelete(null);
       await reloadLinks(selectedTagId);
-      toast.success(`Связь "${getChartTypeLabel(deletedChartType)}" удалена.`);
+      toast.success(
+        t("admin.tagChartTypes.linkDeleted", {
+          chartType: getChartTypeLabel(deletedChartType),
+        })
+      );
     } catch (error) {
       setLinksErrorMessage(
-        extractApiErrorMessage(error, "Не удалось удалить связь tag ↔ chart type.")
+        extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
       );
     } finally {
       setIsDeleting(false);
     }
   }
 
+  const currentLinksTitle = t("admin.tagChartTypes.currentLinksTitle", {
+    suffix: selectedTagName
+      ? t("admin.tagChartTypes.currentLinksSuffix", { name: selectedTagName })
+      : "",
+  }).trim();
+
   return (
     <Card className="border border-border bg-surface">
       <CardHeader className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div className="space-y-1">
-          <CardTitle>Разрешенные типы графиков</CardTitle>
+          <CardTitle>{t("admin.tagChartTypes.title")}</CardTitle>
           <CardDescription>
-            Настройте, какие chart types доступны для выбранного тега в аналитике.
+            {t("admin.tagChartTypes.description")}
           </CardDescription>
         </div>
         <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
           <Link2 className="mr-2 h-3.5 w-3.5" />
-          Связей: {links.length}
+          {t("admin.tagChartTypes.linksCount", { count: links.length })}
         </Badge>
       </CardHeader>
 
@@ -335,12 +352,12 @@ export function AdminTagChartTypesManager() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Search className="h-4 w-4" />
-              Поиск тега
+              {t("admin.tagChartTypes.tagSearchLabel")}
             </div>
             <Input
               value={tagQuery}
               onChange={(event) => handleTagQueryChange(event.target.value)}
-              placeholder="Начните вводить название тега..."
+              placeholder={t("admin.tagChartTypes.tagSearchPlaceholder")}
               disabled={isLoadingTags}
             />
           </div>
@@ -348,7 +365,7 @@ export function AdminTagChartTypesManager() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Tags className="h-4 w-4" />
-              Тег
+              {t("admin.tagChartTypes.tagLabel")}
             </div>
             <Select
               value={selectedTagId != null ? String(selectedTagId) : ""}
@@ -359,10 +376,10 @@ export function AdminTagChartTypesManager() {
                 <SelectValue
                   placeholder={
                     isLoadingTags
-                      ? "Загрузка тегов..."
+                      ? t("admin.tagChartTypes.tagLoading")
                       : availableTags.length === 0
-                        ? "Теги не найдены"
-                        : "Выберите тег"
+                        ? t("admin.tagChartTypes.tagEmpty")
+                        : t("admin.tagChartTypes.tagPlaceholder")
                   }
                 />
               </SelectTrigger>
@@ -383,7 +400,7 @@ export function AdminTagChartTypesManager() {
 
         {!tagsErrorMessage && !isLoadingTags && availableTags.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            По этому запросу теги не найдены.
+            {t("admin.tagChartTypes.noTagsForQuery")}
           </p>
         )}
 
@@ -391,7 +408,7 @@ export function AdminTagChartTypesManager() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <BarChart3 className="h-4 w-4" />
-              Chart type
+              {t("admin.tagChartTypes.chartTypeLabel")}
             </div>
             <Select
               value={selectedChartType ?? ""}
@@ -406,12 +423,12 @@ export function AdminTagChartTypesManager() {
                 <SelectValue
                   placeholder={
                     selectedTagId == null
-                      ? "Сначала выберите тег"
+                      ? t("admin.tagChartTypes.chartTypePlaceholderSelectTag")
                       : isLoadingLinks
-                        ? "Загрузка связей..."
+                        ? t("admin.tagChartTypes.chartTypePlaceholderLoading")
                         : availableChartTypes.length === 0
-                          ? "Все типы уже привязаны"
-                          : "Выберите тип графика"
+                          ? t("admin.tagChartTypes.chartTypePlaceholderAllLinked")
+                          : t("admin.tagChartTypes.chartTypePlaceholderSelect")
                   }
                 />
               </SelectTrigger>
@@ -434,7 +451,9 @@ export function AdminTagChartTypesManager() {
             }
           >
             <Plus className="mr-2 h-4 w-4" />
-            {isCreating ? "Добавление..." : "Добавить связь"}
+            {isCreating
+              ? t("admin.tagChartTypes.creatingLink")
+              : t("admin.tagChartTypes.createLink")}
           </Button>
         </div>
 
@@ -443,39 +462,41 @@ export function AdminTagChartTypesManager() {
           !linksErrorMessage &&
           availableChartTypes.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Для выбранного тега уже привязаны все доступные типы графиков.
+              {t("admin.tagChartTypes.allLinkedForTag")}
             </p>
           )}
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold">
-              Текущие связи{selectedTagName ? ` для "${selectedTagName}"` : ""}
-            </h3>
+            <h3 className="text-lg font-semibold">{currentLinksTitle}</h3>
             <p className="text-sm text-muted-foreground">
-              Просмотр и удаление разрешенных chart types для выбранного тега.
+              {t("admin.tagChartTypes.currentLinksDescription")}
             </p>
           </div>
 
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Chart type</TableHead>
-                <TableHead className="w-[220px]">Enum</TableHead>
-                <TableHead className="w-32 text-right">Действие</TableHead>
+                <TableHead>{t("admin.tagChartTypes.chartTypeColumn")}</TableHead>
+                <TableHead className="w-[220px]">
+                  {t("admin.tagChartTypes.enumColumn")}
+                </TableHead>
+                <TableHead className="w-32 text-right">
+                  {t("admin.tagChartTypes.actionColumn")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {selectedTagId == null ? (
                 <TableRow>
                   <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    Выберите тег, чтобы управлять доступными типами графиков.
+                    {t("admin.tagChartTypes.selectTagHint")}
                   </TableCell>
                 </TableRow>
               ) : isLoadingLinks ? (
                 <TableRow>
                   <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    Загрузка связей...
+                    {t("admin.tagChartTypes.loadingLinks")}
                   </TableCell>
                 </TableRow>
               ) : linksErrorMessage ? (
@@ -487,7 +508,7 @@ export function AdminTagChartTypesManager() {
               ) : links.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    Для этого тега пока нет разрешенных типов графиков.
+                    {t("admin.tagChartTypes.emptyLinks")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -497,7 +518,7 @@ export function AdminTagChartTypesManager() {
                       <div className="space-y-1">
                         <p className="font-medium">{getChartTypeLabel(link.chartType)}</p>
                         <p className="text-sm text-muted-foreground">
-                          Backend analytics availability rule
+                          {t("admin.tagChartTypes.backendRuleLabel")}
                         </p>
                       </div>
                     </TableCell>
@@ -514,7 +535,7 @@ export function AdminTagChartTypesManager() {
                         onClick={() => setPendingDelete(link)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Удалить
+                        {t("common.delete")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -532,13 +553,19 @@ export function AdminTagChartTypesManager() {
             setPendingDelete(null);
           }
         }}
-        title="Удалить связь?"
+        title={t("admin.tagChartTypes.deleteTitle")}
         description={
           pendingDelete == null
             ? ""
-            : `Тип графика "${getChartTypeLabel(pendingDelete.chartType)}" больше не будет доступен для выбранного тега.`
+            : t("admin.tagChartTypes.deleteDescription", {
+                chartType: getChartTypeLabel(pendingDelete.chartType),
+              })
         }
-        confirmLabel={isDeleting ? "Удаление..." : "Удалить связь"}
+        confirmLabel={
+          isDeleting
+            ? t("common.deleting")
+            : t("admin.tagChartTypes.deleteConfirm")
+        }
         loading={isDeleting}
         tone="danger"
         onConfirm={handleDelete}

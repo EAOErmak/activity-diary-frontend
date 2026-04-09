@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { BookOpen, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
@@ -8,7 +9,6 @@ import {
   updateDictionaryItem,
 } from "@/api/admin/dictionaryAdminApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
-import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
 import type {
   DictionaryCreate,
   DictionaryResponse,
@@ -52,12 +53,8 @@ type PendingAction =
     }
   | null;
 
-const TABS: Array<{ id: Tab; label: string }> = [
-  { id: "METRIC_NAME", label: "Название активности" },
-  { id: "METRIC_UNIT", label: "Единицы измерения" },
-];
-
 export default function AdminDictionaryShadcnPage() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("METRIC_NAME");
   const [items, setItems] = useState<DictionaryResponse[]>([]);
   const [label, setLabel] = useState("");
@@ -79,15 +76,22 @@ export default function AdminDictionaryShadcnPage() {
       await refreshDictionaryCache();
     } catch (error) {
       console.error(error);
-      toast.error("Не удалось загрузить словарь.");
+      toast.error(t("admin.dictionaryPage.loadError"));
     } finally {
       setIsLoadingItems(false);
     }
   }
 
+  function getRoleLabel(role: string | null) {
+    if (role === "ADMIN") return t("admin.roles.admin");
+    if (role === "PREMIUM") return t("admin.roles.premium");
+    if (role === "USER") return t("admin.roles.user");
+    return t("admin.dictionaryPage.allAccess");
+  }
+
   async function handleCreate() {
     if (!label.trim()) {
-      toast.error("Введите название элемента.");
+      toast.error(t("admin.dictionaryPage.nameRequired"));
       return;
     }
 
@@ -110,9 +114,15 @@ export default function AdminDictionaryShadcnPage() {
 
   function requestToggle(item: DictionaryResponse) {
     setPendingAction({
-      title: item.active ? "Деактивировать элемент?" : "Активировать элемент?",
-      description: `Подтвердите изменение состояния для "${item.label}".`,
-      confirmLabel: item.active ? "Деактивировать" : "Активировать",
+      title: item.active
+        ? t("admin.dictionaryPage.deactivateTitle")
+        : t("admin.dictionaryPage.activateTitle"),
+      description: t("admin.dictionaryPage.toggleDescription", {
+        label: item.label,
+      }),
+      confirmLabel: item.active
+        ? t("admin.dictionaryPage.deactivateConfirm")
+        : t("admin.dictionaryPage.activateConfirm"),
       run: async () => {
         const payload: DictionaryUpdate = {
           active: !item.active,
@@ -124,14 +134,13 @@ export default function AdminDictionaryShadcnPage() {
     });
   }
 
-  function requestRoleChange(
-    item: DictionaryResponse,
-    role: string | null
-  ) {
+  function requestRoleChange(item: DictionaryResponse, role: string | null) {
     setPendingAction({
-      title: "Изменить доступ?",
-      description: `Подтвердите изменение доступа для "${item.label}".`,
-      confirmLabel: "Сохранить доступ",
+      title: t("admin.dictionaryPage.changeAccessTitle"),
+      description: t("admin.dictionaryPage.changeAccessDescription", {
+        label: item.label,
+      }),
+      confirmLabel: t("admin.dictionaryPage.saveAccess"),
       run: async () => {
         const payload: DictionaryUpdate = {
           allowedRole: role,
@@ -158,55 +167,61 @@ export default function AdminDictionaryShadcnPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Словари</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("admin.dictionaryPage.title")}
+        </h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Управление справочниками активности и единиц измерения через общие
-          UI-компоненты админки.
+          {t("admin.dictionaryPage.subtitle")}
         </p>
       </div>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Тип словаря</CardTitle>
+          <CardTitle>{t("admin.dictionaryPage.typeTitle")}</CardTitle>
           <CardDescription>
-            Выберите набор данных, с которым хотите работать.
+            {t("admin.dictionaryPage.typeDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          {TABS.map((item) => (
-            <Button
-              key={item.id}
-              variant={tab === item.id ? "primary" : "surface"}
-              onClick={() => setTab(item.id)}
-            >
-              {item.label}
-            </Button>
-          ))}
+          <Button
+            variant={tab === "METRIC_NAME" ? "primary" : "surface"}
+            onClick={() => setTab("METRIC_NAME")}
+          >
+            {t("admin.dictionaryPage.metricNameTab")}
+          </Button>
+          <Button
+            variant={tab === "METRIC_UNIT" ? "primary" : "surface"}
+            onClick={() => setTab("METRIC_UNIT")}
+          >
+            {t("admin.dictionaryPage.metricUnitTab")}
+          </Button>
         </CardContent>
       </Card>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Добавить элемент</CardTitle>
+          <CardTitle>{t("admin.dictionaryPage.addTitle")}</CardTitle>
           <CardDescription>
-            Новый элемент появится в выбранном словаре после сохранения.
+            {t("admin.dictionaryPage.addDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <BookOpen className="h-4 w-4" />
-              Название
+              {t("admin.dictionaryPage.nameLabel")}
             </div>
             <Input
               value={label}
               onChange={(event) => setLabel(event.target.value)}
-              placeholder="Введите название..."
+              placeholder={t("admin.dictionaryPage.namePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Доступ</p>
+            <p className="text-sm text-muted-foreground">
+              {t("admin.dictionaryPage.accessLabel")}
+            </p>
             <Select
               value={allowedRole ?? "ALL"}
               onValueChange={(value) =>
@@ -217,17 +232,19 @@ export default function AdminDictionaryShadcnPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Все</SelectItem>
-                <SelectItem value="USER">Пользователь</SelectItem>
-                <SelectItem value="ADMIN">Администратор</SelectItem>
-                <SelectItem value="PREMIUM">Премиум</SelectItem>
+                <SelectItem value="ALL">{t("admin.dictionaryPage.allAccess")}</SelectItem>
+                <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
+                <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
+                <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Button onClick={handleCreate} disabled={isCreating}>
             <Plus className="mr-2 h-4 w-4" />
-            {isCreating ? "Создание..." : "Создать"}
+            {isCreating
+              ? t("admin.dictionaryPage.creatingButton")
+              : t("admin.dictionaryPage.createButton")}
           </Button>
         </CardContent>
       </Card>
@@ -235,13 +252,13 @@ export default function AdminDictionaryShadcnPage() {
       <Card className="border border-border bg-surface">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <CardTitle>Элементы словаря</CardTitle>
+            <CardTitle>{t("admin.dictionaryPage.itemsTitle")}</CardTitle>
             <CardDescription>
-              Меняй доступ и активность элементов с подтверждением.
+              {t("admin.dictionaryPage.itemsDescription")}
             </CardDescription>
           </div>
           <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-            Всего: {items.length}
+            {t("admin.dictionaryPage.totalCount", { count: items.length })}
           </Badge>
         </CardHeader>
         <CardContent>
@@ -249,22 +266,26 @@ export default function AdminDictionaryShadcnPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-20">ID</TableHead>
-                <TableHead>Название</TableHead>
-                <TableHead className="w-[240px]">Роль доступа</TableHead>
-                <TableHead className="w-32 text-center">Активен</TableHead>
+                <TableHead>{t("admin.dictionaryPage.nameColumn")}</TableHead>
+                <TableHead className="w-[240px]">
+                  {t("admin.dictionaryPage.accessColumn")}
+                </TableHead>
+                <TableHead className="w-32 text-center">
+                  {t("admin.dictionaryPage.activeColumn")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    Загрузка...
+                    {t("admin.dictionaryPage.loading")}
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    В текущем словаре нет элементов.
+                    {t("admin.dictionaryPage.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -283,21 +304,18 @@ export default function AdminDictionaryShadcnPage() {
                       <Select
                         value={item.allowedRole ?? "ALL"}
                         onValueChange={(value) =>
-                          requestRoleChange(
-                            item,
-                            value === "ALL" ? null : value
-                          )
+                          requestRoleChange(item, value === "ALL" ? null : value)
                         }
                         disabled={isMutating}
                       >
                         <SelectTrigger className="min-w-[180px]">
-                          <SelectValue />
+                          <SelectValue>{getRoleLabel(item.allowedRole)}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ALL">Все</SelectItem>
-                          <SelectItem value="USER">Пользователь</SelectItem>
-                          <SelectItem value="ADMIN">Администратор</SelectItem>
-                          <SelectItem value="PREMIUM">Премиум</SelectItem>
+                          <SelectItem value="ALL">{t("admin.dictionaryPage.allAccess")}</SelectItem>
+                          <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
+                          <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
+                          <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -311,7 +329,9 @@ export default function AdminDictionaryShadcnPage() {
                               : "rounded-full"
                           }
                         >
-                          {item.active ? "Да" : "Нет"}
+                          {item.active
+                            ? t("admin.dictionaryPage.yes")
+                            : t("admin.dictionaryPage.no")}
                         </Badge>
                         <Switch
                           checked={item.active}
@@ -337,7 +357,7 @@ export default function AdminDictionaryShadcnPage() {
         }}
         title={pendingAction?.title ?? ""}
         description={pendingAction?.description ?? ""}
-        confirmLabel={pendingAction?.confirmLabel ?? "Подтвердить"}
+        confirmLabel={pendingAction?.confirmLabel ?? t("common.continue")}
         loading={isMutating}
         onConfirm={handleConfirmAction}
       />

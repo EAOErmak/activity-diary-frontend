@@ -1,5 +1,6 @@
-import { useCallback, useDeferredValue, useEffect, useState } from "react";
+﻿import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Database, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
@@ -29,20 +30,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import type { FoodDictionaryOption, GeneralFoodResponseDto, FoodUpsertDto } from "@/shared/types/food";
+import { getIntlLocale } from "@/shared/i18n/locale";
+import type {
+  FoodDictionaryOption,
+  FoodUpsertDto,
+  GeneralFoodResponseDto,
+} from "@/shared/types/food";
 
-function formatMacro(value: number) {
-  return new Intl.NumberFormat("ru-RU", {
+function formatMacro(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
-function sortDictionaryOptions(options: FoodDictionaryOption[]) {
-  return [...options].sort((left, right) => left.label.localeCompare(right.label, "ru"));
+function sortDictionaryOptions(options: FoodDictionaryOption[], locale: string) {
+  return [...options].sort((left, right) => left.label.localeCompare(right.label, locale));
 }
 
-function mapDictionaryOptions(options: Array<{ id: number; label: string }>) {
+function mapDictionaryOptions(
+  options: Array<{ id: number; label: string }>,
+  locale: string
+) {
   const seen = new Map<number, FoodDictionaryOption>();
 
   for (const option of options) {
@@ -51,10 +60,12 @@ function mapDictionaryOptions(options: Array<{ id: number; label: string }>) {
     }
   }
 
-  return sortDictionaryOptions(Array.from(seen.values()));
+  return sortDictionaryOptions(Array.from(seen.values()), locale);
 }
 
 export default function AdminGeneralFoodsShadcnPage() {
+  const { t, i18n } = useTranslation();
+  const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [query, setQuery] = useState("");
   const [foods, setFoods] = useState<GeneralFoodResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,14 +85,12 @@ export default function AdminGeneralFoodsShadcnPage() {
     } catch (error) {
       setFoods([]);
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Не удалось загрузить общую базу продуктов."
+        error instanceof Error ? error.message : t("errors.foodBaseLoad")
       );
     } finally {
       setLoading(false);
     }
-  }, [deferredQuery]);
+  }, [deferredQuery, t]);
 
   useEffect(() => {
     void loadFoods(deferredQuery);
@@ -100,13 +109,22 @@ export default function AdminGeneralFoodsShadcnPage() {
       data.map((item) => ({
         id: item.id,
         label: item.label,
-      }))
+      })),
+      locale
     );
-  }, []);
+  }, [locale]);
+
+  const resultLabel = useMemo(
+    () =>
+      foods.length === 1
+        ? t("food.oneProduct")
+        : t("food.manyProducts", { count: foods.length }),
+    [foods.length, t]
+  );
 
   async function handleCreate(payload: FoodUpsertDto) {
     await createGeneralFood(payload);
-    toast.success("Продукт добавлен в общую базу.");
+    toast.success(t("admin.foodsPage.productCreated"));
     setCreateOpen(false);
     await loadFoods(query);
   }
@@ -117,7 +135,7 @@ export default function AdminGeneralFoodsShadcnPage() {
     }
 
     await updateGeneralFood(editingFood.id, payload);
-    toast.success("Продукт обновлен.");
+    toast.success(t("admin.foodsPage.productUpdated"));
     setEditingFood(null);
     await loadFoods(query);
   }
@@ -130,7 +148,11 @@ export default function AdminGeneralFoodsShadcnPage() {
     try {
       setIsDeleting(true);
       await deleteGeneralFood(pendingDelete.id);
-      toast.success(`Продукт "${pendingDelete.dictionaryItemLabel}" удален.`);
+      toast.success(
+        t("admin.foodsPage.productDeleted", {
+          label: pendingDelete.dictionaryItemLabel,
+        })
+      );
       setPendingDelete(null);
       await loadFoods(query);
     } finally {
@@ -142,73 +164,72 @@ export default function AdminGeneralFoodsShadcnPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Еда</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("admin.foodsPage.title")}
+          </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Управление общей базой продуктов. Эти записи доступны пользователям
-            только для просмотра в разделе Еда.
+            {t("admin.foodsPage.subtitle")}
           </p>
         </div>
 
         <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
-          Добавить продукт
+          {t("admin.foodsPage.addProduct")}
         </Button>
       </div>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Поиск</CardTitle>
+          <CardTitle>{t("admin.foodsPage.searchTitle")}</CardTitle>
           <CardDescription>
-            Ищите продукты по названию и управляйте общей базой без перезагрузки
-            страницы.
+            {t("admin.foodsPage.searchDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Search className="h-4 w-4" />
-              Поиск
+              {t("common.search")}
             </div>
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск по общей базе продуктов..."
+              placeholder={t("admin.foodsPage.searchPlaceholder")}
               className="max-w-xl"
             />
           </div>
 
           <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
             <Database className="mr-2 h-3.5 w-3.5" />
-            Найдено: {foods.length}
+            {resultLabel}
           </Badge>
         </CardContent>
       </Card>
 
       <Card className="border border-border bg-surface">
         <CardHeader>
-          <CardTitle>Общая база</CardTitle>
+          <CardTitle>{t("admin.foodsPage.databaseTitle")}</CardTitle>
           <CardDescription>
-            Создание, редактирование и удаление `GeneralFood` доступно только в
-            админ-панели.
+            {t("admin.foodsPage.databaseDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Продукт</TableHead>
-                <TableHead className="w-28 text-right">Белки</TableHead>
-                <TableHead className="w-28 text-right">Жиры</TableHead>
-                <TableHead className="w-32 text-right">Углеводы</TableHead>
-                <TableHead className="w-36 text-right">Калории на 1 г</TableHead>
-                <TableHead className="w-44 text-right">Действия</TableHead>
+                <TableHead>{t("food.product")}</TableHead>
+                <TableHead className="w-28 text-right">{t("food.proteins")}</TableHead>
+                <TableHead className="w-28 text-right">{t("food.fats")}</TableHead>
+                <TableHead className="w-32 text-right">{t("food.carbs")}</TableHead>
+                <TableHead className="w-36 text-right">{t("food.caloriesPerGram")}</TableHead>
+                <TableHead className="w-44 text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    Загрузка...
+                    {t("common.loading")}
                   </TableCell>
                 </TableRow>
               ) : errorMessage ? (
@@ -220,7 +241,7 @@ export default function AdminGeneralFoodsShadcnPage() {
               ) : foods.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    В общей базе пока нет продуктов по этому запросу.
+                    {t("food.noGeneralProducts")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -235,14 +256,19 @@ export default function AdminGeneralFoodsShadcnPage() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Общий продукт
+                          {t("food.sharedProductLabel")}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {t("food.dictionaryItemId", {
+                            id: String(food.dictionaryItemId),
+                          })}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{formatMacro(food.protein)}</TableCell>
-                    <TableCell className="text-right">{formatMacro(food.fat)}</TableCell>
-                    <TableCell className="text-right">{formatMacro(food.carbs)}</TableCell>
-                    <TableCell className="text-right">{formatMacro(food.callories)}</TableCell>
+                    <TableCell className="text-right">{formatMacro(food.protein, locale)}</TableCell>
+                    <TableCell className="text-right">{formatMacro(food.fat, locale)}</TableCell>
+                    <TableCell className="text-right">{formatMacro(food.carbs, locale)}</TableCell>
+                    <TableCell className="text-right">{formatMacro(food.callories, locale)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -251,7 +277,7 @@ export default function AdminGeneralFoodsShadcnPage() {
                           onClick={() => setEditingFood(food)}
                         >
                           <ShieldCheck className="mr-2 h-4 w-4" />
-                          Редактировать
+                          {t("common.edit")}
                         </Button>
                         <Button
                           size="sm"
@@ -260,7 +286,7 @@ export default function AdminGeneralFoodsShadcnPage() {
                           onClick={() => setPendingDelete(food)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Удалить
+                          {t("common.delete")}
                         </Button>
                       </div>
                     </TableCell>
@@ -276,12 +302,12 @@ export default function AdminGeneralFoodsShadcnPage() {
         mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Новый продукт общей базы"
-        submitLabel="Создать продукт"
-        searchPlaceholder="Введите название продукта в словаре..."
-        selectPlaceholder="Выберите продукт из словаря"
-        idleOptionsMessage="Введите запрос, чтобы найти продукт в словаре."
-        noOptionsMessage="Подходящие элементы словаря не найдены."
+        title={t("admin.foodsPage.createDialogTitle")}
+        submitLabel={t("admin.foodsPage.createDialogSubmit")}
+        searchPlaceholder={t("admin.foodsPage.createSearchPlaceholder")}
+        selectPlaceholder={t("admin.foodsPage.selectPlaceholder")}
+        idleOptionsMessage={t("admin.foodsPage.idleOptionsMessage")}
+        noOptionsMessage={t("admin.foodsPage.noOptionsMessage")}
         allowEmptySearch={false}
         loadOptions={loadAdminDictionaryOptions}
         onSubmit={handleCreate}
@@ -296,12 +322,12 @@ export default function AdminGeneralFoodsShadcnPage() {
               setEditingFood(null);
             }
           }}
-          title="Редактирование продукта общей базы"
-          submitLabel="Сохранить изменения"
-          searchPlaceholder="Уточните название продукта в словаре..."
-          selectPlaceholder="Выберите продукт из словаря"
-          idleOptionsMessage="Введите запрос, чтобы найти продукт в словаре."
-          noOptionsMessage="Подходящие элементы словаря не найдены."
+          title={t("admin.foodsPage.editDialogTitle")}
+          submitLabel={t("admin.foodsPage.editDialogSubmit")}
+          searchPlaceholder={t("admin.foodsPage.editSearchPlaceholder")}
+          selectPlaceholder={t("admin.foodsPage.selectPlaceholder")}
+          idleOptionsMessage={t("admin.foodsPage.idleOptionsMessage")}
+          noOptionsMessage={t("admin.foodsPage.noOptionsMessage")}
           allowEmptySearch={false}
           loadOptions={loadAdminDictionaryOptions}
           initialValues={{
@@ -323,13 +349,15 @@ export default function AdminGeneralFoodsShadcnPage() {
             setPendingDelete(null);
           }
         }}
-        title="Удалить продукт?"
+        title={t("admin.foodsPage.deleteTitle")}
         description={
           pendingDelete == null
             ? ""
-            : `Продукт "${pendingDelete.dictionaryItemLabel}" будет удален из общей базы.`
+            : t("admin.foodsPage.deleteDescription", {
+                label: pendingDelete.dictionaryItemLabel,
+              })
         }
-        confirmLabel={isDeleting ? "Удаление..." : "Удалить"}
+        confirmLabel={isDeleting ? t("common.deleting") : t("common.delete")}
         loading={isDeleting}
         tone="danger"
         onConfirm={handleDelete}
