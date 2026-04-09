@@ -16,6 +16,11 @@ const ruBase = {
     continue: "Продолжить",
     start: "Начать",
     back: "Назад",
+    previous: "Назад",
+    previousDay: "Предыдущий день",
+    next: "Вперед",
+    nextDay: "Следующий день",
+    morePages: "Еще страницы",
     reset: "Сбросить",
     search: "Поиск",
     searchByName: "Поиск по названию",
@@ -397,10 +402,376 @@ const ruBase = {
   },
 } as const;
 
+const ruExtensions = {
+  dashboard: {
+    chartTypes: {
+      CALORIES_PER_DAY: "Калории за день",
+      PFC_PER_DAY: "БЖУ за день",
+      CALORIES_PER_DIARY: "Калории по записи",
+      PFC_PER_DIARY: "БЖУ по записи",
+      PFC_PER_METRIC: "БЖУ по метрике",
+      TRAINING_COMPUTED: "Тренировка по расчетным данным",
+      TRAINING_METRICS: "Тренировочные метрики",
+      TRAINING_RAW: "Тренировка по сырым данным",
+    },
+  },
+  admin: {
+    panelBadge: "Админ",
+    panelTitle: "Панель управления",
+    metricLinks: "Связи метрик",
+    roles: {
+      user: "Пользователь",
+      premium: "Премиум",
+      admin: "Администратор",
+    },
+    overviewPage: {
+      badge: "Админ-панель",
+      title: "Обзор",
+      subtitle:
+        "Серверная статистика временно скрыта, пока соответствующие backend-эндпоинты не работают. На этой странице оставлена только операция очистки базы данных.",
+      databaseTitle: "База данных",
+      databaseDescription:
+        "Полная очистка вызывает `POST /admin/database/clear` и удаляет данные из всех таблиц.",
+      databaseWarning:
+        "Используйте эту операцию только для полного сброса среды. Отменить очистку после запуска нельзя.",
+      clearButton: "Очистить базу",
+      clearing: "Очистка...",
+      confirmTitle: "Подтвердите очистку базы",
+      confirmDescription:
+        "Это действие удалит данные из всех таблиц. Отменить очистку после запуска нельзя.",
+      confirmLabel: "Удалить все данные",
+    },
+    usersPage: {
+      title: "Пользователи",
+      subtitle:
+        "Управление аккаунтами, ролями и состоянием доступа пользователей.",
+      createUser: "Создать пользователя",
+      filtersTitle: "Фильтры",
+      filtersDescription:
+        "Поиск по username и имени, фильтрация по роли и статусу.",
+      searchLabel: "Поиск",
+      searchPlaceholder: "Поиск по username или имени...",
+      roleLabel: "Роль",
+      rolePlaceholder: "Все роли",
+      allRoles: "Все роли",
+      statusLabel: "Статус",
+      statusPlaceholder: "Все статусы",
+      allStatuses: "Все статусы",
+      foundCount: "Найдено: {{count}}",
+      listTitle: "Список пользователей",
+      listDescription:
+        "Изменения ролей и статусов подтверждаются отдельно.",
+      userColumn: "Пользователь",
+      roleColumn: "Роль",
+      statusesColumn: "Статусы",
+      createdColumn: "Создан",
+      actionsColumn: "Действия",
+      loading: "Загрузка...",
+      empty: "Пользователи не найдены",
+      you: "Вы",
+      active: "Активен",
+      disabled: "Отключен",
+      locked: "Заблокирован",
+      unlocked: "Разблокирован",
+      selfRoleError: "Нельзя изменить роль самому себе.",
+      selfDisableError: "Нельзя отключить самого себя.",
+      selfLockError: "Нельзя заблокировать самого себя.",
+      roleChangeTitle: "Изменить роль пользователя?",
+      roleChangeDescription:
+        "Пользователь {{username}} получит роль {{role}}.",
+      roleChangeConfirm: "Изменить роль",
+      enableTitle: "Включить пользователя?",
+      disableTitle: "Отключить пользователя?",
+      toggleEnabledDescription:
+        "Подтвердите, что хотите {{action}} пользователя {{username}}.",
+      enableConfirm: "Включить",
+      disableConfirm: "Отключить",
+      enableAction: "включить",
+      disableAction: "отключить",
+      lockTitle: "Заблокировать пользователя?",
+      unlockTitle: "Разблокировать пользователя?",
+      toggleLockDescription:
+        "Подтвердите, что хотите {{action}} пользователя {{username}}.",
+      lockConfirm: "Заблокировать",
+      unlockConfirm: "Разблокировать",
+      lockAction: "заблокировать",
+      unlockAction: "разблокировать",
+    },
+    userCreatePage: {
+      badge: "Создание пользователя",
+      title: "Новый пользователь",
+      subtitle:
+        "Форма использует те же общие UI-компоненты и theme tokens, что и остальная админ-панель.",
+      accountDataTitle: "Данные аккаунта",
+      accountDataDescription:
+        "Создание нового пользователя администратором.",
+      backToUsers: "Назад к списку пользователей",
+    },
+    userCreateForm: {
+      requiredField: "Обязательное поле",
+      passwordRequired: "Введите пароль",
+      passwordMin: "Минимум 8 символов",
+      passwordMax: "Максимум 64 символа",
+      fullNamePlaceholder: "Иван Иванов",
+      emailInvalid: "Некорректный email",
+      emailOptional: "Email (опционально)",
+      rolePlaceholder: "Выберите роль",
+      submit: "Создать пользователя",
+      submitting: "Создание...",
+    },
+    dictionaryPage: {
+      title: "Словари",
+      subtitle:
+        "Управление справочниками активности и единиц измерения через общие UI-компоненты админки.",
+      typeTitle: "Тип словаря",
+      typeDescription:
+        "Выберите набор данных, с которым хотите работать.",
+      metricNameTab: "Название активности",
+      metricUnitTab: "Единицы измерения",
+      addTitle: "Добавить элемент",
+      addDescription:
+        "Новый элемент появится в выбранном словаре после сохранения.",
+      nameLabel: "Название",
+      namePlaceholder: "Введите название...",
+      accessLabel: "Доступ",
+      allAccess: "Все",
+      createButton: "Создать",
+      creatingButton: "Создание...",
+      itemsTitle: "Элементы словаря",
+      itemsDescription:
+        "Меняй доступ и активность элементов с подтверждением.",
+      totalCount: "Всего: {{count}}",
+      nameColumn: "Название",
+      accessColumn: "Роль доступа",
+      activeColumn: "Активен",
+      loading: "Загрузка...",
+      empty: "В текущем словаре нет элементов.",
+      yes: "Да",
+      no: "Нет",
+      loadError: "Не удалось загрузить словарь.",
+      nameRequired: "Введите название элемента.",
+      activateTitle: "Активировать элемент?",
+      deactivateTitle: "Деактивировать элемент?",
+      toggleDescription:
+        "Подтвердите изменение состояния для \"{{label}}\".",
+      activateConfirm: "Активировать",
+      deactivateConfirm: "Деактивировать",
+      changeAccessTitle: "Изменить доступ?",
+      changeAccessDescription:
+        "Подтвердите изменение доступа для \"{{label}}\".",
+      saveAccess: "Сохранить доступ",
+    },
+    metricLinksPage: {
+      badge: "Связи метрик",
+      title: "Связи метрик",
+      subtitle:
+        "Настройте, какие единицы измерения доступны для каждого metric name в формах создания и редактирования записей, шаблонов и целей.",
+      selectMetricTitle: "Выбор метрики",
+      selectMetricDescription:
+        "Сначала выберите metric name, для которого нужно управлять списком разрешенных units.",
+      metricNameLabel: "Metric name",
+      metricNameLoading: "Загрузка metric names...",
+      metricNamePlaceholder: "Выберите metric name",
+      linksCount: "Связей: {{count}}",
+      addLinkTitle: "Добавить связь",
+      addLinkDescription:
+        "Новая связь определяет, какие units вернет backend для выбранного metric name.",
+      unitLabel: "Unit",
+      unitPlaceholderSelectMetric: "Сначала выберите metric name",
+      unitPlaceholderAllLinked: "Все units уже связаны",
+      unitPlaceholderSelect: "Выберите unit",
+      createLink: "Создать связь",
+      creatingLink: "Создание...",
+      currentLinksTitle: "Текущие связи",
+      currentLinksDescriptionSelected:
+        "Units, доступные для \"{{name}}\".",
+      currentLinksDescriptionEmpty:
+        "Выберите metric name, чтобы увидеть связанные units.",
+      unitColumn: "Unit",
+      statusColumn: "Статус",
+      actionColumn: "Действие",
+      noMetricSelected: "Выберите metric name.",
+      loadingLinks: "Загрузка связей...",
+      emptyLinks: "Для этой метрики пока нет связанных units.",
+      unitMeta: "metricUnitId",
+      activeStatus: "Активна",
+      inactiveStatus: "Неактивна",
+      inactiveSuffix: "неактивно",
+      deleteTitle: "Удалить связь?",
+      deleteDescription:
+        "Unit \"{{label}}\" больше не будет доступен для выбранного metric name.",
+      deleteConfirm: "Удалить связь",
+      linkCreated: "Связь создана.",
+      linkDeleted: "Связь удалена.",
+      dictionariesLoadError:
+        "Не удалось загрузить словари для связей метрик.",
+      linksLoadError:
+        "Не удалось загрузить связи для выбранной метрики.",
+      metricRequired: "Выберите metric name.",
+      unitRequired: "Выберите unit для связи.",
+    },
+    foodsPage: {
+      title: "Еда",
+      subtitle:
+        "Управление общей базой продуктов. Эти записи доступны пользователям только для просмотра в разделе Еда.",
+      addProduct: "Добавить продукт",
+      searchTitle: "Поиск",
+      searchDescription:
+        "Ищите продукты по названию и управляйте общей базой без перезагрузки страницы.",
+      searchPlaceholder: "Поиск по общей базе продуктов...",
+      databaseTitle: "Общая база",
+      databaseDescription:
+        "Создание, редактирование и удаление `GeneralFood` доступно только в админ-панели.",
+      createDialogTitle: "Новый продукт общей базы",
+      createDialogSubmit: "Создать продукт",
+      editDialogTitle: "Редактирование продукта общей базы",
+      editDialogSubmit: "Сохранить изменения",
+      createSearchPlaceholder: "Введите название продукта в словаре...",
+      editSearchPlaceholder: "Уточните название продукта в словаре...",
+      selectPlaceholder: "Выберите продукт из словаря",
+      idleOptionsMessage:
+        "Введите запрос, чтобы найти продукт в словаре.",
+      noOptionsMessage: "Подходящие элементы словаря не найдены.",
+      productCreated: "Продукт добавлен в общую базу.",
+      productUpdated: "Продукт обновлен.",
+      productDeleted: "Продукт \"{{label}}\" удален.",
+      deleteTitle: "Удалить продукт?",
+      deleteDescription:
+        "Продукт \"{{label}}\" будет удален из общей базы.",
+    },
+    tagsPage: {
+      title: "Теги",
+      subtitle:
+        "Модерация пользовательских тегов и управление их жизненным циклом.",
+      createTitle: "Создать тег",
+      createDescription:
+        "Новый тег будет создан через административный endpoint и сразу появится в общем списке.",
+      tagNameLabel: "Название тега",
+      tagNamePlaceholder: "Введите название тега...",
+      createButton: "Создать",
+      creatingButton: "Создание...",
+      searchTitle: "Поиск и состояние списка",
+      searchDescription:
+        "Поиск по названию тега и быстрый обзор найденных результатов.",
+      searchPlaceholder: "Поиск по тегам...",
+      foundCount: "Найдено: {{count}}",
+      listTitle: "Список тегов",
+      listDescription:
+        "Статус и действия для каждого тега подтверждаются отдельно.",
+      tagColumn: "Тег",
+      statusColumn: "Статус",
+      actionsColumn: "Действия",
+      loading: "Загрузка...",
+      empty: "Теги не найдены",
+      pageLabel: "Страница {{page}}",
+      previous: "Назад",
+      next: "Вперед",
+      tagNameRequired: "Введите название тега.",
+      tagCreated: "Тег \"{{name}}\" создан.",
+      approveTitle: "Одобрить тег?",
+      approveDescription:
+        "Тег \"{{name}}\" будет переведен в статус \"Одобрен\".",
+      approveConfirm: "Одобрить",
+      rejectTitle: "Отклонить тег?",
+      rejectDescription:
+        "Тег \"{{name}}\" будет переведен в статус \"Отклонен\".",
+      rejectConfirm: "Отклонить",
+      deprecateTitle: "Сделать тег устаревшим?",
+      deprecateDescription:
+        "Тег \"{{name}}\" будет помечен как устаревший.",
+      deprecateConfirm: "Пометить",
+      statusProposed: "Ожидает",
+      statusApproved: "Одобрен",
+      statusRejected: "Отклонен",
+      statusDeprecated: "Устаревший",
+    },
+    tagChartTypes: {
+      title: "Разрешенные типы графиков",
+      description:
+        "Настройте, какие chart types доступны для выбранного тега в аналитике.",
+      linksCount: "Связей: {{count}}",
+      tagSearchLabel: "Поиск тега",
+      tagSearchPlaceholder: "Начните вводить название тега...",
+      tagLabel: "Тег",
+      tagLoading: "Загрузка тегов...",
+      tagEmpty: "Теги не найдены",
+      tagPlaceholder: "Выберите тег",
+      noTagsForQuery: "По этому запросу теги не найдены.",
+      chartTypeLabel: "Chart type",
+      chartTypePlaceholderSelectTag: "Сначала выберите тег",
+      chartTypePlaceholderLoading: "Загрузка связей...",
+      chartTypePlaceholderAllLinked: "Все типы уже привязаны",
+      chartTypePlaceholderSelect: "Выберите тип графика",
+      createLink: "Добавить связь",
+      creatingLink: "Добавление...",
+      allLinkedForTag:
+        "Для выбранного тега уже привязаны все доступные типы графиков.",
+      currentLinksTitle: "Текущие связи {{suffix}}",
+      currentLinksSuffix: "для \"{{name}}\"",
+      currentLinksDescription:
+        "Просмотр и удаление разрешенных chart types для выбранного тега.",
+      chartTypeColumn: "Chart type",
+      enumColumn: "Enum",
+      actionColumn: "Действие",
+      selectTagHint:
+        "Выберите тег, чтобы управлять доступными типами графиков.",
+      loadingLinks: "Загрузка связей...",
+      emptyLinks:
+        "Для этого тега пока нет разрешенных типов графиков.",
+      backendRuleLabel: "Правило доступности аналитики на backend",
+      deleteTitle: "Удалить связь?",
+      deleteDescription:
+        "Тип графика \"{{chartType}}\" больше не будет доступен для выбранного тега.",
+      deleteConfirm: "Удалить связь",
+      tagsLoadError: "Не удалось загрузить список тегов.",
+      linksLoadError:
+        "Не удалось загрузить связи tag ↔ chart type.",
+      selectTagError: "Сначала выберите тег.",
+      selectChartTypeError: "Выберите тип графика.",
+      linkCreated:
+        "Тип графика \"{{chartType}}\" добавлен для тега \"{{tagName}}\".",
+      linkDeleted: "Связь \"{{chartType}}\" удалена.",
+    },
+  },
+  food: {
+    dictionaryItemId: "ID словаря: {{id}}",
+    sharedProductLabel: "Общий продукт",
+  },
+} as const;
+
 type DeepStringify<T> = {
   [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
 };
 
-export type TranslationSchema = DeepStringify<typeof ruBase>;
+type DeepMerge<A, B> = {
+  [K in keyof A | keyof B]:
+    K extends keyof B
+      ? K extends keyof A
+        ? A[K] extends object
+          ? B[K] extends object
+            ? DeepMerge<A[K], B[K]>
+            : B[K]
+          : B[K]
+        : B[K]
+      : K extends keyof A
+        ? A[K]
+        : never;
+};
 
-export const ru = ruBase satisfies TranslationSchema;
+export type TranslationSchema = DeepStringify<DeepMerge<typeof ruBase, typeof ruExtensions>>;
+
+export const ru = {
+  ...ruBase,
+  dashboard: {
+    ...ruBase.dashboard,
+    ...ruExtensions.dashboard,
+  },
+  admin: {
+    ...ruBase.admin,
+    ...ruExtensions.admin,
+  },
+  food: {
+    ...ruBase.food,
+    ...ruExtensions.food,
+  },
+} as const satisfies TranslationSchema;

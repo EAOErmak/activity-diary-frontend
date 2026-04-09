@@ -1,6 +1,6 @@
 import type { TranslationSchema } from "./ru";
 
-export const en = {
+const enBase = {
   common: {
     loading: "Loading...",
     saving: "Saving...",
@@ -18,6 +18,11 @@ export const en = {
     continue: "Continue",
     start: "Get started",
     back: "Back",
+    previous: "Previous",
+    previousDay: "Previous day",
+    next: "Next",
+    nextDay: "Next day",
+    morePages: "More pages",
     reset: "Reset",
     search: "Search",
     searchByName: "Search by name",
@@ -396,5 +401,355 @@ export const en = {
     adminFoodCreate: "Failed to create the food item.",
     adminFoodUpdate: "Failed to update the food item.",
     adminFoodDelete: "Failed to delete the food item.",
+  },
+} as const;
+
+const enExtensions = {
+  dashboard: {
+    chartTypes: {
+      CALORIES_PER_DAY: "Calories per day",
+      PFC_PER_DAY: "Protein, fat, and carbs per day",
+      CALORIES_PER_DIARY: "Calories per entry",
+      PFC_PER_DIARY: "Protein, fat, and carbs per entry",
+      PFC_PER_METRIC: "Protein, fat, and carbs by metric",
+      TRAINING_COMPUTED: "Training from computed data",
+      TRAINING_METRICS: "Training metrics",
+      TRAINING_RAW: "Training from raw data",
+    },
+  },
+  admin: {
+    roles: {
+      user: "User",
+      premium: "Premium",
+      admin: "Administrator",
+    },
+    overviewPage: {
+      badge: "Admin panel",
+      title: "Overview",
+      subtitle:
+        "Server statistics are temporarily hidden while the related backend endpoints are unavailable. This page currently only keeps the database reset action.",
+      databaseTitle: "Database",
+      databaseDescription:
+        "A full reset calls `POST /admin/database/clear` and removes data from all tables.",
+      databaseWarning:
+        "Use this action only for a full environment reset. Once started, the cleanup cannot be undone.",
+      clearButton: "Clear database",
+      clearing: "Clearing...",
+      confirmTitle: "Confirm database cleanup",
+      confirmDescription:
+        "This action will remove data from all tables. Once started, the cleanup cannot be undone.",
+      confirmLabel: "Delete all data",
+    },
+    usersPage: {
+      title: "Users",
+      subtitle:
+        "Manage accounts, roles, and access state for users.",
+      createUser: "Create user",
+      filtersTitle: "Filters",
+      filtersDescription:
+        "Search by username and name, then filter by role and status.",
+      searchLabel: "Search",
+      searchPlaceholder: "Search by username or name...",
+      roleLabel: "Role",
+      rolePlaceholder: "All roles",
+      allRoles: "All roles",
+      statusLabel: "Status",
+      statusPlaceholder: "All statuses",
+      allStatuses: "All statuses",
+      foundCount: "Found: {{count}}",
+      listTitle: "User list",
+      listDescription:
+        "Role and status changes are confirmed separately.",
+      userColumn: "User",
+      roleColumn: "Role",
+      statusesColumn: "Statuses",
+      createdColumn: "Created",
+      actionsColumn: "Actions",
+      loading: "Loading...",
+      empty: "No users found",
+      you: "You",
+      active: "Active",
+      disabled: "Disabled",
+      locked: "Locked",
+      unlocked: "Unlocked",
+      selfRoleError: "You cannot change your own role.",
+      selfDisableError: "You cannot disable your own account.",
+      selfLockError: "You cannot lock your own account.",
+      roleChangeTitle: "Change user role?",
+      roleChangeDescription:
+        "User {{username}} will receive the {{role}} role.",
+      roleChangeConfirm: "Change role",
+      enableTitle: "Enable user?",
+      disableTitle: "Disable user?",
+      toggleEnabledDescription:
+        "Confirm that you want to {{action}} user {{username}}.",
+      enableConfirm: "Enable",
+      disableConfirm: "Disable",
+      enableAction: "enable",
+      disableAction: "disable",
+      lockTitle: "Lock user?",
+      unlockTitle: "Unlock user?",
+      toggleLockDescription:
+        "Confirm that you want to {{action}} user {{username}}.",
+      lockConfirm: "Lock",
+      unlockConfirm: "Unlock",
+      lockAction: "lock",
+      unlockAction: "unlock",
+    },
+    userCreatePage: {
+      badge: "Create user",
+      title: "New user",
+      subtitle:
+        "This form uses the same shared UI components and theme tokens as the rest of the admin panel.",
+      accountDataTitle: "Account details",
+      accountDataDescription:
+        "Create a new user as an administrator.",
+      backToUsers: "Back to user list",
+    },
+    userCreateForm: {
+      requiredField: "This field is required",
+      passwordRequired: "Enter a password",
+      passwordMin: "Minimum 8 characters",
+      passwordMax: "Maximum 64 characters",
+      fullNamePlaceholder: "John Doe",
+      emailInvalid: "Invalid email address",
+      emailOptional: "Email (optional)",
+      rolePlaceholder: "Select a role",
+      submit: "Create user",
+      submitting: "Creating...",
+    },
+    dictionaryPage: {
+      title: "Dictionaries",
+      subtitle:
+        "Manage activity and measurement dictionaries with the shared admin UI components.",
+      typeTitle: "Dictionary type",
+      typeDescription:
+        "Choose the data set you want to work with.",
+      metricNameTab: "Activity name",
+      metricUnitTab: "Units of measurement",
+      addTitle: "Add item",
+      addDescription:
+        "The new item will appear in the selected dictionary after saving.",
+      nameLabel: "Name",
+      namePlaceholder: "Enter a name...",
+      accessLabel: "Access",
+      allAccess: "All",
+      createButton: "Create",
+      creatingButton: "Creating...",
+      itemsTitle: "Dictionary items",
+      itemsDescription:
+        "Adjust item access and active state with confirmation.",
+      totalCount: "Total: {{count}}",
+      nameColumn: "Name",
+      accessColumn: "Access role",
+      activeColumn: "Active",
+      loading: "Loading...",
+      empty: "There are no items in the current dictionary.",
+      yes: "Yes",
+      no: "No",
+      loadError: "Failed to load the dictionary.",
+      nameRequired: "Enter an item name.",
+      activateTitle: "Activate item?",
+      deactivateTitle: "Deactivate item?",
+      toggleDescription:
+        "Confirm the state change for \"{{label}}\".",
+      activateConfirm: "Activate",
+      deactivateConfirm: "Deactivate",
+      changeAccessTitle: "Change access?",
+      changeAccessDescription:
+        "Confirm the access change for \"{{label}}\".",
+      saveAccess: "Save access",
+    },
+    metricLinksPage: {
+      badge: "Metric links",
+      title: "Metric links",
+      subtitle:
+        "Configure which measurement units are available for each metric name in entry, template, and goal create/edit forms.",
+      selectMetricTitle: "Metric selection",
+      selectMetricDescription:
+        "First choose the metric name whose allowed units you want to manage.",
+      metricNameLabel: "Metric name",
+      metricNameLoading: "Loading metric names...",
+      metricNamePlaceholder: "Select a metric name",
+      linksCount: "Links: {{count}}",
+      addLinkTitle: "Add link",
+      addLinkDescription:
+        "A new link defines which units the backend returns for the selected metric name.",
+      unitLabel: "Unit",
+      unitPlaceholderSelectMetric: "Select a metric name first",
+      unitPlaceholderAllLinked: "All units are already linked",
+      unitPlaceholderSelect: "Select a unit",
+      createLink: "Create link",
+      creatingLink: "Creating...",
+      currentLinksTitle: "Current links",
+      currentLinksDescriptionSelected:
+        "Units available for \"{{name}}\".",
+      currentLinksDescriptionEmpty:
+        "Select a metric name to see linked units.",
+      unitColumn: "Unit",
+      statusColumn: "Status",
+      actionColumn: "Action",
+      noMetricSelected: "Select a metric name.",
+      loadingLinks: "Loading links...",
+      emptyLinks: "No linked units yet for this metric.",
+      unitMeta: "metricUnitId",
+      activeStatus: "Active",
+      inactiveStatus: "Inactive",
+      inactiveSuffix: "inactive",
+      deleteTitle: "Delete link?",
+      deleteDescription:
+        "Unit \"{{label}}\" will no longer be available for the selected metric name.",
+      deleteConfirm: "Delete link",
+      linkCreated: "Link created.",
+      linkDeleted: "Link deleted.",
+      dictionariesLoadError:
+        "Failed to load dictionaries for metric links.",
+      linksLoadError:
+        "Failed to load links for the selected metric.",
+      metricRequired: "Select a metric name.",
+      unitRequired: "Select a unit to link.",
+    },
+    foodsPage: {
+      title: "Food",
+      subtitle:
+        "Manage the shared food database. These entries are available to users as read-only items in the Food section.",
+      addProduct: "Add product",
+      searchTitle: "Search",
+      searchDescription:
+        "Find products by name and manage the shared database without reloading the page.",
+      searchPlaceholder: "Search the shared food database...",
+      databaseTitle: "Shared database",
+      databaseDescription:
+        "Creating, editing, and deleting `GeneralFood` is only available in the admin panel.",
+      createDialogTitle: "New shared product",
+      createDialogSubmit: "Create product",
+      editDialogTitle: "Edit shared product",
+      editDialogSubmit: "Save changes",
+      createSearchPlaceholder: "Enter a product name from the dictionary...",
+      editSearchPlaceholder: "Refine the product name from the dictionary...",
+      selectPlaceholder: "Select a product from the dictionary",
+      idleOptionsMessage:
+        "Enter a query to find a product in the dictionary.",
+      noOptionsMessage: "No matching dictionary items found.",
+      productCreated: "Product added to the shared database.",
+      productUpdated: "Product updated.",
+      productDeleted: "Product \"{{label}}\" deleted.",
+      deleteTitle: "Delete product?",
+      deleteDescription:
+        "Product \"{{label}}\" will be removed from the shared database.",
+    },
+    tagsPage: {
+      title: "Tags",
+      subtitle:
+        "Moderate user-created tags and manage their lifecycle.",
+      createTitle: "Create tag",
+      createDescription:
+        "A new tag will be created through the administrative endpoint and will immediately appear in the shared list.",
+      tagNameLabel: "Tag name",
+      tagNamePlaceholder: "Enter a tag name...",
+      createButton: "Create",
+      creatingButton: "Creating...",
+      searchTitle: "Search and list state",
+      searchDescription:
+        "Search by tag name and quickly review the matching results.",
+      searchPlaceholder: "Search tags...",
+      foundCount: "Found: {{count}}",
+      listTitle: "Tag list",
+      listDescription:
+        "Each tag status change is confirmed separately.",
+      tagColumn: "Tag",
+      statusColumn: "Status",
+      actionsColumn: "Actions",
+      loading: "Loading...",
+      empty: "No tags found",
+      pageLabel: "Page {{page}}",
+      previous: "Previous",
+      next: "Next",
+      tagNameRequired: "Enter a tag name.",
+      tagCreated: "Tag \"{{name}}\" created.",
+      approveTitle: "Approve tag?",
+      approveDescription:
+        "Tag \"{{name}}\" will be moved to the \"Approved\" status.",
+      approveConfirm: "Approve",
+      rejectTitle: "Reject tag?",
+      rejectDescription:
+        "Tag \"{{name}}\" will be moved to the \"Rejected\" status.",
+      rejectConfirm: "Reject",
+      deprecateTitle: "Mark tag as deprecated?",
+      deprecateDescription:
+        "Tag \"{{name}}\" will be marked as deprecated.",
+      deprecateConfirm: "Mark",
+      statusProposed: "Pending",
+      statusApproved: "Approved",
+      statusRejected: "Rejected",
+      statusDeprecated: "Deprecated",
+    },
+    tagChartTypes: {
+      title: "Allowed chart types",
+      description:
+        "Configure which chart types are available for the selected tag in analytics.",
+      linksCount: "Links: {{count}}",
+      tagSearchLabel: "Tag search",
+      tagSearchPlaceholder: "Start typing a tag name...",
+      tagLabel: "Tag",
+      tagLoading: "Loading tags...",
+      tagEmpty: "No tags found",
+      tagPlaceholder: "Select a tag",
+      noTagsForQuery: "No tags were found for this query.",
+      chartTypeLabel: "Chart type",
+      chartTypePlaceholderSelectTag: "Select a tag first",
+      chartTypePlaceholderLoading: "Loading links...",
+      chartTypePlaceholderAllLinked: "All types are already linked",
+      chartTypePlaceholderSelect: "Select a chart type",
+      createLink: "Add link",
+      creatingLink: "Adding...",
+      allLinkedForTag:
+        "All available chart types are already linked for the selected tag.",
+      currentLinksTitle: "Current links {{suffix}}",
+      currentLinksSuffix: "for \"{{name}}\"",
+      currentLinksDescription:
+        "Review and remove the allowed chart types for the selected tag.",
+      chartTypeColumn: "Chart type",
+      enumColumn: "Enum",
+      actionColumn: "Action",
+      selectTagHint:
+        "Select a tag to manage its available chart types.",
+      loadingLinks: "Loading links...",
+      emptyLinks:
+        "There are no allowed chart types for this tag yet.",
+      backendRuleLabel: "Backend analytics availability rule",
+      deleteTitle: "Delete link?",
+      deleteDescription:
+        "Chart type \"{{chartType}}\" will no longer be available for the selected tag.",
+      deleteConfirm: "Delete link",
+      tagsLoadError: "Failed to load the tag list.",
+      linksLoadError:
+        "Failed to load tag ↔ chart type links.",
+      selectTagError: "Select a tag first.",
+      selectChartTypeError: "Select a chart type.",
+      linkCreated:
+        "Chart type \"{{chartType}}\" was added for tag \"{{tagName}}\".",
+      linkDeleted: "Link \"{{chartType}}\" deleted.",
+    },
+  },
+  food: {
+    dictionaryItemId: "Dictionary ID: {{id}}",
+    sharedProductLabel: "Shared product",
+  },
+} as const;
+
+export const en = {
+  ...enBase,
+  dashboard: {
+    ...enBase.dashboard,
+    ...enExtensions.dashboard,
+  },
+  admin: {
+    ...enBase.admin,
+    ...enExtensions.admin,
+  },
+  food: {
+    ...enBase.food,
+    ...enExtensions.food,
   },
 } as const satisfies TranslationSchema;
