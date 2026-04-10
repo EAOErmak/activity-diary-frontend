@@ -10,23 +10,20 @@ import {
 } from "@/shared/components/ui/table";
 import type { DiaryEntryView } from "@/shared/types/diary";
 
-import { DiaryTablePlaceholderRow } from "./DiaryTablePlaceholderRow";
 import { DiaryTableRow } from "./DiaryTableRow";
 
 type Props = {
   entries: DiaryEntryView[];
-  pageSize: number;
   deletingEntryId: number | null;
   onEdit: (id: number) => void;
   onDelete: (entry: DiaryEntryView) => Promise<void>;
 };
 
-export function DiaryTable({ entries, pageSize, deletingEntryId, onEdit, onDelete }: Props) {
+export function DiaryTable({ entries, deletingEntryId, onEdit, onDelete }: Props) {
   const { t } = useTranslation();
-  const rows = Array.from({ length: pageSize }, (_, index) => entries[index] ?? null);
 
   return (
-    <Card className="max-w-6xl mx-auto overflow-hidden">
+    <Card className="w-full shrink-0 overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -39,19 +36,15 @@ export function DiaryTable({ entries, pageSize, deletingEntryId, onEdit, onDelet
         </TableHeader>
 
         <TableBody>
-          {rows.map((entry, index) =>
-            entry ? (
-              <DiaryTableRow
-                key={entry.id}
-                entry={entry}
-                isDeleting={deletingEntryId === entry.id}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            ) : (
-              <DiaryTablePlaceholderRow key={`placeholder-row-${index}`} />
-            ),
-          )}
+          {entries.map((entry) => (
+            <DiaryTableRow
+              key={entry.id}
+              entry={entry}
+              isDeleting={deletingEntryId === entry.id}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))}
         </TableBody>
       </Table>
     </Card>

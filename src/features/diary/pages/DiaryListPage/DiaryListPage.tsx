@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { diaryApi } from "@/api/diaryApi";
-import { AnimatePresence, motion } from "framer-motion";
 import { DiaryListHeader } from "@/features/diary/pages/DiaryListPage/components/DiaryListHeader";
 import { DiaryListFilters } from "@/features/diary/pages/DiaryListPage/components/DiaryListFilters";
 import { CreateEntryDialog } from "@/features/diary/components/CreateEntryDialog";
@@ -58,21 +57,6 @@ function buildPaginationItems(totalPages: number, currentPage: number) {
     totalPages,
   ] as const;
 }
-
-const paginationLayoutTransition = {
-  layout: {
-    duration: 0.28,
-    ease: [0.22, 1, 0.36, 1] as const,
-  },
-  opacity: {
-    duration: 0.18,
-    ease: "easeOut" as const,
-  },
-  y: {
-    duration: 0.28,
-    ease: [0.22, 1, 0.36, 1] as const,
-  },
-};
 
 export default function DiaryListPage() {
   const { t } = useTranslation();
@@ -212,132 +196,127 @@ export default function DiaryListPage() {
 
   return (
     <div className="h-[calc(100dvh-3.5rem)] overflow-hidden bg-page p-6 text-foreground sm:p-10">
-      <DiaryListHeader
-        count={totalElements}
-        onCreate={() => {
-          setEditOpen(false);
-          setEditEntryId(null);
-          setCreateOpen(true);
-        }}
-      />
-
-      <CreateEntryDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-      />
-
-      {editEntryId !== null && (
-        <EditEntryDialog
-          entryId={editEntryId}
-          open={editOpen}
-          onOpenChange={(open) => {
-            setEditOpen(open);
-            if (!open) setEditEntryId(null);
+      <div className="mx-auto flex h-full w-full max-w-[57.6rem] flex-col">
+        <DiaryListHeader
+          count={totalElements}
+          onCreate={() => {
+            setEditOpen(false);
+            setEditEntryId(null);
+            setCreateOpen(true);
           }}
         />
-      )}
 
-      <DiaryListFilters
-        status={status}
-        tags={tags}
-        tagQuery={tagQuery}
-        date={date}
-        onStatusChange={(value) => {
-          setPage(0);
-          setStatus(value);
-        }}
-        onTagsChange={(value) => {
-          setPage(0);
-          setTags(value);
-        }}
-        onTagQueryChange={(value) => {
-          setPage(0);
-          setTagQuery(value);
-        }}
-        onDateChange={(value) => {
-          setPage(0);
-          setDate(value);
-        }}
-        onReset={() => {
-          setPage(0);
-          setStatus("");
-          setTags([]);
-          setTagQuery("");
-          setDate(undefined);
-        }}
-      />
+        <CreateEntryDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+        />
 
-      <DiaryTable
-        entries={entries}
-        pageSize={PAGE_SIZE}
-        deletingEntryId={deletingEntryId}
-        onEdit={(id) => {
-          setEditEntryId(id);
-          setEditOpen(true);
-        }}
-        onDelete={handleDelete}
-      />
-
-      <AnimatePresence initial={false}>
-        {shouldShowPagination && (
-          <motion.div
-            key="diary-pagination"
-            layout="position"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={paginationLayoutTransition}
-            className="mt-6"
-          >
-            <Pagination className="max-w-6xl">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      handlePreviousNavigation();
-                    }}
-                  >
-                    {isFirstPage ? t("common.previousDay") : t("common.previous")}
-                  </PaginationPrevious>
-                </PaginationItem>
-
-                {resolvedTotalPages > 0 && paginationItems.map((item, index) => (
-                  <PaginationItem key={`${item}-${index}`}>
-                    {typeof item === "number" ? (
-                      <PaginationLink
-                        href="#"
-                        isActive={item === page + 1}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setPage(item - 1);
-                        }}
-                      >
-                        {item}
-                      </PaginationLink>
-                    ) : (
-                      <PaginationEllipsis />
-                    )}
-                  </PaginationItem>
-                ))}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      handleNextNavigation();
-                    }}
-                  >
-                    {isLastPage ? t("common.nextDay") : t("common.next")}
-                  </PaginationNext>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </motion.div>
+        {editEntryId !== null && (
+          <EditEntryDialog
+            entryId={editEntryId}
+            open={editOpen}
+            onOpenChange={(open) => {
+              setEditOpen(open);
+              if (!open) setEditEntryId(null);
+            }}
+          />
         )}
-      </AnimatePresence>
+
+        <DiaryListFilters
+          status={status}
+          tags={tags}
+          tagQuery={tagQuery}
+          date={date}
+          onStatusChange={(value) => {
+            setPage(0);
+            setStatus(value);
+          }}
+          onTagsChange={(value) => {
+            setPage(0);
+            setTags(value);
+          }}
+          onTagQueryChange={(value) => {
+            setPage(0);
+            setTagQuery(value);
+          }}
+          onDateChange={(value) => {
+            setPage(0);
+            setDate(value);
+          }}
+          onReset={() => {
+            setPage(0);
+            setStatus("");
+            setTags([]);
+            setTagQuery("");
+            setDate(undefined);
+          }}
+        />
+
+        <div className="relative min-h-0 flex-1">
+          <div className="pb-16">
+            <DiaryTable
+              entries={entries}
+              deletingEntryId={deletingEntryId}
+              onEdit={(id) => {
+                setEditEntryId(id);
+                setEditOpen(true);
+              }}
+              onDelete={handleDelete}
+            />
+          </div>
+
+          {shouldShowPagination && (
+            <div className="absolute inset-x-0 bottom-0 translate-y-5">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        handlePreviousNavigation();
+                      }}
+                    >
+                      {isFirstPage ? t("common.previousDay") : t("common.previous")}
+                    </PaginationPrevious>
+                  </PaginationItem>
+
+                  {resolvedTotalPages > 0 && paginationItems.map((item, index) => (
+                    <PaginationItem key={`${item}-${index}`}>
+                      {typeof item === "number" ? (
+                        <PaginationLink
+                          href="#"
+                          isActive={item === page + 1}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setPage(item - 1);
+                          }}
+                        >
+                          {item}
+                        </PaginationLink>
+                      ) : (
+                        <PaginationEllipsis />
+                      )}
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        handleNextNavigation();
+                      }}
+                    >
+                      {isLastPage ? t("common.nextDay") : t("common.next")}
+                    </PaginationNext>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

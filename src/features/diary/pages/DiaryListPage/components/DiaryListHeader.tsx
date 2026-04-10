@@ -10,7 +10,7 @@ type Props = {
 export function DiaryListHeader({ count, onCreate }: Props) {
   const { t } = useTranslation();
   return (
-    <Card className="max-w-6xl mx-auto mb-8">
+    <Card className="mb-8 w-full">
       <CardHeader className="flex flex-col px-4 py-4 sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <CardTitle className="text-blue-400">{t("diary.myEntries")}</CardTitle>
