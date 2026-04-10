@@ -1212,7 +1212,7 @@ export default function GoalsPage() {
             {activeView === "daily" ? (
               <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
                 <DailyViewCard
-                  className={cn(isFixedDesktopWorkspace && "xl:h-full")}
+                  className={cn(isFixedDesktopWorkspace && "xl:max-h-full")}
                   dailyDateLabel={dailyDateLabel}
                   dailyDateKey={dailyDateKey}
                   isToday={dailyDateKey === todayKey}

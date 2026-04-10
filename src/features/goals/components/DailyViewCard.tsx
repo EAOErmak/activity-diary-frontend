@@ -171,7 +171,12 @@ export function DailyViewCard({
               : undefined
           }
         >
-          <div className="relative flex flex-1 min-h-[120px] flex-col">
+          <div
+            className={cn(
+              "relative flex flex-col",
+              dailyEntries.length > 0 || isLoadingDailyEntries ? "flex-1 min-h-[120px]" : "min-h-0"
+            )}
+          >
             {isLoadingDailyEntries && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-surface/70">
                 <div className="w-full max-w-sm space-y-3 px-4">
@@ -182,9 +187,7 @@ export function DailyViewCard({
             )}
 
             {dailyEntries.length === 0 && (
-              <div className="flex flex-1 items-center text-sm text-muted-foreground">
-                No goal entries for this day.
-              </div>
+              <div className="text-sm text-muted-foreground">No goal entries for this day.</div>
             )}
 
             {dailyEntries.length > 0 && (
