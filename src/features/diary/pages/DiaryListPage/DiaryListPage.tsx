@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { diaryApi } from "@/api/diaryApi";
 import { DiaryListHeader } from "@/features/diary/pages/DiaryListPage/components/DiaryListHeader";
 import { DiaryListFilters } from "@/features/diary/pages/DiaryListPage/components/DiaryListFilters";
@@ -15,7 +15,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/shared/components/ui/pagination";
-import type { DiaryEntryView } from "@/shared/types/diary";
+import { cn } from "@/shared/lib/utils";
+import type { DiaryEntryView, Page } from "@/shared/types/diary";
 import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 8;
@@ -58,12 +59,47 @@ function buildPaginationItems(totalPages: number, currentPage: number) {
   ] as const;
 }
 
+type PaginationMeta = {
+  totalPages: number;
+  totalElements: number;
+};
+
+function resolvePaginationMeta(result: Pick<Page<DiaryEntryView>, "content" | "totalElements" | "totalPages">, page: number): PaginationMeta {
+  const contentLength = result.content?.length ?? 0;
+  const apiTotalPages = result.totalPages ?? 0;
+  const apiTotalElements = result.totalElements ?? 0;
+
+  const resolvedTotalPages =
+    apiTotalPages > 0
+      ? apiTotalPages
+      : apiTotalElements > 0
+        ? Math.ceil(apiTotalElements / PAGE_SIZE)
+        : contentLength === 0
+          ? (page > 0 ? page + 1 : 0)
+          : contentLength === PAGE_SIZE
+            ? page + 2
+            : page + 1;
+
+  const resolvedTotalElements =
+    apiTotalElements > 0
+      ? apiTotalElements
+      : resolvedTotalPages > page + 1
+        ? (page + 1) * PAGE_SIZE + 1
+        : page * PAGE_SIZE + contentLength;
+
+  return {
+    totalPages: resolvedTotalPages,
+    totalElements: resolvedTotalElements,
+  };
+}
+
 export default function DiaryListPage() {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<DiaryEntryView[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [paginationMetaByContext, setPaginationMetaByContext] = useState<Record<string, PaginationMeta>>({});
 
   const [status, setStatus] = useState<DisplayStatus | "">("");
   const [tags, setTags] = useState<string[]>([]);
@@ -73,8 +109,20 @@ export default function DiaryListPage() {
   const [editEntryId, setEditEntryId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<number | null>(null);
+  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+  const latestLoadIdRef = useRef(0);
+  const filterContextKey = useMemo(() => JSON.stringify({
+    status: status || null,
+    tags: [...tags].sort(),
+    tagQuery: tagQuery.trim().toLowerCase(),
+    date: date ? new Date(date).toISOString().slice(0, 10) : null,
+  }), [date, status, tagQuery, tags]);
 
   const load = useCallback(async () => {
+    const loadId = latestLoadIdRef.current + 1;
+    latestLoadIdRef.current = loadId;
+    setIsPageTransitioning(true);
+
     const nowIso = new Date().toISOString();
     const query = tagQuery.trim().toLowerCase();
     const mergedTags = query ? [query, ...tags] : tags;
@@ -91,18 +139,52 @@ export default function DiaryListPage() {
       to = end.toISOString();
     }
 
-    const result = await diaryApi.getMyEntries(page, PAGE_SIZE, {
-      uiStatus: status || undefined,
-      now: nowIso,
-      tags: tagsParam,
-      from,
-      to,
-    });
+    try {
+      const result = await diaryApi.getMyEntries(page, PAGE_SIZE, {
+        uiStatus: status || undefined,
+        now: nowIso,
+        tags: tagsParam,
+        from,
+        to,
+      });
 
-    setEntries(result.content ?? []);
-    setTotalPages(result.totalPages ?? 0);
-    setTotalElements(result.totalElements ?? 0);
-  }, [status, tags, tagQuery, date, page]);
+      if (latestLoadIdRef.current !== loadId) {
+        return;
+      }
+
+      const nextPaginationMeta = resolvePaginationMeta({
+        content: result.content ?? [],
+        totalPages: result.totalPages ?? 0,
+        totalElements: result.totalElements ?? 0,
+      }, page);
+
+      startTransition(() => {
+        setEntries(result.content ?? []);
+        setTotalPages(nextPaginationMeta.totalPages);
+        setTotalElements(nextPaginationMeta.totalElements);
+        setPaginationMetaByContext((current) => {
+          const previousMeta = current[filterContextKey];
+          if (
+            previousMeta?.totalPages === nextPaginationMeta.totalPages &&
+            previousMeta?.totalElements === nextPaginationMeta.totalElements
+          ) {
+            return current;
+          }
+
+          return {
+            ...current,
+            [filterContextKey]: nextPaginationMeta,
+          };
+        });
+        setIsPageTransitioning(false);
+      });
+    } catch (error) {
+      if (latestLoadIdRef.current === loadId) {
+        setIsPageTransitioning(false);
+      }
+      throw error;
+    }
+  }, [date, filterContextKey, page, status, tagQuery, tags]);
 
   useEffect(() => {
     load();
@@ -133,21 +215,11 @@ export default function DiaryListPage() {
     };
   }, []);
 
-  const resolvedTotalPages = useMemo(() => {
-    if (totalPages > 0) {
-      return totalPages;
-    }
-
-    if (totalElements > 0) {
-      return Math.ceil(totalElements / PAGE_SIZE);
-    }
-
-    if (entries.length === 0) {
-      return page > 0 ? page + 1 : 0;
-    }
-
-    return entries.length === PAGE_SIZE ? page + 2 : page + 1;
-  }, [entries.length, page, totalElements, totalPages]);
+  const currentPaginationMeta = paginationMetaByContext[filterContextKey];
+  const resolvedTotalPages = currentPaginationMeta?.totalPages ?? 0;
+  const resolvedTotalElements = currentPaginationMeta?.totalElements ?? 0;
+  const isPaginationMetaPending = isPageTransitioning && !currentPaginationMeta;
+  const isPaginationInteractionLocked = isPageTransitioning;
 
   const paginationItems = useMemo(
     () => buildPaginationItems(resolvedTotalPages, page + 1),
@@ -175,6 +247,10 @@ export default function DiaryListPage() {
   }, [entries.length, load, page]);
 
   const handlePreviousNavigation = useCallback(() => {
+    if (isPaginationInteractionLocked || isPaginationMetaPending) {
+      return;
+    }
+
     if (isFirstPage) {
       setPage(0);
       setDate((currentDate) => shiftCalendarDay(currentDate, -1));
@@ -182,9 +258,13 @@ export default function DiaryListPage() {
     }
 
     setPage((prev) => Math.max(0, prev - 1));
-  }, [isFirstPage]);
+  }, [isFirstPage, isPaginationInteractionLocked, isPaginationMetaPending]);
 
   const handleNextNavigation = useCallback(() => {
+    if (isPaginationInteractionLocked || isPaginationMetaPending) {
+      return;
+    }
+
     if (isLastPage) {
       setPage(0);
       setDate((currentDate) => shiftCalendarDay(currentDate, 1));
@@ -192,13 +272,13 @@ export default function DiaryListPage() {
     }
 
     setPage((prev) => prev + 1);
-  }, [isLastPage]);
+  }, [isLastPage, isPaginationInteractionLocked, isPaginationMetaPending]);
 
   return (
     <div className="h-[calc(100dvh-3.5rem)] overflow-hidden bg-page p-6 text-foreground sm:p-10">
       <div className="mx-auto flex h-full w-full max-w-[57.6rem] flex-col">
         <DiaryListHeader
-          count={totalElements}
+          count={resolvedTotalElements}
           onCreate={() => {
             setEditOpen(false);
             setEditEntryId(null);
@@ -253,7 +333,12 @@ export default function DiaryListPage() {
         />
 
         <div className="relative min-h-0 flex-1">
-          <div className="pb-16">
+          <div
+            className={cn(
+              "pb-16 transition-opacity duration-150 ease-out",
+              isPageTransitioning && "opacity-70"
+            )}
+          >
             <DiaryTable
               entries={entries}
               deletingEntryId={deletingEntryId}
@@ -266,9 +351,9 @@ export default function DiaryListPage() {
           </div>
 
           {shouldShowPagination && (
-            <div className="absolute inset-x-0 bottom-0 translate-y-5">
+            <div className="absolute inset-x-0 bottom-0 translate-y-5 transform-gpu">
               <Pagination>
-                <PaginationContent>
+                <PaginationContent className="flex-nowrap">
                   <PaginationItem>
                     <PaginationPrevious
                       href="#"
@@ -277,18 +362,26 @@ export default function DiaryListPage() {
                         handlePreviousNavigation();
                       }}
                     >
-                      {isFirstPage ? t("common.previousDay") : t("common.previous")}
+                      {isPaginationMetaPending
+                        ? t("common.previous")
+                        : isFirstPage
+                          ? t("common.previousDay")
+                          : t("common.previous")}
                     </PaginationPrevious>
                   </PaginationItem>
 
                   {resolvedTotalPages > 0 && paginationItems.map((item, index) => (
-                    <PaginationItem key={`${item}-${index}`}>
+                    <PaginationItem key={`pagination-slot-${index}`}>
                       {typeof item === "number" ? (
                         <PaginationLink
                           href="#"
                           isActive={item === page + 1}
+                          className="tabular-nums"
                           onClick={(event) => {
                             event.preventDefault();
+                            if (isPaginationInteractionLocked) {
+                              return;
+                            }
                             setPage(item - 1);
                           }}
                         >
@@ -308,7 +401,11 @@ export default function DiaryListPage() {
                         handleNextNavigation();
                       }}
                     >
-                      {isLastPage ? t("common.nextDay") : t("common.next")}
+                      {isPaginationMetaPending
+                        ? t("common.next")
+                        : isLastPage
+                          ? t("common.nextDay")
+                          : t("common.next")}
                     </PaginationNext>
                   </PaginationItem>
                 </PaginationContent>

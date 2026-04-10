@@ -46,7 +46,7 @@ const PaginationLink = ({
   <a
     aria-current={isActive ? "page" : undefined}
     className={cn(
-      "inline-flex h-10 min-w-10 items-center justify-center rounded-full border px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring",
+      "inline-flex h-10 min-w-10 items-center justify-center rounded-full border px-3 text-sm font-medium tabular-nums transition-[background-color,border-color,color,box-shadow] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-ring",
       isActive
         ? "border-primary bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(37,99,235,0.2)]"
         : "border-border bg-surface text-foreground shadow-sm hover:border-border/80 hover:bg-accent hover:text-foreground",
