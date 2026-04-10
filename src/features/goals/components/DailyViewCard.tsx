@@ -189,7 +189,7 @@ export function DailyViewCard({
 
             {dailyEntries.length > 0 && (
               <div className="daily-view-scroll flex-1 min-h-0 w-full overflow-y-auto overscroll-contain pr-4">
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(121px,121px))] gap-3">
                   {dailyEntries.map((entry, index) => {
                     const entryHoldId = `entry-${entry.id}`;
                     const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
@@ -253,7 +253,7 @@ export function DailyViewCard({
                           if (isEraserOn) event.preventDefault();
                         }}
                         className={[
-                          "relative h-[120px] w-[120px] overflow-hidden rounded-xl border p-2 flex flex-col justify-between",
+                          "relative h-[121px] w-[121px] overflow-hidden rounded-xl border p-2 flex flex-col justify-between",
                           "text-sm font-semibold leading-tight break-words",
                           isEraserOn ? "cursor-pointer" : "cursor-default",
                           getDiaryEntrySquareClass(entry.status),
