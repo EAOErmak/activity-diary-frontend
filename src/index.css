@@ -63,6 +63,26 @@ body::-webkit-scrollbar,
   display: none;                /* Chrome / Safari */
 }
 
+.daily-view-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.daily-view-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  display: block;
+}
+
+.daily-view-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 999px;
+}
+
+.daily-view-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @layer base {
   #root {
     width: 100%;

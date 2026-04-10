@@ -583,7 +583,8 @@ export default function GoalsPage() {
     [calendarYear, dailyDateLabel, weekPreviewMonthLabel]
   );
 
-  const isFixedDesktopWorkspace = activeView === "calendar" || activeView === "week";
+  const isFixedDesktopWorkspace =
+    activeView === "calendar" || activeView === "week" || activeView === "daily";
 
   useEffect(() => {
     if (!isFixedDesktopWorkspace) return;
@@ -1209,38 +1210,41 @@ export default function GoalsPage() {
             ) : null}
 
             {activeView === "daily" ? (
-              <DailyViewCard
-                dailyDateLabel={dailyDateLabel}
-                dailyDateKey={dailyDateKey}
-                isToday={dailyDateKey === todayKey}
-                currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
-                dailyEntries={dailyEntries}
-                isLoadingDailyEntries={isLoadingDailyEntries}
-                isDailyPreviewTarget={isDailyPreviewTarget}
-                canDropOnDailyDate={canDropOnDailyDate}
-                draggingTemplate={Boolean(draggingTemplate)}
-                creatingDate={creatingDate}
-                isEraserOn={isEraserOn}
-                shouldIgnorePostDropInteraction={shouldIgnorePostDropInteraction}
-                onPrevDay={() => shiftDailyDate(-1)}
-                onNextDay={() => shiftDailyDate(1)}
-                onHoverDate={setHoverDate}
-                onDeleteDayGoal={(dateKey) => {
-                  void handleDeleteDayGoalOnDate(dateKey);
-                }}
-                onDeleteEntryGoal={(entryGoalId, entryName) => {
-                  void handleDeleteEntryGoal(entryGoalId, entryName);
-                }}
-                onConfirmDayGoal={(dayGoalId) => {
-                  void handleConfirmDayGoal(dayGoalId, dailyDateKey);
-                }}
-                onConfirmEntryGoal={(entry, entryName) => {
-                  void handleConfirmEntryGoal(entry, entryName);
-                }}
-                onConfirmEntryGoalSimple={(entry, entryName) => {
-                  void handleConfirmEntryGoalSimple(entry, entryName);
-                }}
-              />
+              <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
+                <DailyViewCard
+                  className={cn(isFixedDesktopWorkspace && "xl:h-full")}
+                  dailyDateLabel={dailyDateLabel}
+                  dailyDateKey={dailyDateKey}
+                  isToday={dailyDateKey === todayKey}
+                  currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
+                  dailyEntries={dailyEntries}
+                  isLoadingDailyEntries={isLoadingDailyEntries}
+                  isDailyPreviewTarget={isDailyPreviewTarget}
+                  canDropOnDailyDate={canDropOnDailyDate}
+                  draggingTemplate={Boolean(draggingTemplate)}
+                  creatingDate={creatingDate}
+                  isEraserOn={isEraserOn}
+                  shouldIgnorePostDropInteraction={shouldIgnorePostDropInteraction}
+                  onPrevDay={() => shiftDailyDate(-1)}
+                  onNextDay={() => shiftDailyDate(1)}
+                  onHoverDate={setHoverDate}
+                  onDeleteDayGoal={(dateKey) => {
+                    void handleDeleteDayGoalOnDate(dateKey);
+                  }}
+                  onDeleteEntryGoal={(entryGoalId, entryName) => {
+                    void handleDeleteEntryGoal(entryGoalId, entryName);
+                  }}
+                  onConfirmDayGoal={(dayGoalId) => {
+                    void handleConfirmDayGoal(dayGoalId, dailyDateKey);
+                  }}
+                  onConfirmEntryGoal={(entry, entryName) => {
+                    void handleConfirmEntryGoal(entry, entryName);
+                  }}
+                  onConfirmEntryGoalSimple={(entry, entryName) => {
+                    void handleConfirmEntryGoalSimple(entry, entryName);
+                  }}
+                />
+              </div>
             ) : null}
           </Tabs>
         </div>

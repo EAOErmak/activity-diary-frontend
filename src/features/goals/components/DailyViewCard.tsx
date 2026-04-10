@@ -8,9 +8,9 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { useLongPressProgress } from "@/features/goals/hooks/useLongPressProgress";
-import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Separator } from "@/shared/components/ui/separator";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+import { cn } from "@/shared/lib/utils";
 import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
 import {
   formatDailyTime,
@@ -22,6 +22,7 @@ import {
 const LONG_PRESS_MS = 600;
 
 type Props = {
+  className?: string;
   dailyDateLabel: string;
   dailyDateKey: string;
   isToday: boolean;
@@ -45,6 +46,7 @@ type Props = {
 };
 
 export function DailyViewCard({
+  className,
   dailyDateLabel,
   dailyDateKey,
   isToday,
@@ -71,8 +73,8 @@ export function DailyViewCard({
   const entryLongPress = useLongPressProgress(LONG_PRESS_MS);
 
   return (
-    <Card className="w-full min-w-0">
-      <CardHeader className="space-y-3">
+    <Card className={cn("flex w-full min-w-0 flex-col", className)}>
+      <CardHeader className="shrink-0 space-y-3">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -101,7 +103,7 @@ export function DailyViewCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 min-h-0 flex-col space-y-3 overflow-hidden">
         <div className="flex flex-wrap items-center gap-2">
           {isEraserOn ? (
             <Badge className="rounded-full bg-rose-500/15 px-3 py-1 text-rose-600 hover:bg-rose-500/15">
@@ -149,7 +151,7 @@ export function DailyViewCard({
             if (draggingTemplate) onHoverDate(dailyDateKey);
           }}
           className={[
-            "relative overflow-hidden rounded-xl border bg-surface p-3 transition-all",
+            "relative flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl border bg-surface p-3 transition-all",
             isDailyPreviewTarget
               ? canDropOnDailyDate
                 ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
@@ -169,7 +171,7 @@ export function DailyViewCard({
               : undefined
           }
         >
-          <div className="relative min-h-[120px]">
+          <div className="relative flex flex-1 min-h-[120px] flex-col">
             {isLoadingDailyEntries && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-surface/70">
                 <div className="w-full max-w-sm space-y-3 px-4">
@@ -180,12 +182,14 @@ export function DailyViewCard({
             )}
 
             {dailyEntries.length === 0 && (
-              <div className="text-sm text-muted-foreground">No goal entries for this day.</div>
+              <div className="flex flex-1 items-center text-sm text-muted-foreground">
+                No goal entries for this day.
+              </div>
             )}
 
             {dailyEntries.length > 0 && (
-              <ScrollArea className="max-h-[420px] w-full">
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3 pr-4">
+              <div className="daily-view-scroll flex-1 min-h-0 w-full overflow-y-auto overscroll-contain pr-4">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,120px))] gap-3">
                   {dailyEntries.map((entry, index) => {
                     const entryHoldId = `entry-${entry.id}`;
                     const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
@@ -295,7 +299,7 @@ export function DailyViewCard({
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
             )}
           </div>
         </div>
