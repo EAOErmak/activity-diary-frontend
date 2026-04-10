@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 import { TableCell, TableRow } from "@/shared/components/ui/table";
-import { cn } from "@/shared/lib/utils";
 
 type Props = {
   indicator: ReactNode;
@@ -9,7 +8,6 @@ type Props = {
   date: ReactNode;
   status: ReactNode;
   actions: ReactNode;
-  isPlaceholder?: boolean;
 };
 
 export function DiaryTableRowLayout({
@@ -18,13 +16,9 @@ export function DiaryTableRowLayout({
   date,
   status,
   actions,
-  isPlaceholder = false,
 }: Props) {
   return (
-    <TableRow
-      aria-hidden={isPlaceholder || undefined}
-      className={cn(isPlaceholder && "pointer-events-none hover:bg-transparent")}
-    >
+    <TableRow>
       <TableCell className="w-1 p-0">{indicator}</TableCell>
       <TableCell className="text-surfaceForeground/80">{category}</TableCell>
       <TableCell className="text-mutedForeground">{date}</TableCell>

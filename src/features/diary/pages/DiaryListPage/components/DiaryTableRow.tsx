@@ -15,12 +15,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog";
-import { Button } from "@/shared/components/ui/button";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { getUiStatus, STATUS_LEFT_BAR, STATUS_STYLES } from "@/shared/lib/uiStatus";
 
 import { getStatusLabel } from "../statusConfig";
 import { DiaryTableRowLayout } from "./DiaryTableRowLayout";
+import {
+  DiaryTableActionButton,
+  DiaryTableCategoryContent,
+  DiaryTableDateContent,
+  DiaryTableIndicator,
+  DiaryTableStatusBadge,
+} from "./DiaryTableRowContent";
 
 type Props = {
   entry: DiaryEntryView;
@@ -54,33 +60,27 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
 
   return (
     <DiaryTableRowLayout
-      indicator={<div className={`h-full w-1 ${STATUS_LEFT_BAR[uiStatus]}`} />}
-      category={entry.firstTag}
-      date={formattedDate}
+      indicator={<DiaryTableIndicator className={STATUS_LEFT_BAR[uiStatus]} />}
+      category={<DiaryTableCategoryContent>{entry.firstTag}</DiaryTableCategoryContent>}
+      date={<DiaryTableDateContent>{formattedDate}</DiaryTableDateContent>}
       status={
-        <span
-          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[uiStatus]}`}
-        >
+        <DiaryTableStatusBadge toneClassName={STATUS_STYLES[uiStatus]}>
           {getStatusLabel(uiStatus)}
-        </span>
+        </DiaryTableStatusBadge>
       }
       actions={
         <>
-          <Button
-            size="sm"
-            variant="primary"
+          <DiaryTableActionButton
+            icon={<PanelLeftOpen />}
             onClick={() =>
               navigate(`/diary/${entry.id}`, {
                 state: { background: location },
               })
             }
-          >
-            <PanelLeftOpen />
-          </Button>
+          />
 
-          <Button
-            size="sm"
-            variant="primary"
+          <DiaryTableActionButton
+            icon={<Pencil />}
             disabled={!canEdit}
             onClick={() => {
               if (canEdit) {
@@ -88,22 +88,17 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
               }
             }}
             className={!canEdit ? "opacity-60 cursor-not-allowed" : ""}
-          >
-            <Pencil />
-          </Button>
+          />
 
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <AlertDialogTrigger asChild>
-              <Button
-                size="sm"
-                variant="primary"
+              <DiaryTableActionButton
+                icon={<Trash2 />}
                 disabled={!canDelete}
                 className={!canDelete ? "opacity-60 cursor-not-allowed" : ""}
                 aria-label={t("diary.deleteAria", { id: String(entry.id) })}
                 title={canDelete ? t("diary.deleteEntry") : t("diary.deleteUnavailable")}
-              >
-                <Trash2 />
-              </Button>
+              />
             </AlertDialogTrigger>
             <AlertDialogContent
               className="max-w-[24rem] overflow-hidden rounded-[1.35rem] border border-border bg-surface p-0 text-surfaceForeground shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
