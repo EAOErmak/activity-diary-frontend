@@ -419,6 +419,10 @@ export default function FoodForm(props: Props) {
                 )}
               </div>
 
+              <p className="text-sm leading-5 text-muted-foreground">
+                {t("food.valuesPer100gHint")}
+              </p>
+
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <FormField
                   control={form.control}
