@@ -8,7 +8,6 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -141,9 +140,9 @@ function FoodNumberInput({
             onChange(normalizedValue);
           }
         }}
-        className="[appearance:textfield] pr-14 text-right tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-10 rounded-[18px] [appearance:textfield] pr-12 text-right text-sm tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
-      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {suffix}
       </span>
     </div>
@@ -341,7 +340,7 @@ export default function FoodForm(props: Props) {
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(async (values) => {
@@ -363,17 +362,17 @@ export default function FoodForm(props: Props) {
               callories: parseDecimal(values.callories),
             });
           })}
-          className="flex h-full min-h-0 flex-col"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
-            <div className="space-y-5">
-              <section className="rounded-[28px] border border-border/70 bg-surface p-4 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-5">
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="px-4 py-3.5 sm:px-5 sm:py-4">
+            <div className="space-y-3.5">
+              <section className="rounded-[22px] border border-border/70 bg-surface p-3 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-3.5">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
-                        className="rounded-full border-border/70 bg-background px-2.5 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground"
+                        className="rounded-full border-border/70 bg-background px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em] text-muted-foreground"
                       >
                         1
                       </Badge>
@@ -381,19 +380,22 @@ export default function FoodForm(props: Props) {
                         {t("food.productSectionTitle")}
                       </p>
                     </div>
-                    <p className="max-w-[42rem] text-sm leading-6 text-muted-foreground">
+                    <p className="max-w-[34rem] text-sm leading-5 text-muted-foreground">
                       {t("food.productSearchHint")}
                     </p>
                   </div>
 
-                  {selectedOption && (
-                    <Badge
-                      variant="outline"
-                      className="rounded-full border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-700"
-                    >
-                      {t("food.selectedProduct")}
-                    </Badge>
-                  )}
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "rounded-full px-3 py-1 transition-colors",
+                      selectedOption
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                        : "border-border/70 bg-background text-muted-foreground"
+                    )}
+                  >
+                    {t("food.selectedProduct")}
+                  </Badge>
                 </div>
 
                 <FormField
@@ -404,7 +406,7 @@ export default function FoodForm(props: Props) {
                       value != null || t("food.selectProductForValidation"),
                   }}
                   render={() => (
-                    <FormItem className="space-y-3">
+                    <FormItem className="space-y-2">
                       <FormLabel>{t("food.product")}</FormLabel>
                       <FormControl>
                         <div ref={autocompleteRootRef} className="relative">
@@ -471,7 +473,7 @@ export default function FoodForm(props: Props) {
                               }
                             }}
                             placeholder={searchPlaceholder}
-                            className="pl-11 pr-12"
+                            className="h-11 rounded-[18px] pl-11 pr-12 text-sm"
                             role="combobox"
                             aria-expanded={isAutocompleteOpen}
                             aria-autocomplete="list"
@@ -495,8 +497,8 @@ export default function FoodForm(props: Props) {
                           </div>
 
                           {isAutocompleteOpen && (
-                            <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-[24px] border border-border/70 bg-popover shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
-                              <div className="max-h-72 overflow-y-auto p-2">
+                            <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-[20px] border border-border/70 bg-popover shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
+                              <div className="max-h-64 overflow-y-auto p-2">
                                 {optionsError ? (
                                   <div className="rounded-2xl px-3 py-3 text-sm text-destructive">
                                     {optionsError}
@@ -527,7 +529,7 @@ export default function FoodForm(props: Props) {
                                           selectOption(option);
                                         }}
                                         className={cn(
-                                          "flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition-colors",
+                                          "flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors",
                                           "hover:bg-accent hover:text-accent-foreground",
                                           highlightedIndex === index &&
                                             "bg-accent/60 text-accent-foreground",
@@ -556,44 +558,49 @@ export default function FoodForm(props: Props) {
                           )}
                         </div>
                       </FormControl>
-                      <FormDescription>
-                        {t("food.productSearchHint")}
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {selectedOption && (
-                  <div className="mt-4 rounded-[22px] border border-border/70 bg-background px-4 py-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {t("food.selectedProduct")}
-                        </p>
-                        <p className="mt-1 truncate text-sm font-semibold text-foreground">
-                          {selectedOption.label}
-                        </p>
-                      </div>
-
-                      <Badge
-                        variant="outline"
-                        className="rounded-full border-border/70 bg-surface px-3 py-1 text-muted-foreground"
+                <div className="mt-3 min-h-[4.1rem] rounded-[18px] border border-border/70 bg-background px-3.5 py-2.5">
+                  <div className="flex h-full flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        {t("food.selectedProduct")}
+                      </p>
+                      <p
+                        className={cn(
+                          "mt-1 truncate text-sm font-semibold",
+                          selectedOption ? "text-foreground" : "text-muted-foreground"
+                        )}
                       >
-                        #{selectedOption.id}
-                      </Badge>
+                        {selectedOption?.label ?? "—"}
+                      </p>
                     </div>
+
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "rounded-full px-3 py-1",
+                        selectedOption
+                          ? "border-border/70 bg-surface text-muted-foreground"
+                          : "border-border/60 bg-background text-muted-foreground"
+                      )}
+                    >
+                      {selectedOption ? `#${selectedOption.id}` : "—"}
+                    </Badge>
                   </div>
-                )}
+                </div>
               </section>
 
-              <section className="rounded-[28px] border border-border/70 bg-surface p-4 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-5">
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <section className="rounded-[22px] border border-border/70 bg-surface p-3 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-3.5">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
-                        className="rounded-full border-border/70 bg-background px-2.5 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground"
+                        className="rounded-full border-border/70 bg-background px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em] text-muted-foreground"
                       >
                         2
                       </Badge>
@@ -601,7 +608,7 @@ export default function FoodForm(props: Props) {
                         {t("food.macroSectionTitle")}
                       </p>
                     </div>
-                    <p className="max-w-[42rem] text-sm leading-6 text-muted-foreground">
+                    <p className="max-w-[34rem] text-sm leading-5 text-muted-foreground">
                       {t("food.valuesPer100gHint")}
                     </p>
                   </div>
@@ -614,7 +621,7 @@ export default function FoodForm(props: Props) {
                   </Badge>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="protein"
@@ -638,7 +645,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[22px] border border-border/70 bg-background p-4">
+                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
                         <FormLabel>{t("food.proteins")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -676,7 +683,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[22px] border border-border/70 bg-background p-4">
+                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
                         <FormLabel>{t("food.fats")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -714,7 +721,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[22px] border border-border/70 bg-background p-4">
+                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
                         <FormLabel>{t("food.carbs")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -752,7 +759,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[22px] border border-border/70 bg-background p-4">
+                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
                         <FormLabel>{t("food.caloriesPerGram")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -771,12 +778,13 @@ export default function FoodForm(props: Props) {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border/70 bg-background px-5 py-4 sm:px-6">
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <div className="shrink-0 border-t border-border/70 bg-background px-4 py-3 sm:px-5">
+            <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
               {onCancel && (
                 <Button
                   type="button"
                   variant="surface"
+                  size="sm"
                   className="w-full sm:w-auto"
                   onClick={onCancel}
                   disabled={isSubmitting}
@@ -787,7 +795,8 @@ export default function FoodForm(props: Props) {
 
               <Button
                 type="submit"
-                className="w-full sm:min-w-[13rem] sm:w-auto"
+                size="sm"
+                className="w-full sm:min-w-[11rem] sm:w-auto"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? t("common.saving") : submitLabel}

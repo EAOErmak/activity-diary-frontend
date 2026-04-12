@@ -47,19 +47,21 @@ export function FoodFormDialog(props: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="mb-0 flex max-h-[calc(100vh-2rem)] w-[680px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-[30px] border border-border/70 bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
-        <DialogHeader className="relative gap-2 border-b border-border/70 px-5 py-5 text-left sm:px-6">
-          <DialogTitle className="pr-12 text-xl leading-tight text-foreground">
+      <DialogContent className="mb-0 flex w-[620px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-[28px] border border-border/70 bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+        <DialogHeader className="relative gap-2 overflow-hidden border-b border-border/70 px-4 py-3.5 text-left sm:px-5">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_44%)]" />
+
+          <DialogTitle className="relative pr-12 text-[1.15rem] leading-tight text-foreground">
             {props.title ??
               (props.mode === "create"
                 ? t("food.createTitle")
                 : t("food.editTitle"))}
           </DialogTitle>
-          <DialogDescription className="max-w-[46rem] text-sm leading-6 text-muted-foreground">
+          <DialogDescription className="relative max-w-[36rem] text-sm leading-5 text-muted-foreground">
             {description}
           </DialogDescription>
 
-          <DialogClose className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+          <DialogClose className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
             <X className="h-4 w-4" />
             <span className="sr-only">{t("common.close")}</span>
           </DialogClose>
