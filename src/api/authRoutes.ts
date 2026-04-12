@@ -1,4 +1,4 @@
-const AUTH_BASE_PATH = "/api/auth";
+const AUTH_BASE_PATH = "/auth";
 
 export const AUTH_ENDPOINTS = {
   register: `${AUTH_BASE_PATH}/register`,

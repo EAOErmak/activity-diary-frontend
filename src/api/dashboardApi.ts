@@ -1,3 +1,8 @@
+export {
+  getAnalyticsChart,
+  getAnalyticsChartTypes,
+} from "./analyticsApi";
+/*
 import api from "./http/axiosInstance";
 import type { ApiResponse } from "@/shared/types/api";
 import type { ChartResponse } from "@/shared/types/analytics";
@@ -62,3 +67,4 @@ export const getSequenceChartBySubCategory = async (
   );
   return r.data.data;
 };
+*/

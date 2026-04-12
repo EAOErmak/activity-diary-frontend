@@ -1,3 +1,5 @@
+export { default } from "./DashboardPageV3";
+/*
 import { useQuery } from "@tanstack/react-query";
 import {
   getTimeChartByCategory,
@@ -108,3 +110,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+*/

@@ -19,8 +19,19 @@ type RetriableRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18080";
+function buildApiBaseUrl(baseUrl: string) {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+
+  if (normalizedBaseUrl.endsWith("/api")) {
+    return normalizedBaseUrl;
+  }
+
+  return `${normalizedBaseUrl}/api`;
+}
+
+const API_BASE_URL = buildApiBaseUrl(
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18080"
+);
 
 // ======================================================
 // BASE API (С interceptor'ами)

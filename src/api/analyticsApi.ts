@@ -68,6 +68,8 @@ export async function getAnalyticsChart(
   }
 }
 
+// Legacy category/sub-category analytics helpers below do not match the
+// current backend controller surface and are not used by the routed dashboard.
 /* ========================================================
    TIME BY CATEGORY
 ======================================================== */
