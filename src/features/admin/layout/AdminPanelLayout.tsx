@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   BookOpen,
+  Database,
   LayoutDashboard,
   Link2,
   Moon,
@@ -53,6 +54,11 @@ export default function AdminPanelLayout() {
       to: "/admin/tags",
       label: t("admin.tags"),
       icon: Tags,
+    },
+    {
+      to: "/admin/database",
+      label: t("admin.database"),
+      icon: Database,
     },
   ] as const;
 

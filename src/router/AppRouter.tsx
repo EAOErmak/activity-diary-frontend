@@ -25,9 +25,10 @@ import CalendarPage from "@/features/calendar/pages/CalendarPage";
 import AdminDictionaryPage from "@/features/admin/dictionary/pages/AdminDictionaryShadcnPage";
 import AdminUsersPage from "@/features/admin/users/pages/AdminUsersShadcnPage";
 import AdminTagsPage from "@/features/admin/tags/pages/AdminTagsShadcnPage";
-import AdminOverviewPage from "@/features/admin/dashboard/pages/AdminOverviewShadcnPage";
+import AdminOverviewPage from "@/features/admin/dashboard/pages/AdminOverviewLandingShadcnPage";
 import AdminMetricLinksPage from "@/features/admin/entry-config/pages/AdminMetricLinksShadcnPage";
 import AdminGeneralFoodsPage from "@/features/admin/food/pages/AdminGeneralFoodsShadcnPage";
+import AdminDatabasePage from "@/features/admin/database/pages/AdminDatabaseShadcnPage";
 import AdminLayout from "@/features/admin/layout/AdminPanelLayout";
 
 // 🆕 MODAL
@@ -102,6 +103,7 @@ export default function AppRouter() {
           <Route path="/admin/dictionary" element={<AdminDictionaryPage />} />
           <Route path="/admin/metric-links" element={<AdminMetricLinksPage />} />
           <Route path="/admin/foods" element={<AdminGeneralFoodsPage />} />
+          <Route path="/admin/database" element={<AdminDatabasePage />} />
         </Route>
 
         {/* FALLBACK */}

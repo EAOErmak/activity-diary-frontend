@@ -77,6 +77,7 @@ const enBase = {
     panelBadge: "Admin",
     panelTitle: "Control Panel",
     overview: "Overview",
+    database: "Database",
     users: "Users",
     dictionaries: "Dictionaries",
     foods: "Food",
@@ -421,6 +422,8 @@ const enExtensions = {
       CALORIES_PER_DIARY: "Calories per entry",
       PFC_PER_DIARY: "Protein, fat, and carbs per entry",
       PFC_PER_METRIC: "Protein, fat, and carbs by metric",
+      SLEEP_SCORE_PER_ENTRY: "Sleep score per entry",
+      DURATION_PER_ENTRY: "Duration per entry",
       TRAINING_COMPUTED: "Training from computed data",
       TRAINING_METRICS: "Training metrics",
       TRAINING_RAW: "Training from raw data",
@@ -436,7 +439,7 @@ const enExtensions = {
       badge: "Admin panel",
       title: "Overview",
       subtitle:
-        "Server statistics are temporarily hidden while the related backend endpoints are unavailable. This page currently only keeps the database reset action.",
+        "Use this page as a shortcut hub for the main administrative sections.",
       databaseTitle: "Database",
       databaseDescription:
         "A full reset calls `POST /admin/database/clear` and removes data from all tables.",
@@ -448,6 +451,37 @@ const enExtensions = {
       confirmDescription:
         "This action will remove data from all tables. Once started, the cleanup cannot be undone.",
       confirmLabel: "Delete all data",
+    },
+    databasePage: {
+      badge: "Database",
+      title: "Database",
+      subtitle:
+        "Review the available backend table types, clear a specific table, or run a full database reset.",
+      tablesTitle: "Table cleanup",
+      tablesDescription:
+        "The list is loaded from `GET /admin/database/table-types`. Use it to target a single table cleanup.",
+      tableCount: "Tables: {{count}}",
+      tableColumn: "Table",
+      identifierColumn: "Identifier",
+      loadingTableTypes: "Loading table types...",
+      emptyTableTypes: "No table types are available.",
+      clearTableButton: "Clear table",
+      fullResetTitle: "Full database reset",
+      fullResetDescription:
+        "This action calls `POST /admin/database/clear` and removes data from all tables.",
+      fullResetWarning:
+        "Use the full reset only for a complete environment cleanup. Once started, the operation cannot be undone.",
+      clearDatabaseButton: "Clear database",
+      clearing: "Clearing...",
+      fullResetConfirmTitle: "Confirm full database cleanup",
+      fullResetConfirmDescription:
+        "This action will remove data from all tables. Once started, the cleanup cannot be undone.",
+      fullResetConfirmLabel: "Delete all data",
+      tableResetConfirmTitle: "Confirm table cleanup",
+      tableResetConfirmDescription:
+        "Table \"{{table}}\" with identifier `{{value}}` will be cleared. Once started, the cleanup cannot be undone.",
+      tableResetConfirmLabel: "Clear table",
+      tableTypesLoadError: "Failed to load table types.",
     },
     usersPage: {
       title: "Users",

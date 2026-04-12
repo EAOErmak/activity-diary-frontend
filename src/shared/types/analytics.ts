@@ -18,6 +18,8 @@ export const CHART_TYPE_LABELS = {
   CALORIES_PER_DIARY: "dashboard.chartTypes.CALORIES_PER_DIARY",
   PFC_PER_DIARY: "dashboard.chartTypes.PFC_PER_DIARY",
   PFC_PER_METRIC: "dashboard.chartTypes.PFC_PER_METRIC",
+  SLEEP_SCORE_PER_ENTRY: "dashboard.chartTypes.SLEEP_SCORE_PER_ENTRY",
+  DURATION_PER_ENTRY: "dashboard.chartTypes.DURATION_PER_ENTRY",
   TRAINING_COMPUTED: "dashboard.chartTypes.TRAINING_COMPUTED",
   TRAINING_METRICS: "dashboard.chartTypes.TRAINING_METRICS",
   TRAINING_RAW: "dashboard.chartTypes.TRAINING_RAW",

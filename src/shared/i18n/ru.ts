@@ -75,6 +75,7 @@ const ruBase = {
     panelBadge: "Admin",
     panelTitle: "Control Panel",
     overview: "Обзор",
+    database: "База данных",
     users: "Пользователи",
     dictionaries: "Словари",
     foods: "Еда",
@@ -419,6 +420,8 @@ const ruExtensions = {
       CALORIES_PER_DIARY: "Калории по записи",
       PFC_PER_DIARY: "БЖУ по записи",
       PFC_PER_METRIC: "БЖУ по метрике",
+      SLEEP_SCORE_PER_ENTRY: "Оценка сна по записи",
+      DURATION_PER_ENTRY: "Длительность по записи",
       TRAINING_COMPUTED: "Тренировка по расчетным данным",
       TRAINING_METRICS: "Тренировочные метрики",
       TRAINING_RAW: "Тренировка по сырым данным",
@@ -437,7 +440,7 @@ const ruExtensions = {
       badge: "Админ-панель",
       title: "Обзор",
       subtitle:
-        "Серверная статистика временно скрыта, пока соответствующие backend-эндпоинты не работают. На этой странице оставлена только операция очистки базы данных.",
+        "Используйте эту страницу как точку быстрого перехода в основные разделы админ-панели.",
       databaseTitle: "База данных",
       databaseDescription:
         "Полная очистка вызывает `POST /admin/database/clear` и удаляет данные из всех таблиц.",
@@ -449,6 +452,37 @@ const ruExtensions = {
       confirmDescription:
         "Это действие удалит данные из всех таблиц. Отменить очистку после запуска нельзя.",
       confirmLabel: "Удалить все данные",
+    },
+    databasePage: {
+      badge: "База данных",
+      title: "База данных",
+      subtitle:
+        "Просматривайте доступные типы таблиц с backend, очищайте отдельную таблицу или запускайте полную очистку базы данных.",
+      tablesTitle: "Очистка таблиц",
+      tablesDescription:
+        "Список загружается через `GET /admin/database/table-types`. Используйте его для точечной очистки одной таблицы.",
+      tableCount: "Таблиц: {{count}}",
+      tableColumn: "Таблица",
+      identifierColumn: "Идентификатор",
+      loadingTableTypes: "Загрузка типов таблиц...",
+      emptyTableTypes: "Доступные типы таблиц не найдены.",
+      clearTableButton: "Очистить таблицу",
+      fullResetTitle: "Полная очистка базы",
+      fullResetDescription:
+        "Это действие вызывает `POST /admin/database/clear` и удаляет данные из всех таблиц.",
+      fullResetWarning:
+        "Используйте полную очистку только для полного сброса среды. Отменить операцию после запуска нельзя.",
+      clearDatabaseButton: "Очистить базу",
+      clearing: "Очистка...",
+      fullResetConfirmTitle: "Подтвердите полную очистку базы",
+      fullResetConfirmDescription:
+        "Это действие удалит данные из всех таблиц. Отменить очистку после запуска нельзя.",
+      fullResetConfirmLabel: "Удалить все данные",
+      tableResetConfirmTitle: "Подтвердите очистку таблицы",
+      tableResetConfirmDescription:
+        "Таблица \"{{table}}\" с идентификатором `{{value}}` будет очищена. Отменить операцию после запуска нельзя.",
+      tableResetConfirmLabel: "Очистить таблицу",
+      tableTypesLoadError: "Не удалось загрузить типы таблиц.",
     },
     usersPage: {
       title: "Пользователи",

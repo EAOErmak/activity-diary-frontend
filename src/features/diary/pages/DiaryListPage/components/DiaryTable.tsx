@@ -29,7 +29,7 @@ export function DiaryTable({ entries, deletingEntryId, onEdit, onDelete }: Props
           <TableRow>
             <TableHead />
             <TableHead>{t("diary.category")}</TableHead>
-            <TableHead>{t("common.date")}</TableHead>
+            <TableHead>{t("diary.timeStart")}</TableHead>
             <TableHead>{t("common.status")}</TableHead>
             <TableHead className="text-right">{t("common.actions")}</TableHead>
           </TableRow>

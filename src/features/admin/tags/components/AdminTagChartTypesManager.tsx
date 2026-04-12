@@ -1,5 +1,5 @@
 ﻿import axios from "axios";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Link2, Plus, Search, Tags, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import type { ApiResponse } from "@/shared/types/api";
 import {
@@ -78,7 +79,7 @@ export function AdminTagChartTypesManager() {
   const [tagsErrorMessage, setTagsErrorMessage] = useState<string | null>(null);
   const [linksErrorMessage, setLinksErrorMessage] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<AdminTagChartTypeLink | null>(null);
-  const deferredTagQuery = useDeferredValue(tagQuery);
+  const debouncedTagQuery = useDebouncedValue(tagQuery.trim(), 180);
 
   function sortTags(tags: Tag[]) {
     return [...tags].sort((left, right) => left.name.localeCompare(right.name, locale));
@@ -114,7 +115,7 @@ export function AdminTagChartTypesManager() {
         setIsLoadingTags(true);
         setTagsErrorMessage(null);
 
-        const data = await getAllTags(deferredTagQuery);
+        const data = await getAllTags(debouncedTagQuery);
         if (!isActive) {
           return;
         }
@@ -141,7 +142,7 @@ export function AdminTagChartTypesManager() {
     return () => {
       isActive = false;
     };
-  }, [deferredTagQuery, locale, t]);
+  }, [debouncedTagQuery, locale, t]);
 
   useEffect(() => {
     if (selectedTagId == null) {
@@ -358,7 +359,6 @@ export function AdminTagChartTypesManager() {
               value={tagQuery}
               onChange={(event) => handleTagQueryChange(event.target.value)}
               placeholder={t("admin.tagChartTypes.tagSearchPlaceholder")}
-              disabled={isLoadingTags}
             />
           </div>
 
@@ -370,12 +370,12 @@ export function AdminTagChartTypesManager() {
             <Select
               value={selectedTagId != null ? String(selectedTagId) : ""}
               onValueChange={handleSelectTag}
-              disabled={isLoadingTags || availableTags.length === 0}
+              disabled={availableTags.length === 0}
             >
               <SelectTrigger>
                 <SelectValue
                   placeholder={
-                    isLoadingTags
+                    isLoadingTags && availableTags.length === 0
                       ? t("admin.tagChartTypes.tagLoading")
                       : availableTags.length === 0
                         ? t("admin.tagChartTypes.tagEmpty")
@@ -396,12 +396,6 @@ export function AdminTagChartTypesManager() {
 
         {tagsErrorMessage && (
           <p className="text-sm text-destructive">{tagsErrorMessage}</p>
-        )}
-
-        {!tagsErrorMessage && !isLoadingTags && availableTags.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            {t("admin.tagChartTypes.noTagsForQuery")}
-          </p>
         )}
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">

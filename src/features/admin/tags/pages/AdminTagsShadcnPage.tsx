@@ -2,6 +2,7 @@
 import { Plus, Search, Tags } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useRef } from "react";
 
 import {
   approveTag,
@@ -30,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import type { Tag } from "@/shared/types/tag";
 
 type Slice<T> = {
@@ -68,7 +70,7 @@ function getTagStatus(tag: Tag): TagStatus {
 
 export default function AdminTagsShadcnPage() {
   const { t } = useTranslation();
-  const [query, setQuery] = useState("");
+  const [queryInput, setQueryInput] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [page, setPage] = useState(0);
   const [data, setData] = useState<Slice<Tag> | null>(null);
@@ -76,6 +78,8 @@ export default function AdminTagsShadcnPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const debouncedQuery = useDebouncedValue(queryInput, 180);
+  const latestLoadRequestIdRef = useRef(0);
 
   const statusMeta = useMemo(
     () => ({
@@ -101,9 +105,11 @@ export default function AdminTagsShadcnPage() {
 
   useEffect(() => {
     void load();
-  }, [page, query]);
+  }, [debouncedQuery, page]);
 
-  async function load(nextPage = page, nextQuery = query) {
+  async function load(nextPage = page, nextQuery = debouncedQuery) {
+    const requestId = ++latestLoadRequestIdRef.current;
+
     try {
       setLoading(true);
       const result = await getAdminTags(
@@ -111,9 +117,18 @@ export default function AdminTagsShadcnPage() {
         20,
         nextQuery.trim() || undefined
       );
+
+      if (requestId !== latestLoadRequestIdRef.current) {
+        return;
+      }
+
       setData(result);
+    } catch {
+      // The axios interceptor already shows the backend error message.
     } finally {
-      setLoading(false);
+      if (requestId === latestLoadRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -130,7 +145,7 @@ export default function AdminTagsShadcnPage() {
       setIsCreating(true);
       const createdTag = await createAdminTag({ name });
       setNewTagName("");
-      setQuery("");
+      setQueryInput("");
       setPage(0);
       toast.success(t("admin.tagsPage.tagCreated", { name: createdTag.name }));
       await load(0, "");
@@ -189,6 +204,7 @@ export default function AdminTagsShadcnPage() {
   }
 
   const tags = data?.content ?? [];
+  const showInitialLoading = loading && data == null;
 
   return (
     <div className="space-y-6">
@@ -252,9 +268,9 @@ export default function AdminTagsShadcnPage() {
               {t("common.search")}
             </div>
             <Input
-              value={query}
+              value={queryInput}
               onChange={(event) => {
-                setQuery(event.target.value);
+                setQueryInput(event.target.value);
                 setPage(0);
               }}
               placeholder={t("admin.tagsPage.searchPlaceholder")}
@@ -286,7 +302,7 @@ export default function AdminTagsShadcnPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {showInitialLoading ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                     {t("admin.tagsPage.loading")}

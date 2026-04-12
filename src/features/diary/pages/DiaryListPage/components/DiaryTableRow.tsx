@@ -45,8 +45,11 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
   const canEdit = entry.status !== "DELETED";
   const canDelete = entry.status !== "DELETED" && !isDeleting;
   const entryLabel = entry.firstTag?.trim() || t("diary.entryWithId", { id: String(entry.id) });
-  const formattedDate = entry.whenStarted
-    ? new Date(entry.whenStarted).toLocaleDateString(getIntlLocale())
+  const formattedStartTime = entry.whenStarted
+    ? new Date(entry.whenStarted).toLocaleTimeString(getIntlLocale(), {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "\u2014";
 
   const handleDeleteConfirm = async () => {
@@ -62,7 +65,7 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
     <DiaryTableRowLayout
       indicator={<DiaryTableIndicator className={STATUS_LEFT_BAR[uiStatus]} />}
       category={<DiaryTableCategoryContent>{entry.firstTag}</DiaryTableCategoryContent>}
-      date={<DiaryTableDateContent>{formattedDate}</DiaryTableDateContent>}
+      date={<DiaryTableDateContent>{formattedStartTime}</DiaryTableDateContent>}
       status={
         <DiaryTableStatusBadge toneClassName={STATUS_STYLES[uiStatus]}>
           {getStatusLabel(uiStatus)}
