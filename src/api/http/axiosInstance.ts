@@ -6,6 +6,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { toast } from "sonner";
+import { AUTH_ENDPOINTS, isAuthEndpoint } from "@/api/authRoutes";
 import i18n from "@/shared/i18n/config";
 import { useAuthStore } from "@/shared/store/authStore";
 import { isTokenExpired } from "@/shared/lib/jwt";
@@ -46,12 +47,7 @@ const refreshApi = axios.create({
 let refreshPromise: Promise<string> | null = null;
 
 function isAuthRequest(url?: string) {
-  return (
-    url?.includes("/auth/login") ||
-    url?.includes("/auth/register") ||
-    url?.includes("/auth/verification") ||
-    url?.includes("/auth/refresh")
-  );
+  return isAuthEndpoint(url);
 }
 
 function applyAccessToken(
@@ -104,7 +100,7 @@ async function requestTokenRefresh() {
   }
 
   const response = await refreshApi.post<ApiResponse<AuthResponse>>(
-    "/auth/refresh",
+    AUTH_ENDPOINTS.refresh,
     { refreshToken }
   );
 

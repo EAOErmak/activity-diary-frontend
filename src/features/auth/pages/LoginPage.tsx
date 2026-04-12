@@ -43,7 +43,10 @@ export default function LoginPage() {
       }
 
       // ✅ обычный логин
-      setAuthData(payload);
+      setAuthData({
+        ...payload,
+        twoFactorRequired: payload.twoFactorRequired ?? false,
+      });
       navigate("/diary");
     } catch (err: any) {
       alert(err?.response?.data?.message || t("auth.loginError"));

@@ -1,4 +1,5 @@
 import api from "./http/axiosInstance";
+import { AUTH_ENDPOINTS } from "./authRoutes";
 
 import type { 
   ApiResponse
@@ -8,8 +9,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
-  VerificationRequest,
-  VerificationConfirm,
+  RegisterResponse,
   RefreshTokenRequest
  } from "@/shared/types/auth";
 
@@ -20,22 +20,31 @@ import type {
 
 export const registerRequest = async (
   dto: RegisterRequest
-): Promise<AuthResponse> => {
-  const r = await api.post<ApiResponse<AuthResponse>>("/auth/register", dto);
+): Promise<RegisterResponse> => {
+  const r = await api.post<ApiResponse<RegisterResponse>>(
+    AUTH_ENDPOINTS.register,
+    dto
+  );
   return r.data.data;
 };
 
 export const loginRequest = async (
   dto: LoginRequest
 ): Promise<AuthResponse> => {
-  const r = await api.post<ApiResponse<AuthResponse>>("/auth/login", dto);
+  const r = await api.post<ApiResponse<AuthResponse>>(
+    AUTH_ENDPOINTS.login,
+    dto
+  );
   return r.data.data;
 };
 
 export const refreshTokenRequest = async (
   dto: RefreshTokenRequest
 ): Promise<AuthResponse> => {
-  const r = await api.post<ApiResponse<AuthResponse>>("/auth/refresh", dto);
+  const r = await api.post<ApiResponse<AuthResponse>>(
+    AUTH_ENDPOINTS.refresh,
+    dto
+  );
   return r.data.data;
 };
 

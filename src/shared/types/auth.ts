@@ -10,13 +10,17 @@ export type RegisterRequest = {
   fullName: string;
 };
 
+export type RegisterResponse = {
+  message: string;
+};
+
 export type AuthResponse = {
   accessToken: string | null;
   refreshToken: string | null;
   username: string;
   userId: number;
   role: "ADMIN" | "USER" | "PREMIUM";
-  twoFactorRequired: boolean;
+  twoFactorRequired?: boolean | null;
 };
 
 export type VerificationRequest = {
