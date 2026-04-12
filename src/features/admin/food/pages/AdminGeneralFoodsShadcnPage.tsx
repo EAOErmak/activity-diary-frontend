@@ -218,10 +218,10 @@ export default function AdminGeneralFoodsShadcnPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("food.product")}</TableHead>
-                <TableHead className="w-28 text-right">{t("food.proteins")}</TableHead>
-                <TableHead className="w-28 text-right">{t("food.fats")}</TableHead>
-                <TableHead className="w-32 text-right">{t("food.carbs")}</TableHead>
-                <TableHead className="w-36 text-right">{t("food.caloriesPerGram")}</TableHead>
+                <TableHead className="w-36 whitespace-nowrap text-right">{t("food.proteins")}</TableHead>
+                <TableHead className="w-36 whitespace-nowrap text-right">{t("food.fats")}</TableHead>
+                <TableHead className="w-40 whitespace-nowrap text-right">{t("food.carbs")}</TableHead>
+                <TableHead className="w-44 whitespace-nowrap text-right">{t("food.caloriesPerGram")}</TableHead>
                 <TableHead className="w-44 text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
