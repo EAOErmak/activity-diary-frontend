@@ -18,12 +18,15 @@ type RetriableRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18080";
+
 // ======================================================
 // BASE API (С interceptor'ами)
 // ======================================================
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18080",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -34,7 +37,7 @@ export const api = axios.create({
 // ======================================================
 
 const refreshApi = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
