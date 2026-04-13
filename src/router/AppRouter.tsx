@@ -1,16 +1,9 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import UserLayout from "@/shared/components/layout/UserLayout";
-import ProtectedRoute from "@/shared/components/layout/ProtectedRoute";
-import AdminProtectedRoute from "@/shared/components/layout/AdminProtectedRoute";
-
-import HomePage from "@/pages/HomePage";
-import LoginPage from "@/features/auth/pages/LoginPage";
-import RegisterPage from "@/features/auth/pages/RegisterPage";
 
 import DiaryListPage from "@/features/diary/pages/DiaryListPage/DiaryListPage";
 import DiaryFormPage from "@/features/diary/pages/DiaryFormPage";
-import DiaryDetailsPage from "@/features/diary/pages/DiaryDetailsPage";
 import DiaryEditPage from "@/features/diary/pages/DiaryEditPage";
 import EntryTemplatesPage from "@/features/entry-templates/pages/EntryTemplatesPage";
 import FoodPage from "@/features/food/pages/FoodPage";
@@ -36,7 +29,6 @@ import { DiaryDetailsDialog } from "@/features/diary/pages/DiaryListPage/compone
 import ProfilePage from "@/features/profile/pages/ProfilePage";
 import ProfileEditPage from "@/features/profile/pages/ProfileEditPage";
 import AdminUserCreatePage from "@/features/admin/users/pages/AdminUserCreateShadcnPage";
-import RoleProtectedRoute from "@/shared/components/layout/RoleProtectedRoute";
 
 export default function AppRouter() {
   const location = useLocation();
@@ -46,21 +38,8 @@ export default function AppRouter() {
     <>
       {/* ================= ОСНОВНЫЕ РОУТЫ ================= */}
       <Routes location={state?.background || location}>
-        {/* PUBLIC */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        {/*<Route path="/verify-register" element={<VerifyRegisterPage />} />*/}
-        {/*<Route path="/verify-login" element={<VerifyLoginPage />} />*/}
-
-        {/* USER */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <UserLayout />
-            </ProtectedRoute>
-          }
-        >
+        <Route element={<UserLayout />}>
+          <Route index element={<Navigate to="/diary" replace />} />
           <Route path="/diary" element={<DiaryListPage />} />
           <Route path="/diary/new" element={<DiaryFormPage />} />
           <Route path="/entry-templates" element={<EntryTemplatesPage />} />
@@ -74,28 +53,14 @@ export default function AppRouter() {
           <Route path="/diary/:id/edit" element={<DiaryEditPage />} />
 
           <Route path="/calendar" element={<CalendarPage />} />
-         <Route
-          path="/dashboard"
-          element={
-            <RoleProtectedRoute allowedRoles={["ADMIN", "PREMIUM"]}>
-              <DashboardPageV3 />
-            </RoleProtectedRoute>
-          }
-        />
+          <Route path="/dashboard" element={<DashboardPageV3 />} />
 
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEditPage />} />
         </Route>
 
-        {/* ADMIN */}
-        <Route
-          element={
-            <AdminProtectedRoute>
-              <AdminLayout />
-            </AdminProtectedRoute>
-          }
-        >
+        <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminOverviewPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/tags" element={<AdminTagsPage />} />

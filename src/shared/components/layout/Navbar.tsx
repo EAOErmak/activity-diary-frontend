@@ -42,7 +42,7 @@ export default function Navbar() {
 
         {/* LOGO */}
         <Link
-          to="/"
+          to="/diary"
           className="text-xl font-bold text-surfaceForeground"
         >
           Activity

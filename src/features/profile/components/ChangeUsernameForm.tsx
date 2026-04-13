@@ -34,7 +34,8 @@ export function ChangeUsernameForm({ username, onSuccess }: Props) {
         className="space-y-4"
         onSubmit={form.handleSubmit(async (data) => {
           await profileApi.changeUsername(data);
-          form.reset();
+          form.reset({ newUsername: data.newUsername });
+          onSuccess?.();
         })}
       >
         <FormField

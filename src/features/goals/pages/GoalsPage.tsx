@@ -52,7 +52,7 @@ import {
 import { cn } from "@/shared/lib/utils";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
 import type { DayGoalView, DiaryEntryGoalSummary, WeekGoalView } from "@/shared/types/goal";
-import { useAuthStore } from "@/shared/store/authStore";
+import { useCurrentUserStore } from "@/shared/store/currentUserStore";
 
 type PointerPosition = {
   x: number;
@@ -115,7 +115,7 @@ export default function GoalsPage() {
     null
   );
   const [isSubmittingEntryConfirm, setIsSubmittingEntryConfirm] = useState(false);
-  const userId = useAuthStore((state) => state.userId);
+  const currentUserId = useCurrentUserStore((state) => state.user?.id ?? null);
   const viewParam = searchParams.get("view");
   const activeView: GoalsWorkspaceView = isGoalsWorkspaceView(viewParam)
     ? viewParam
@@ -758,34 +758,34 @@ export default function GoalsPage() {
     async (entry: DiaryEntryGoalSummary, entryName: string) => {
       if (eraserMode === "eraseOn") return;
       if (!entry?.id) return;
-      if (!userId) {
-        toast.error("Unable to confirm entry goal: user is not authenticated");
+      if (!currentUserId) {
+        toast.error("Unable to confirm entry goal: current user is unavailable");
         return;
       }
       setCreatingDate(dailyDateKey);
 
       try {
-        await goalApi.confirmEntryGoalSimple(entry.id, userId);
+        await goalApi.confirmEntryGoalSimple(entry.id, currentUserId);
         toast.success(`Entry goal "${entryName}" confirmed`);
         await reloadAll();
       } finally {
         setCreatingDate(null);
       }
     },
-    [dailyDateKey, eraserMode, reloadAll, userId]
+    [currentUserId, dailyDateKey, eraserMode, reloadAll]
   );
 
   const handleSubmitEntryGoalConfirm = useCallback(
     async (goalId: number, payload: DiaryEntryCreate) => {
-      if (!userId) {
-        toast.error("Unable to confirm entry goal: user is not authenticated");
-        throw new Error("User is not authenticated");
+      if (!currentUserId) {
+        toast.error("Unable to confirm entry goal: current user is unavailable");
+        throw new Error("Current user is unavailable");
       }
       setCreatingDate(dailyDateKey);
       setIsSubmittingEntryConfirm(true);
 
       try {
-        await goalApi.confirmEntryGoal(goalId, userId, payload);
+        await goalApi.confirmEntryGoal(goalId, currentUserId, payload);
         const entryLabel = entryConfirmDialog?.entryName ?? String(goalId);
         toast.success(`Entry goal "${entryLabel}" confirmed`);
         await reloadAll();
@@ -795,7 +795,7 @@ export default function GoalsPage() {
         setCreatingDate(null);
       }
     },
-    [dailyDateKey, entryConfirmDialog?.entryName, reloadAll, userId]
+    [currentUserId, dailyDateKey, entryConfirmDialog?.entryName, reloadAll]
   );
 
   const applyGoalToDate = useCallback(

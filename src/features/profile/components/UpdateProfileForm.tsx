@@ -34,6 +34,7 @@ export function UpdateProfileForm({ fullName, onSuccess }: Props) {
         className="space-y-4"
         onSubmit={form.handleSubmit(async (data) => {
           await profileApi.updateProfile(data);
+          form.reset({ fullName: data.fullName });
           onSuccess?.();
         })}
       >

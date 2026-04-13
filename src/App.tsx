@@ -2,20 +2,45 @@ import { QueryProvider } from "./providers/QueryProvider";
 import { LanguageProvider } from "./providers/LanguageProvider";
 import { ThemeProvider } from "./theme-provider";
 import AppRouter from "./router/AppRouter";
-import { useAppBootstrap } from "./shared/hooks/useAppBootstrap";
-import { useAuthTokenRefresh } from "./shared/hooks/useAuthTokenRefresh";
+import { Button } from "./shared/components/ui/button";
 import { Toaster } from "./shared/components/ui/sonner";
+import { useAppBootstrap } from "./shared/hooks/useAppBootstrap";
+
+function AppBootstrapFallback({
+  message,
+}: {
+  message: string;
+}) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 text-center shadow-sm">
+        <h1 className="text-xl font-semibold">Activity Diary</h1>
+        <p className="mt-3 text-sm text-mutedForeground">{message}</p>
+        <Button className="mt-6 w-full" onClick={() => window.location.reload()}>
+          Retry startup
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
-  useAppBootstrap();
-  useAuthTokenRefresh();
+  const { status, error } = useAppBootstrap();
 
   return (
     <LanguageProvider>
       <ThemeProvider>
         <QueryProvider>
           <div className="min-h-screen">
-            <AppRouter />
+            {status === "loading" ? (
+              <AppBootstrapFallback message="Loading the local desktop workspace..." />
+            ) : status === "error" ? (
+              <AppBootstrapFallback
+                message={error ?? "The desktop app could not load the local profile."}
+              />
+            ) : (
+              <AppRouter />
+            )}
           </div>
           <Toaster />
         </QueryProvider>

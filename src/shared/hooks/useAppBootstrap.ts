@@ -1,12 +1,17 @@
-import { useEffect } from "react";
-import { useTagRepository } from "@/shared/repository/tagRepository";
-import { useDiaryRepository } from "@/shared/repository/diaryRepository";
-import { useDictionaryRepository } from "@/shared/repository/dictionaryRepository";
-import { useAuthStore } from "@/shared/store/authStore";
+import { useEffect, useState } from "react";
+
 import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
+import { useDictionaryRepository } from "@/shared/repository/dictionaryRepository";
+import { useDiaryRepository } from "@/shared/repository/diaryRepository";
+import { useTagRepository } from "@/shared/repository/tagRepository";
+import { useCurrentUserStore } from "@/shared/store/currentUserStore";
+
+type AppBootstrapStatus = "loading" | "ready" | "error";
 
 export function useAppBootstrap() {
-  const role = useAuthStore((state) => state.role);
+  const loadCurrentUser = useCurrentUserStore((state) => state.loadCurrentUser);
+  const currentUserError = useCurrentUserStore((state) => state.error);
+  const [status, setStatus] = useState<AppBootstrapStatus>("loading");
 
   useEffect(() => {
     useTagRepository.getState().hydrate();
@@ -15,16 +20,39 @@ export function useAppBootstrap() {
   }, []);
 
   useEffect(() => {
-    if (!role) return;
+    let isMounted = true;
 
     const boot = async () => {
       try {
-        await refreshDictionaryCache();
-      } catch (e) {
-        console.error("Failed to load dictionaries", e);
+        await loadCurrentUser();
+
+        try {
+          await refreshDictionaryCache();
+        } catch (error) {
+          console.error("Failed to refresh dictionaries during desktop bootstrap", error);
+        }
+
+        if (isMounted) {
+          setStatus("ready");
+        }
+      } catch (error) {
+        console.error("Failed to bootstrap the desktop app", error);
+
+        if (isMounted) {
+          setStatus("error");
+        }
       }
     };
 
     void boot();
-  }, [role]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [loadCurrentUser]);
+
+  return {
+    status,
+    error: currentUserError,
+  };
 }

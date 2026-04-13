@@ -37,7 +37,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
-import { useAuthStore } from "@/shared/store/authStore";
+import { useCurrentUserStore } from "@/shared/store/currentUserStore";
 import type { AdminUserDto } from "@/shared/types/adminUser";
 
 type RoleFilter = "ALL" | "ADMIN" | "USER" | "PREMIUM";
@@ -77,7 +77,7 @@ export default function AdminUsersShadcnPage() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
-  const { userId: currentUserId } = useAuthStore();
+  const currentUserId = useCurrentUserStore((state) => state.user?.id ?? null);
 
   useEffect(() => {
     void load();

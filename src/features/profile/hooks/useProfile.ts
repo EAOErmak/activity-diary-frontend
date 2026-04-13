@@ -1,21 +1,16 @@
-import { useEffect, useState } from "react";
-import type { UserDto } from "@/shared/types/user";
-import { getCurrentUser } from "@/api/userApi";
+import { useCurrentUserStore } from "@/shared/store/currentUserStore";
 
 export function useProfile() {
-  const [user, setUser] = useState<UserDto | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<"profile.loadError" | null>(null);
+  const user = useCurrentUserStore((state) => state.user);
+  const isLoading = useCurrentUserStore((state) => state.isLoading);
+  const isReady = useCurrentUserStore((state) => state.isReady);
+  const error = useCurrentUserStore((state) => state.error);
+  const reloadProfile = useCurrentUserStore((state) => state.loadCurrentUser);
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-
-    getCurrentUser()
-      .then(setUser)
-      .catch(() => setError("profile.loadError"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { user, loading, error };
+  return {
+    user,
+    loading: !isReady && isLoading,
+    error: error ? ("profile.loadError" as const) : null,
+    reloadProfile,
+  };
 }

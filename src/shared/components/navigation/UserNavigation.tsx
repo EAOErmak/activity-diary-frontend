@@ -13,7 +13,6 @@ import {
   Settings,
   ShieldCheck,
   UserCircle2,
-  LogOut,
   UtensilsCrossed,
 } from "lucide-react";
 
@@ -22,7 +21,7 @@ import userImgWhite from "@/assets/AD_white.svg";
 import adminImgBlack from "@/assets/ADP_black.svg";
 import adminImgWhite from "@/assets/ADP_white.svg";
 import { useTranslation } from "react-i18next";
-import { useAuthStore } from "@/shared/store/authStore";
+import { useCurrentUserStore } from "@/shared/store/currentUserStore";
 import { useTheme } from "@/theme-provider";
 
 type Props = {
@@ -31,7 +30,8 @@ type Props = {
 
 export default function UserNavigation({ onNavigate }: Props) {
   const { t } = useTranslation();
-  const { role, isAuthenticated, logout } = useAuthStore();
+  const currentUser = useCurrentUserStore((state) => state.user);
+  const role = currentUser?.role ?? null;
   const { theme } = useTheme();
   const nav = useNavigate();
   const headerImage =
@@ -102,13 +102,20 @@ export default function UserNavigation({ onNavigate }: Props) {
         <div className="absolute inset-0 bg-gradient-to-br from-surfaceMuted via-surface to-surface" />
         <div className="relative space-y-3.5">
           <SheetTitle className="sr-only">{t("navigation.quickAccess")}</SheetTitle>
-          <div className="relative -translate-y-2 mb-[-0.75rem] w-fit rounded-[1.75rem] border border-border/70 bg-surface/90 p-3 shadow-sm backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={() => {
+              nav("/diary");
+              onNavigate?.();
+            }}
+            className="relative -translate-y-2 mb-[-0.75rem] w-fit rounded-[1.75rem] border border-border/70 bg-surface/90 p-3 shadow-sm backdrop-blur-sm"
+          >
             <img
               src={headerImage}
               className="h-20 w-auto max-w-[15rem] object-contain"
               alt={t("common.logoAlt")}
             />
-          </div>
+          </button>
           <div className="space-y-2">
             <div className="h-px bg-border/70" aria-hidden="true" />
             <SheetDescription className="text-left text-[0.72rem] font-medium uppercase tracking-[0.24em] text-mutedForeground/90">
@@ -168,24 +175,6 @@ export default function UserNavigation({ onNavigate }: Props) {
               <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
               {t("navigation.adminPanel")}
             </NavLink>
-          </>
-        )}
-
-        {isAuthenticated && (
-          <>
-            <div className="my-2 h-px bg-border/70" />
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                nav("/", { replace: true });
-                onNavigate?.();
-              }}
-              className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-base transition-colors text-event-loseText hover:bg-surfaceMuted"
-            >
-              <LogOut className="h-5 w-5 shrink-0" />
-              {t("navigation.logout")}
-            </button>
           </>
         )}
         </div>

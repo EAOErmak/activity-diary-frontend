@@ -12,7 +12,7 @@ import { useProfile } from "../hooks/useProfile";
 export default function ProfileEditPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, loading, error } = useProfile();
+  const { user, loading, error, reloadProfile } = useProfile();
 
   if (loading) {
     return (
@@ -48,6 +48,7 @@ export default function ProfileEditPage() {
           {/* Full name */}
           <UpdateProfileForm
             fullName={user.fullName}
+            onSuccess={reloadProfile}
           />
 
           <Separator />
@@ -55,6 +56,7 @@ export default function ProfileEditPage() {
           {/* Username */}
           <ChangeUsernameForm 
              username={user.username}
+             onSuccess={reloadProfile}
           />
 
           <Separator />
