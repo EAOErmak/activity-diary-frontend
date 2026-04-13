@@ -19,7 +19,7 @@ export default function DiaryEditPage() {
 
   const [values, setValues] = useState<DiaryEntryFormValues | null>(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<EntryStatus>("SCHEDULED");
+  const [status, setStatus] = useState<EntryStatus>("PLANNED");
 
   useEffect(() => {
     if (!id) return;

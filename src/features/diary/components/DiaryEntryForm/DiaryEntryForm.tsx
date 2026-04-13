@@ -90,7 +90,7 @@ export default function DiaryEntryForm(props: Props) {
         : {
             description: "",
             mood: 3,
-            status: "SCHEDULED",
+            status: "PLANNED",
             whenStarted: "",
             whenEnded: "",
             metrics: [],

@@ -220,7 +220,6 @@ const enBase = {
       win: "Success",
       lose: "Failed",
       activeShort: "Active",
-      scheduled: "Scheduled",
     },
   },
   calendar: {

@@ -218,7 +218,6 @@ const ruBase = {
       win: "Успех",
       lose: "Провал",
       activeShort: "Активно",
-      scheduled: "Запланировано",
     },
   },
   calendar: {

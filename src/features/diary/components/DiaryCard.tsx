@@ -7,7 +7,7 @@ export function DiaryCard({ entry }: any) {
       ? "text-green-400"
       : entry.status === "FAILED"
       ? "text-rose-400"
-      : entry.status === "SCHEDULED" || entry.status === "PLANNED"
+      : entry.status === "PLANNED" || entry.status === "PLANNED"
       ? "text-yellow-400"
       : "text-blue-400";
 

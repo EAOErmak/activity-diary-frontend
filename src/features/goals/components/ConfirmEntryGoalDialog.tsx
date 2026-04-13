@@ -36,7 +36,7 @@ type Props = {
 const EMPTY_FORM_VALUES: DiaryEntryFormValues = {
   description: "",
   mood: 3,
-  status: "SCHEDULED",
+  status: "PLANNED",
   whenStarted: "",
   whenEnded: "",
   metrics: [],

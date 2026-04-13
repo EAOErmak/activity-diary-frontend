@@ -49,12 +49,12 @@ export function DiaryStatusSection() {
               <Button
                 type="button"
                 size="sm"
-                variant={status === "SCHEDULED" ? "form" : "surface"}
-                aria-pressed={status === "SCHEDULED"}
-                onClick={() => setValue("status", "SCHEDULED")}
+                variant={status === "PLANNED" ? "form" : "surface"}
+                aria-pressed={status === "PLANNED"}
+                onClick={() => setValue("status", "PLANNED")}
               >
                 <Clock3 className="mr-2 h-4 w-4" />
-                {t("diary.status.scheduled")}
+                {t("diary.status.planned")}
               </Button>
             </div>
           </FormControl>
