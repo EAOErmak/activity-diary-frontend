@@ -51,6 +51,7 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
     onScroll,
     onSelect,
     spellCheck = false,
+    style,
     tags,
     value,
     ...props
@@ -131,8 +132,19 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
     Boolean(suggestionKey) && suggestionKey !== dismissedSuggestionKey;
 
   const cursorIndex = selection.start ?? value.length;
-  const textBeforeCursor = value.slice(0, cursorIndex);
+  const textBeforeActiveTag = activeTag
+    ? value.slice(0, activeTag.hashIndex)
+    : value.slice(0, cursorIndex);
+  const typedTagPrefix = activeTag
+    ? value.slice(activeTag.hashIndex, activeTag.cursorIndex)
+    : "";
   const textAfterCursor = value.slice(cursorIndex);
+  const textPresentationClassName = "px-5 py-4 text-base font-normal leading-6";
+  const completionStyle: React.CSSProperties = {
+    color: "hsl(var(--muted-foreground))",
+    opacity: 0.45,
+    fontWeight: 400,
+  };
 
   const acceptSuggestion = React.useCallback(() => {
     if (!activeTag || !completion || disabled) {
@@ -237,7 +249,10 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl px-5 py-4 text-base text-foreground"
+        className={cn(
+          "pointer-events-none absolute inset-0 overflow-hidden rounded-2xl text-foreground",
+          textPresentationClassName
+        )}
       >
         <div
           className="min-h-full whitespace-pre-wrap break-words"
@@ -245,11 +260,21 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
             transform: `translate(${-scrollPosition.left}px, ${-scrollPosition.top}px)`,
           }}
         >
-          <span>{textBeforeCursor}</span>
           {isSuggestionVisible ? (
-            <span className="text-muted-foreground">{completion}</span>
-          ) : null}
-          <span>{textAfterCursor}</span>
+            <>
+              <span>{textBeforeActiveTag}</span>
+              <span className="text-foreground">{typedTagPrefix}</span>
+              <span className="font-normal" style={completionStyle}>
+                {completion}
+              </span>
+              <span>{textAfterCursor}</span>
+            </>
+          ) : (
+            <>
+              <span>{value.slice(0, cursorIndex)}</span>
+              <span>{textAfterCursor}</span>
+            </>
+          )}
           <span>{"\u200b"}</span>
         </div>
       </div>
@@ -266,9 +291,8 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
           resize-none
           rounded-2xl
           bg-transparent
-          px-5
-          py-4
-          text-base
+          whitespace-pre-wrap
+          break-words
           text-transparent
           caret-foreground
           placeholder:text-muted-foreground
@@ -277,10 +301,16 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
           focus:ring-ring
           selection:bg-foreground/15
           `,
+          textPresentationClassName,
           className
         )}
         disabled={disabled}
         spellCheck={spellCheck}
+        style={{
+          ...style,
+          color: "transparent",
+          WebkitTextFillColor: "transparent",
+        }}
         value={value}
         onBlur={onBlur}
         onChange={handleChange}
