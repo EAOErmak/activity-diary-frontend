@@ -7,12 +7,13 @@ import type {
   DiaryEntryView,
 } from "@/shared/types/diary";
 import type { ApiResponse } from "@/shared/types/api";
+import type { UiStatus } from "@/shared/lib/uiStatus";
 
 // ==============================
 // GET MY ENTRIES (PAGE)
 // ==============================
 type DiaryMineFilters = {
-  uiStatus?: string;
+  uiStatus?: UiStatus;
   now?: string;
   tags?: string[];
   from?: string;

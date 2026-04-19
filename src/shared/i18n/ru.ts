@@ -217,6 +217,7 @@ const ruBase = {
     status: {
       planned: "Запланировано",
       active: "В процессе",
+      overdue: "Просрочено",
       finished: "Завершено",
       failed: "Провал",
       win: "Успех",

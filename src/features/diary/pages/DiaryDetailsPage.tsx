@@ -8,9 +8,10 @@ import { Edit3, Calendar, Activity, Trash2, X } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 
 import type { DiaryEntry } from "@/shared/types/diary";
-import { getUiStatus, STATUS_STYLES, type UiStatus } from "@/shared/lib/uiStatus";
+import { getUiStatus, STATUS_STYLES } from "@/shared/lib/uiStatus";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
+import { getStatusLabel } from "@/features/diary/pages/DiaryListPage/statusConfig";
 
 export default function DiaryDetailsPage() {
   const { t } = useTranslation();
@@ -87,12 +88,6 @@ export default function DiaryDetailsPage() {
   });
   const canEdit = entry.status !== "DELETED";
   const title = entry.firstTag ?? t("diary.entryTitleFallback");
-  const uiStatusLabels: Record<UiStatus, string> = {
-    PLANNED: t("diary.status.planned"),
-    ACTIVE: t("diary.status.activeShort"),
-    FINISHED: t("diary.status.finished"),
-    FAILED: t("diary.status.failed"),
-  };
 
   const readCssVar = (name: string) => {
     if (typeof window === "undefined") return "";
@@ -240,7 +235,7 @@ export default function DiaryDetailsPage() {
                 STATUS_STYLES[uiStatus]
               }`}
             >
-              {uiStatusLabels[uiStatus]}
+              {getStatusLabel(uiStatus)}
             </span>
           </div>
         </div>
@@ -300,7 +295,7 @@ export default function DiaryDetailsPage() {
         </div>
 
         <div className="flex items-center justify-center gap-2">
-          {uiStatus === "PLANNED" && (
+          {(uiStatus === "PLANNED" || uiStatus === "OVERDUE") && (
             <Button
               onClick={handleDelete}
               variant="primary"

@@ -18,6 +18,7 @@ export function DiaryTablePlaceholderRow() {
   const placeholderStatusLabel = [
     t("diary.status.active"),
     t("diary.status.planned"),
+    t("diary.status.overdue"),
     t("diary.status.finished"),
     t("diary.status.failed"),
   ].reduce((longest, current) => (current.length > longest.length ? current : longest));

@@ -1,5 +1,9 @@
 ﻿import { useEffect } from "react";
-import type { DisplayStatus } from "@/features/diary/pages/DiaryListPage/statusConfig";
+import {
+  DISPLAY_STATUSES,
+  getStatusLabel,
+  type DisplayStatus,
+} from "@/features/diary/pages/DiaryListPage/statusConfig";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -68,10 +72,11 @@ export function DiaryListFilters(props: Props) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("diary.allStatuses")}</SelectItem>
-              <SelectItem value="ACTIVE">{t("diary.status.active")}</SelectItem>
-              <SelectItem value="PLANNED">{t("diary.status.planned")}</SelectItem>
-              <SelectItem value="FINISHED">{t("diary.status.finished")}</SelectItem>
-              <SelectItem value="FAILED">{t("diary.status.failed")}</SelectItem>
+              {DISPLAY_STATUSES.map((displayStatus) => (
+                <SelectItem key={displayStatus} value={displayStatus}>
+                  {getStatusLabel(displayStatus)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

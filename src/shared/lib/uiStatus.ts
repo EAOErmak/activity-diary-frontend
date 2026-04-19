@@ -1,6 +1,6 @@
 import type { DiaryEntryView } from "@/shared/types/diary";
 
-export type UiStatus = "PLANNED" | "ACTIVE" | "FINISHED" | "FAILED";
+export type UiStatus = "PLANNED" | "ACTIVE" | "OVERDUE" | "FINISHED" | "FAILED";
 
 export function getUiStatus(
   entry: DiaryEntryView,
@@ -10,6 +10,8 @@ export function getUiStatus(
 
   if (status === "FINISHED") return "FINISHED";
   if (status === "FAILED" || status === "DELETED") return "FAILED";
+  if (status === "ACTIVE") return "ACTIVE";
+  if (status === "OVERDUE") return "OVERDUE";
 
   if (!whenStarted || !whenEnded) return "PLANNED";
 
@@ -19,7 +21,7 @@ export function getUiStatus(
   if (now < start) return "PLANNED";
   if (now >= start && now <= end) return "ACTIVE";
 
-  return "FAILED";
+  return "OVERDUE";
 }
 
 export function getLeftBarColor(status: UiStatus) {
@@ -30,6 +32,7 @@ export function getLeftBarColor(status: UiStatus) {
 export const STATUS_LEFT_BAR: Record<UiStatus, string> = {
   PLANNED: "bg-plannedBorder",
   ACTIVE: "bg-activeBorder",
+  OVERDUE: "bg-overdueBorder",
   FINISHED: "bg-winBorder",
   FAILED: "bg-loseBorder",
 };
@@ -37,6 +40,7 @@ export const STATUS_LEFT_BAR: Record<UiStatus, string> = {
 export const STATUS_STYLES: Record<UiStatus, string> = {
   PLANNED: "bg-planned text-plannedText",
   ACTIVE: "bg-active text-activeText",
+  OVERDUE: "bg-overdue text-overdueText",
   FINISHED: "bg-win text-winText",
   FAILED: "bg-lose text-loseText",
 };

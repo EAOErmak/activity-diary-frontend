@@ -16,6 +16,7 @@ import {
   formatDailyTime,
   getCompletionColor,
   getDiaryEntrySquareClass,
+  getDiaryEntryStatusLabel,
   normalizeScore,
 } from "@/features/goals/lib/goalsUtils";
 
@@ -198,6 +199,7 @@ export function DailyViewCard({
                     const startedLabel = entry.whenStarted ? formatDailyTime(new Date(entry.whenStarted)) : "--:--";
                     const entryName = entry.name ?? entry.firstTag ?? `Entry ${index + 1}`;
                     const entryCompleteness = normalizeScore(entry.completeness);
+                    const entryStatusLabel = getDiaryEntryStatusLabel(entry.status);
                     const completionColor = getCompletionColor(entryCompleteness);
                     const isEntryConfirming = entryLongPress.activeId === entryHoldId;
                     const entryDisplayedProgress = isEntryConfirming
@@ -205,7 +207,7 @@ export function DailyViewCard({
                         ((100 - entryCompleteness) * entryLongPress.progress) / 100
                       : entryCompleteness;
                     const entryTitle = entry.status
-                      ? `${entryName} - ${startedLabel} - ${entry.status} - ${entryCompleteness}%`
+                      ? `${entryName} - ${startedLabel} - ${entryStatusLabel} - ${entryCompleteness}%`
                       : `${entryName} - ${startedLabel} - ${entryCompleteness}%`;
 
                     return (
@@ -267,7 +269,7 @@ export function DailyViewCard({
                             variant="outline"
                             className="max-w-[72px] truncate rounded-full border-white/15 bg-black/10 px-1.5 py-0 text-[9px] uppercase text-current backdrop-blur-sm"
                           >
-                            {entry.status ?? "Pending"}
+                            {entryStatusLabel}
                           </Badge>
                           <span className="text-[10px] font-medium opacity-80">
                             {startedLabel}

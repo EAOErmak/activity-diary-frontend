@@ -5,16 +5,19 @@
 
     --event-planned-bg: 221 83% 20% / var(--event-opacity);
     --event-active-bg: 270 95% 25% / var(--event-opacity);
+    --event-overdue-bg: 28 88% 24% / var(--event-opacity);
     --event-win-bg: 142 71% 22% / var(--event-opacity);
     --event-lose-bg: 0 84% 25% / var(--event-opacity);
 
     --event-planned-text: 221 83% 75%;
     --event-active-text: 270 95% 80%;
+    --event-overdue-text: 28 96% 76%;
     --event-win-text: 142 71% 75%;
     --event-lose-text: 0 84% 80%;
 
     --event-planned-border: 221 83% 45%;
     --event-active-border: 270 95% 50%;
+    --event-overdue-border: 28 90% 48%;
     --event-win-border: 142 71% 45%;
     --event-lose-border: 0 84% 50%;
   }

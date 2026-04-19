@@ -91,8 +91,29 @@ export const getGoalKindBadgeClass = (kind: GoalKind): string => {
 export const getDiaryEntrySquareClass = (status?: string | null): string => {
   if (status === "FINISHED") return "border-emerald-400/70 bg-emerald-500/20 text-emerald-100";
   if (status === "FAILED") return "border-rose-400/70 bg-rose-500/20 text-rose-100";
+  if (status === "OVERDUE") return "border-orange-400/70 bg-orange-500/20 text-orange-100";
+  if (status === "ACTIVE") return "border-sky-400/70 bg-sky-500/20 text-sky-100";
   if (status === "PLANNED") return "border-amber-400/70 bg-amber-500/20 text-amber-100";
   return "border-border bg-surfaceMuted text-muted-foreground";
+};
+
+export const getDiaryEntryStatusBadgeClass = (status?: string | null): string => {
+  if (status === "FINISHED") return "border-emerald-400/40 bg-emerald-500/10 text-emerald-600";
+  if (status === "FAILED") return "border-rose-400/40 bg-rose-500/10 text-rose-600";
+  if (status === "OVERDUE") return "border-orange-400/40 bg-orange-500/10 text-orange-600";
+  if (status === "ACTIVE") return "border-sky-400/40 bg-sky-500/10 text-sky-600";
+  if (status === "PLANNED") return "border-amber-400/40 bg-amber-500/10 text-amber-600";
+  return "border-border bg-surface text-muted-foreground";
+};
+
+export const getDiaryEntryStatusLabel = (status?: string | null): string => {
+  if (status === "FINISHED") return "FINISHED";
+  if (status === "FAILED") return "FAILED";
+  if (status === "OVERDUE") return "OVERDUE";
+  if (status === "ACTIVE") return "ACTIVE";
+  if (status === "PLANNED") return "PLANNED";
+  if (status === "DELETED") return "DELETED";
+  return "PENDING";
 };
 
 export const getCompletionColor = (score: number): string => {

@@ -219,6 +219,7 @@ const enBase = {
     status: {
       planned: "Planned",
       active: "In progress",
+      overdue: "Overdue",
       finished: "Completed",
       failed: "Failed",
       win: "Success",

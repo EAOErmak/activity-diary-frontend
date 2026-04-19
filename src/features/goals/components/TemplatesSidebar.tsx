@@ -37,7 +37,12 @@ import type {
   TemplateFilterKind,
   TemplateItem,
 } from "@/features/goals/lib/goalsTypes";
-import { getGoalKindBadgeClass, getGoalKindLabel } from "@/features/goals/lib/goalsUtils";
+import {
+  getDiaryEntryStatusBadgeClass,
+  getDiaryEntryStatusLabel,
+  getGoalKindBadgeClass,
+  getGoalKindLabel,
+} from "@/features/goals/lib/goalsUtils";
 import type { DiaryEntryGoalDetail, DiaryEntryGoalSummary } from "@/shared/types/goal";
 
 type Props = {
@@ -131,13 +136,6 @@ const getTemplateHint = (kind: TemplateItem["kind"]): string => {
   return "Fill a whole week";
 };
 
-const getEntryStatusClass = (entry: DiaryEntryGoalSummary | null): string => {
-  if (!entry) return "border-border bg-surface text-muted-foreground";
-  return isPendingEntryGoal(entry)
-    ? "border-amber-400/40 bg-amber-500/10 text-amber-600"
-    : "border-emerald-400/40 bg-emerald-500/10 text-emerald-600";
-};
-
 const getEntryName = (
   entry: DiaryEntryGoalSummary | null,
   detail?: DiaryEntryGoalDetail | null
@@ -225,8 +223,10 @@ export function TemplatesSidebar({
     };
   }, [panel, selectedEntry?.id]);
 
-  const selectedEntryStatusLabel = selectedEntry?.status ?? (selectedEntry ? "PENDING" : "--");
-  const selectedEntryStatusClass = getEntryStatusClass(selectedEntry);
+  const selectedEntryStatusLabel = selectedEntry
+    ? getDiaryEntryStatusLabel(selectedEntry.status)
+    : "--";
+  const selectedEntryStatusClass = getDiaryEntryStatusBadgeClass(selectedEntry?.status);
   const selectedEntryName = getEntryName(selectedEntry, selectedEntryDetail);
   const selectedEntryCompleteness = Math.round(
     selectedEntryDetail?.completeness ?? selectedEntry?.completeness ?? 0

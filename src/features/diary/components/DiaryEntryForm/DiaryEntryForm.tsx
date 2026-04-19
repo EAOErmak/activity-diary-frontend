@@ -17,6 +17,7 @@ import type {
   DiaryEntryCreate,
   DiaryEntryUpdate,
   EntryStatus,
+  ManualEntryStatus,
 } from "@/shared/types/diary";
 import type { MetricFormValue } from "@/shared/types/metricForm";
 
@@ -30,6 +31,12 @@ import {
 import { useTranslation } from "react-i18next";
 
 void React;
+
+const MANUAL_EDIT_STATUSES = new Set<ManualEntryStatus>([
+  "FAILED",
+  "FINISHED",
+  "PLANNED",
+]);
 
 /* ==============================
    TYPES
@@ -130,12 +137,17 @@ export default function DiaryEntryForm(props: Props) {
               }
 
               if (mode === "edit") {
+                const statusChanged = values.status !== props.initialValues.status;
+                const nextStatus = statusChanged && MANUAL_EDIT_STATUSES.has(values.status as ManualEntryStatus)
+                  ? values.status
+                  : undefined;
+
                 return onSubmit({
                   ...(values.whenStarted ? { whenStarted: values.whenStarted } : {}),
                   ...(values.whenEnded ? { whenEnded: values.whenEnded } : {}),
                   ...(values.mood !== undefined ? { mood: values.mood } : {}),
                   ...(values.description ? { description: values.description } : {}),
-                  status: values.status,
+                  ...(nextStatus ? { status: nextStatus } : {}),
 
                   metrics: values.metrics.map(m => ({
                     // react-hook-form field array adds a string id for keys;
