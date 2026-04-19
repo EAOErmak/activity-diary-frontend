@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
 
 export type ChartConfig = Record<
@@ -33,14 +34,85 @@ type ChartContainerProps = React.ComponentProps<"div"> & {
   children: React.ReactElement;
 };
 
+type ChartDimensions = {
+  width: number;
+  height: number;
+};
+
+function hasValidChartDimensions(dimensions: ChartDimensions | null) {
+  return !!dimensions && dimensions.width > 0 && dimensions.height > 0;
+}
+
 const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
   ({ className, config, children, ...props }, ref) => {
+    const [containerNode, setContainerNode] = React.useState<HTMLDivElement | null>(
+      null
+    );
+    const [dimensions, setDimensions] = React.useState<ChartDimensions | null>(
+      null
+    );
+
+    const setRefs = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        setContainerNode(node);
+
+        if (typeof ref === "function") {
+          ref(node);
+          return;
+        }
+
+        if (ref) {
+          ref.current = node;
+        }
+      },
+      [ref]
+    );
+
+    React.useLayoutEffect(() => {
+      if (!containerNode) {
+        setDimensions(null);
+        return;
+      }
+
+      const updateDimensions = () => {
+        const nextDimensions = {
+          width: Math.round(containerNode.clientWidth),
+          height: Math.round(containerNode.clientHeight),
+        };
+
+        setDimensions((currentDimensions) => {
+          if (
+            currentDimensions?.width === nextDimensions.width &&
+            currentDimensions?.height === nextDimensions.height
+          ) {
+            return currentDimensions;
+          }
+
+          return nextDimensions;
+        });
+      };
+
+      updateDimensions();
+
+      const resizeObserver = new ResizeObserver(() => {
+        updateDimensions();
+      });
+
+      resizeObserver.observe(containerNode);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }, [containerNode]);
+
+    const isChartReady = hasValidChartDimensions(dimensions);
+
     return (
       <ChartContext.Provider value={{ config }}>
         <div
-          ref={ref}
+          ref={setRefs}
           className={cn(
-            "h-[320px] w-full text-xs",
+            "relative h-[320px] min-h-[320px] min-w-0 w-full overflow-hidden text-xs",
             "[&_.recharts-cartesian-axis-tick_text]:fill-mutedForeground",
             "[&_.recharts-cartesian-grid_line]:stroke-border/60",
             "[&_.recharts-curve.recharts-tooltip-cursor]:stroke-border",
@@ -49,9 +121,18 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
           )}
           {...props}
         >
-          <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
-            {children}
-          </RechartsPrimitive.ResponsiveContainer>
+          {isChartReady && dimensions ? (
+            <RechartsPrimitive.ResponsiveContainer
+              width={dimensions.width}
+              height={dimensions.height}
+            >
+              {children}
+            </RechartsPrimitive.ResponsiveContainer>
+          ) : (
+            <div className="h-full w-full p-3" aria-hidden="true">
+              <Skeleton className="h-full w-full rounded-[inherit]" />
+            </div>
+          )}
         </div>
       </ChartContext.Provider>
     );

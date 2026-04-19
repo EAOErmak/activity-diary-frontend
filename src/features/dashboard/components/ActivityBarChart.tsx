@@ -179,7 +179,7 @@ export default function ActivityBarChart({ data, tagName }: Props) {
 
   if (!chartPoints.length) {
     return (
-      <Card>
+      <Card className="min-w-0">
         <CardContent className="pt-6 text-sm text-mutedForeground">
           {t("dashboard.noData")}
         </CardContent>
@@ -188,15 +188,15 @@ export default function ActivityBarChart({ data, tagName }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
         <CardTitle>{data.title ?? getChartTypeLabel(data.chartType)}</CardTitle>
         {tagName ? <CardDescription>{tagName}</CardDescription> : null}
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="min-w-0 space-y-4">
 
-        <div className="pb-2">
+        <div className="min-w-0 pb-2">
           <ChartContainer
             config={chartConfig}
             className={chartHeightClass}

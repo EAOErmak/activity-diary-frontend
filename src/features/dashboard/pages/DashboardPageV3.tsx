@@ -223,7 +223,7 @@ export default function DashboardPageV3() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto min-w-0 max-w-6xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold">{t("dashboard.title")}</h1>
         </div>
@@ -288,7 +288,11 @@ export default function DashboardPageV3() {
           !isError &&
           selectedTagId !== null &&
           chartType !== null &&
-          data && <ActivityBarChart data={data} tagName={selectedTagName} />}
+          data && (
+            <div className="min-w-0">
+              <ActivityBarChart data={data} tagName={selectedTagName} />
+            </div>
+          )}
       </div>
     </div>
   );
