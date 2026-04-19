@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 
+import { bootstrap, session } from "@/platform";
 import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
 import { useDictionaryRepository } from "@/shared/repository/dictionaryRepository";
 import { useDiaryRepository } from "@/shared/repository/diaryRepository";
@@ -22,26 +24,48 @@ export function useAppBootstrap() {
   useEffect(() => {
     let isMounted = true;
 
+    const markReady = () => {
+      if (isMounted) {
+        setStatus("ready");
+      }
+    };
+
+    const markError = () => {
+      if (isMounted) {
+        setStatus("error");
+      }
+    };
+
     const boot = async () => {
+      if (!session.getAccessToken()) {
+        markReady();
+        return;
+      }
+
       try {
         await loadCurrentUser();
-
-        try {
-          await refreshDictionaryCache();
-        } catch (error) {
-          console.error("Failed to refresh dictionaries during desktop bootstrap", error);
-        }
-
-        if (isMounted) {
-          setStatus("ready");
-        }
       } catch (error) {
-        console.error("Failed to bootstrap the desktop app", error);
-
-        if (isMounted) {
-          setStatus("error");
+        if (
+          axios.isAxiosError(error) &&
+          (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+          session.clearAuth();
+          markReady();
+          return;
         }
+
+        bootstrap.logStartupError(error);
+        markError();
+        return;
       }
+
+      try {
+        await refreshDictionaryCache();
+      } catch (error) {
+        bootstrap.logRefreshCacheError(error);
+      }
+
+      markReady();
     };
 
     void boot();

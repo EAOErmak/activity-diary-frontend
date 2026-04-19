@@ -1,6 +1,8 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { toast } from "sonner";
 import i18n from "@/shared/i18n/config";
+import { session } from "@/platform";
+import { isAuthEndpoint } from "@/api/authRoutes";
 
 function buildApiBaseUrl(baseUrl: string) {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
@@ -16,20 +18,12 @@ const API_BASE_URL = buildApiBaseUrl(
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18080"
 );
 
-// ======================================================
-// BASE API (С interceptor'ами)
-// ======================================================
-
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-// ======================================================
-// REFRESH API (БЕЗ interceptor'ов)
-// ======================================================
 
 function extractErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -54,15 +48,18 @@ function showErrorToast(error: unknown) {
   }
 }
 
+api.interceptors.request.use((config) => {
+  const accessToken = session.getAccessToken();
 
-// ======================================================
-// REQUEST INTERCEPTOR — ACCESS TOKEN
-// ======================================================
+  if (!accessToken || isAuthEndpoint(config.url)) {
+    return config;
+  }
 
+  config.headers = config.headers ?? {};
+  config.headers.Authorization = `Bearer ${accessToken}`;
 
-// ======================================================
-// RESPONSE INTERCEPTOR — REFRESH LOGIC
-// ======================================================
+  return config;
+});
 
 api.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -72,32 +69,20 @@ api.interceptors.response.use(
           message?: string | null;
         }
       | undefined;
+
     if (data?.success === false) {
       toast.error(data.message ?? i18n.t("errors.generic"));
       return Promise.reject(
         new Error(data.message ?? i18n.t("errors.generic"))
       );
     }
+
     return response;
   },
 
   async (error: AxiosError) => {
     showErrorToast(error);
     return Promise.reject(error);
-
-    // ❌ Не обрабатываем refresh запрос
-
-
-
-
-    // QUEUE — если refresh уже идёт
-    // ==================================================
-
-
-    // ==================================================
-    // START REFRESH
-    // ==================================================
-
   }
 );
 

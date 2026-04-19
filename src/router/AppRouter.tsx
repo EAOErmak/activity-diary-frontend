@@ -1,6 +1,10 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
+import LoginPage from "@/features/auth/pages/LoginPage";
+import RegisterPage from "@/features/auth/pages/RegisterPage";
 import UserLayout from "@/shared/components/layout/UserLayout";
+import ProtectedRoute from "@/shared/components/layout/ProtectedRoute";
+import AdminProtectedRoute from "@/shared/components/layout/AdminProtectedRoute";
 
 import DiaryListPage from "@/features/diary/pages/DiaryListPage/DiaryListPage";
 import DiaryFormPage from "@/features/diary/pages/DiaryFormPage";
@@ -24,7 +28,6 @@ import AdminGeneralFoodsPage from "@/features/admin/food/pages/AdminGeneralFoods
 import AdminDatabasePage from "@/features/admin/database/pages/AdminDatabaseShadcnPage";
 import AdminLayout from "@/features/admin/layout/AdminPanelLayout";
 
-// 🆕 MODAL
 import { DiaryDetailsDialog } from "@/features/diary/pages/DiaryListPage/components/DiaryDetailsDialog";
 import ProfilePage from "@/features/profile/pages/ProfilePage";
 import ProfileEditPage from "@/features/profile/pages/ProfileEditPage";
@@ -36,31 +39,38 @@ export default function AppRouter() {
 
   return (
     <>
-      {/* ================= ОСНОВНЫЕ РОУТЫ ================= */}
       <Routes location={state?.background || location}>
-        <Route element={<UserLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        <Route
+          element={
+            <ProtectedRoute>
+              <UserLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="/diary" replace />} />
           <Route path="/diary" element={<DiaryListPage />} />
           <Route path="/diary/new" element={<DiaryFormPage />} />
           <Route path="/entry-templates" element={<EntryTemplatesPage />} />
           <Route path="/food" element={<FoodPage />} />
           <Route path="/goals" element={<GoalsPage />} />
-
-          {/* ❗ ОСТАЁТСЯ как обычная страница (deep link) 
-          <Route path="/diary/:id" element={<DiaryDetailsPage />} />*/}
-
-          {/* временно оставляем */}
           <Route path="/diary/:id/edit" element={<DiaryEditPage />} />
-
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/dashboard" element={<DashboardPageV3 />} />
-
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEditPage />} />
         </Route>
 
-        <Route element={<AdminLayout />}>
+        <Route
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
           <Route path="/admin" element={<AdminOverviewPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/tags" element={<AdminTagsPage />} />
@@ -71,17 +81,12 @@ export default function AppRouter() {
           <Route path="/admin/database" element={<AdminDatabasePage />} />
         </Route>
 
-        {/* FALLBACK */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
-      {/* ================= MODAL ROUTES ================= */}
       {state?.background && (
         <Routes>
-          <Route
-            path="/diary/:id"
-            element={<DiaryDetailsDialog />}
-          />
+          <Route path="/diary/:id" element={<DiaryDetailsDialog />} />
         </Routes>
       )}
     </>
