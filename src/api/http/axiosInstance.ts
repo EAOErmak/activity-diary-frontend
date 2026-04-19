@@ -1,22 +1,24 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
 import { toast } from "sonner";
 import i18n from "@/shared/i18n/config";
-import { session } from "@/platform";
 import { isAuthEndpoint } from "@/api/authRoutes";
+import { API_BASE_URL } from "@/api/http/apiConfig";
+import {
+  getAccessToken,
+  hasRefreshToken,
+  refreshAuthSession,
+  refreshAuthSessionIfNeeded,
+} from "@/api/http/authSession";
+import { clearAuthSession } from "@/shared/store/authStore";
 
-function buildApiBaseUrl(baseUrl: string) {
-  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
-
-  if (normalizedBaseUrl.endsWith("/api")) {
-    return normalizedBaseUrl;
-  }
-
-  return `${normalizedBaseUrl}/api`;
-}
-
-const API_BASE_URL = buildApiBaseUrl(
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18080"
-);
+type RetriableRequestConfig = InternalAxiosRequestConfig & {
+  _retryAfterRefresh?: boolean;
+  skipAuthRefresh?: boolean;
+};
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -40,6 +42,19 @@ function extractErrorMessage(error: unknown) {
   return i18n.t("errors.generic");
 }
 
+function setAuthorizationHeader(
+  config: InternalAxiosRequestConfig,
+  accessToken: string
+) {
+  if (typeof config.headers?.set === "function") {
+    config.headers.set("Authorization", `Bearer ${accessToken}`);
+    return;
+  }
+
+  config.headers = config.headers ?? {};
+  config.headers.Authorization = `Bearer ${accessToken}`;
+}
+
 function showErrorToast(error: unknown) {
   const message = extractErrorMessage(error);
 
@@ -48,15 +63,20 @@ function showErrorToast(error: unknown) {
   }
 }
 
-api.interceptors.request.use((config) => {
-  const accessToken = session.getAccessToken();
+api.interceptors.request.use(async (config) => {
+  const requestConfig = config as RetriableRequestConfig;
 
-  if (!accessToken || isAuthEndpoint(config.url)) {
+  if (requestConfig.skipAuthRefresh || isAuthEndpoint(requestConfig.url)) {
     return config;
   }
 
-  config.headers = config.headers ?? {};
-  config.headers.Authorization = `Bearer ${accessToken}`;
+  const accessToken = hasRefreshToken()
+    ? await refreshAuthSessionIfNeeded()
+    : getAccessToken();
+
+  if (accessToken) {
+    setAuthorizationHeader(config, accessToken);
+  }
 
   return config;
 });
@@ -81,6 +101,42 @@ api.interceptors.response.use(
   },
 
   async (error: AxiosError) => {
+    const requestConfig = error.config as RetriableRequestConfig | undefined;
+    const shouldAttemptRefresh =
+      error.response?.status === 401 &&
+      !!requestConfig &&
+      !requestConfig.skipAuthRefresh &&
+      !requestConfig._retryAfterRefresh &&
+      !isAuthEndpoint(requestConfig.url) &&
+      hasRefreshToken();
+
+    if (shouldAttemptRefresh && requestConfig) {
+      requestConfig._retryAfterRefresh = true;
+
+      try {
+        const accessToken = await refreshAuthSession();
+
+        if (!accessToken) {
+          clearAuthSession();
+          return Promise.reject(error);
+        }
+
+        setAuthorizationHeader(requestConfig, accessToken);
+        return api.request(requestConfig);
+      } catch (refreshError) {
+        showErrorToast(refreshError);
+        return Promise.reject(refreshError);
+      }
+    }
+
+    if (
+      error.response?.status === 401 &&
+      requestConfig &&
+      !isAuthEndpoint(requestConfig.url)
+    ) {
+      clearAuthSession();
+    }
+
     showErrorToast(error);
     return Promise.reject(error);
   }
