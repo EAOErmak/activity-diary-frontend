@@ -1,3 +1,5 @@
+import { queryClient } from "@/providers/QueryProvider";
+import { useDiaryRepository } from "@/shared/repository/diaryRepository";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useCurrentUserStore } from "./currentUserStore";
@@ -89,6 +91,9 @@ export const useAuthStore = create<AuthState>()(
 );
 
 export function clearAuthSession(options?: { preserveLoggingOut?: boolean }) {
+  queryClient.clear();
+  useDiaryRepository.getState().clear();
+
   useAuthStore.setState({
     ...createLoggedOutAuthState(),
     ...(options?.preserveLoggingOut ? {} : { isLoggingOut: false }),

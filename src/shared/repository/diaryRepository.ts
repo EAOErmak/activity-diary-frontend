@@ -12,6 +12,7 @@ type PersistedDiaryRepo = {
 
 type DiaryRepoState = PersistedDiaryRepo & {
   hydrate(): void;
+  clear(): void;
   setList(list: DiaryEntryView[], version: number): void;
   setFull(entry: DiaryEntry): void;
   appendView(entry: DiaryEntryView): void;
@@ -34,6 +35,15 @@ export const useDiaryRepository = create<DiaryRepoState>((set) => ({
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
+  },
+
+  clear() {
+    localStorage.removeItem(STORAGE_KEY);
+    set({
+      list: [],
+      full: {},
+      version: 0,
+    });
   },
 
   setList(list, version) {

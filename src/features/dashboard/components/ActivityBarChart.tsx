@@ -272,15 +272,15 @@ export default function ActivityBarChart({ data, tagName }: Props) {
 
   return (
     <Card className="min-w-0">
-      <CardHeader className="gap-4 space-y-0 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0 space-y-1.5">
+      <CardHeader className="flex flex-row items-start justify-between gap-6 space-y-0">
+        <div className="min-w-0 flex-1 space-y-1.5 pr-2">
           <CardTitle>{data.title ?? getChartTypeLabel(data.chartType)}</CardTitle>
           {tagName ? <CardDescription>{tagName}</CardDescription> : null}
         </div>
 
         {metricOptions.length > 0 ? (
-          <div className="min-w-0 md:flex md:flex-1 md:justify-end">
-            <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1">
+          <div className="min-w-0 max-w-[62%] shrink-0 self-start">
+            <div className="flex max-w-full items-center justify-end gap-2 overflow-x-auto pb-1 pl-4">
               {metricOptions.map((metric) => {
                 const isChecked = enabledMetricLabelSet.has(metric.label);
 
@@ -292,18 +292,18 @@ export default function ActivityBarChart({ data, tagName }: Props) {
                     aria-checked={isChecked}
                     onClick={() => toggleMetricVisibility(metric.label)}
                     className={cn(
-                      "inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-0",
+                      "inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-0",
                       isChecked
-                        ? "bg-foreground/10 text-foreground"
-                        : "bg-transparent text-mutedForeground hover:bg-foreground/5"
+                        ? "bg-primary/15 text-foreground hover:bg-primary/20"
+                        : "bg-input text-mutedForeground hover:bg-accent"
                     )}
                   >
                     <span
                       className={cn(
-                        "flex h-4 w-4 items-center justify-center rounded-full transition-colors",
+                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors",
                         isChecked
-                          ? "bg-foreground/10 text-foreground"
-                          : "bg-transparent text-transparent"
+                          ? "bg-primary/25 text-primary"
+                          : "bg-background/80 text-transparent"
                       )}
                       aria-hidden="true"
                     >
@@ -311,12 +311,12 @@ export default function ActivityBarChart({ data, tagName }: Props) {
                     </span>
 
                     <span
-                      className="h-2 w-2 rounded-full"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: metric.color }}
                       aria-hidden="true"
                     />
 
-                    <span className="whitespace-nowrap">{metric.label}</span>
+                    <span className="whitespace-nowrap leading-none">{metric.label}</span>
                   </button>
                 );
               })}

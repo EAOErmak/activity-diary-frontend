@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 
 import { refreshAuthSessionOnStartup, getAccessToken } from "@/api/http/authSession";
@@ -14,11 +14,39 @@ type AppBootstrapStatus = "loading" | "ready" | "error";
 
 export function useAppBootstrap() {
   const loadCurrentUser = useCurrentUserStore((state) => state.loadCurrentUser);
+  const currentUserId = useCurrentUserStore((state) => state.user?.id ?? null);
+  const isCurrentUserLoading = useCurrentUserStore((state) => state.isLoading);
   const currentUserError = useCurrentUserStore((state) => state.error);
   const [status, setStatus] = useState<AppBootstrapStatus>("loading");
   const [isAuthHydrated, setIsAuthHydrated] = useState(() =>
     useAuthStore.persist.hasHydrated()
   );
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const authUserId = useAuthStore((state) => state.userId);
+
+  const syncAuthorizedSession = useCallback(async () => {
+    try {
+      await loadCurrentUser();
+    } catch (error) {
+      if (
+        axios.isAxiosError(error) &&
+        (error.response?.status === 401 || error.response?.status === 403)
+      ) {
+        clearAuthSession();
+        return false;
+      }
+
+      throw error;
+    }
+
+    try {
+      await refreshDictionaryCache();
+    } catch (error) {
+      bootstrap.logRefreshCacheError(error);
+    }
+
+    return true;
+  }, [loadCurrentUser]);
 
   useEffect(() => {
     useTagRepository.getState().hydrate();
@@ -72,26 +100,15 @@ export function useAppBootstrap() {
       }
 
       try {
-        await loadCurrentUser();
-      } catch (error) {
-        if (
-          axios.isAxiosError(error) &&
-          (error.response?.status === 401 || error.response?.status === 403)
-        ) {
-          clearAuthSession();
+        const didSyncSession = await syncAuthorizedSession();
+        if (!didSyncSession) {
           markReady();
           return;
         }
-
+      } catch (error) {
         bootstrap.logStartupError(error);
         markError();
         return;
-      }
-
-      try {
-        await refreshDictionaryCache();
-      } catch (error) {
-        bootstrap.logRefreshCacheError(error);
       }
 
       markReady();
@@ -102,7 +119,34 @@ export function useAppBootstrap() {
     return () => {
       isMounted = false;
     };
-  }, [isAuthHydrated, loadCurrentUser]);
+  }, [isAuthHydrated, syncAuthorizedSession]);
+
+  useEffect(() => {
+    if (
+      !isAuthHydrated ||
+      status !== "ready" ||
+      !accessToken ||
+      isCurrentUserLoading
+    ) {
+      return;
+    }
+
+    if (currentUserId !== null && authUserId !== null && currentUserId === authUserId) {
+      return;
+    }
+
+    void syncAuthorizedSession().catch((error) => {
+      bootstrap.logStartupError(error);
+    });
+  }, [
+    accessToken,
+    authUserId,
+    currentUserId,
+    isAuthHydrated,
+    isCurrentUserLoading,
+    status,
+    syncAuthorizedSession,
+  ]);
 
   return {
     status,

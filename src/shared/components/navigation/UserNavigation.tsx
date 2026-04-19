@@ -7,6 +7,7 @@ import {
 import {
   Calendar,
   LayoutDashboard,
+  LogOut,
   NotebookPen,
   Layers,
   Target,
@@ -21,7 +22,7 @@ import userImgWhite from "@/assets/AD_white.svg";
 import adminImgBlack from "@/assets/ADP_black.svg";
 import adminImgWhite from "@/assets/ADP_white.svg";
 import { useTranslation } from "react-i18next";
-import { useCurrentUserStore } from "@/shared/store/currentUserStore";
+import { useAuthStore } from "@/shared/store/authStore";
 import { useTheme } from "@/theme-provider";
 
 type Props = {
@@ -30,8 +31,8 @@ type Props = {
 
 export default function UserNavigation({ onNavigate }: Props) {
   const { t } = useTranslation();
-  const currentUser = useCurrentUserStore((state) => state.user);
-  const role = currentUser?.role ?? null;
+  const logout = useAuthStore((state) => state.logout);
+  const role = useAuthStore((state) => state.role);
   const { theme } = useTheme();
   const nav = useNavigate();
   const headerImage =
@@ -43,6 +44,12 @@ export default function UserNavigation({ onNavigate }: Props) {
       ? userImgWhite
       : userImgBlack;
   const isPremium = role === "PREMIUM" || role === "ADMIN";
+
+  const handleLogout = () => {
+    logout();
+    onNavigate?.();
+    nav("/login", { replace: true });
+  };
 
   const navItems = [
     {
@@ -182,6 +189,14 @@ export default function UserNavigation({ onNavigate }: Props) {
 
       <div className="mt-auto px-3 pb-5">
         <div className="mb-2 h-px bg-border/70" />
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-base text-mutedForeground transition-colors hover:bg-surfaceMuted hover:text-surfaceForeground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <LogOut className="h-5 w-5 shrink-0" />
+          <span className="truncate">{t("navigation.logout")}</span>
+        </button>
       </div>
     </div>
   );
