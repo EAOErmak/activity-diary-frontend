@@ -39,6 +39,8 @@ import {
 } from "@/features/diary/components/DiaryEntryForm/sections";
 import { useDictionary } from "@/shared/hooks/useDictionary";
 import { useTranslation } from "react-i18next";
+import { parseMetricValueInput } from "@/shared/lib/metricValue";
+import type { MetricFormValue } from "@/shared/types/metricForm";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
@@ -198,14 +200,7 @@ export type EntryTemplateFormValues = {
   description: string;
   timeStart: string;
   timeEnd: string;
-  metrics: {
-    id?: number;
-    metricTypeId: number | null;
-    values: {
-      unitId: number | null;
-      value: number;
-    }[];
-  }[];
+  metrics: MetricFormValue[];
 };
 
 type Props =
@@ -349,7 +344,7 @@ export default function EntryTemplateForm(props: Props) {
                       .filter((v) => v.unitId)
                       .map((v) => ({
                         unitId: v.unitId!,
-                        value: v.value,
+                        value: parseMetricValueInput(v.value)!,
                       })),
                   }));
 

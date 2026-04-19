@@ -198,6 +198,10 @@ const ruBase = {
     noUnitsAvailable: "Нет доступных единиц",
     removeMetric: "Удалить метрику",
     removeMetricValue: "Удалить значение метрики",
+    metricValueRequired: "Введите значение",
+    metricValueInvalid: "Введите корректное положительное число",
+    metricValuePositive: "Значение должно быть больше 0",
+    metricValueScale: "Не более {{count}} знаков после разделителя",
     deleteDialogTitle: "Вы уверены?",
     deleteDialogDescription:
       "Это действие нельзя отменить. Запись \"{{label}}\" будет навсегда удалена из дневника.",

@@ -11,12 +11,14 @@ import {
 } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { useDictionary } from "@/shared/hooks/useDictionary";
+import { parseMetricValueInput } from "@/shared/lib/metricValue";
 
 import type {
   DiaryEntryCreate,
   DiaryEntryUpdate,
   EntryStatus,
 } from "@/shared/types/diary";
+import type { MetricFormValue } from "@/shared/types/metricForm";
 
 import {
   DiaryDescriptionSection,
@@ -42,14 +44,7 @@ export type DiaryEntryFormValues = {
 
   tags: string[]   
 
-  metrics: {
-    id?: number
-    metricTypeId: number | null
-    values: {
-      unitId: number | null
-      value: number
-    }[]
-  }[]
+  metrics: MetricFormValue[]
 }
 
 type Props =
@@ -128,7 +123,7 @@ export default function DiaryEntryForm(props: Props) {
                         .filter(v => v.unitId)
                         .map(v => ({
                           unitId: v.unitId!,
-                          value: v.value,
+                          value: parseMetricValueInput(v.value)!,
                         })),
                     })),
                 });
@@ -147,10 +142,12 @@ export default function DiaryEntryForm(props: Props) {
                     // send id only if it is a real numeric backend id
                     ...(typeof m.id === "number" ? { id: m.id } : {}),
                     metricTypeId: m.metricTypeId!,
-                    values: m.values.map(v => ({
-                      unitId: v.unitId!,
-                      value: v.value,
-                    })),
+                    values: m.values
+                      .filter(v => v.unitId != null || v.value.trim() !== "")
+                      .map(v => ({
+                        unitId: v.unitId!,
+                        value: parseMetricValueInput(v.value)!,
+                      })),
                   })),
                 });
               }

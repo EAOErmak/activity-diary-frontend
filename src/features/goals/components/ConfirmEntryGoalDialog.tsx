@@ -21,6 +21,10 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Form } from "@/shared/components/ui/form";
 import { useDictionary } from "@/shared/hooks/useDictionary";
+import {
+  formatMetricValueForForm,
+  parseMetricValueInput,
+} from "@/shared/lib/metricValue";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
 import type { DiaryEntryGoalDetail } from "@/shared/types/goal";
 
@@ -53,12 +57,13 @@ const toFormValues = (detail: DiaryEntryGoalDetail): DiaryEntryFormValues => ({
     metricTypeId: metricGoal.metricTypeId ?? metricGoal.metricType?.id ?? null,
     values: (metricGoal.values ?? []).map((value) => ({
       unitId: value.unitId ?? value.unit?.id ?? null,
-      value:
+      value: formatMetricValueForForm(
         typeof value.expectedValue === "number"
           ? value.expectedValue
           : typeof value.value === "number"
             ? value.value
-            : 0,
+            : null
+      ),
     })),
   })),
 });
@@ -76,7 +81,7 @@ const toConfirmPayload = (values: DiaryEntryFormValues): DiaryEntryCreate => ({
         .filter((value) => value.unitId)
         .map((value) => ({
           unitId: value.unitId!,
-          value: value.value,
+          value: parseMetricValueInput(value.value)!,
         })),
     })),
 });

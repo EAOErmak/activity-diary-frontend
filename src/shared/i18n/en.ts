@@ -200,6 +200,10 @@ const enBase = {
     noUnitsAvailable: "No units available",
     removeMetric: "Remove metric",
     removeMetricValue: "Remove metric value",
+    metricValueRequired: "Enter a value",
+    metricValueInvalid: "Enter a valid positive number",
+    metricValuePositive: "Value must be greater than 0",
+    metricValueScale: "No more than {{count}} digits after the decimal separator",
     deleteDialogTitle: "Are you sure?",
     deleteDialogDescription:
       "This action cannot be undone. \"{{label}}\" will be permanently deleted from your diary.",

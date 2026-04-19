@@ -12,6 +12,7 @@ import { EditWeekTemplateDialog } from "@/features/entry-templates/components/Ed
 import type { EntryTemplateFormValues } from "@/features/entry-templates/components/EntryTemplateForm/EntryTemplateForm";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 import type { DiaryEntryTemplate, DiaryEntryTemplateView } from "@/shared/types/entryTemplate";
 import type { DayTemplateView, WeekTemplateView } from "@/shared/types/scheduleTemplate";
 
@@ -93,7 +94,14 @@ export default function EntryTemplatesPage() {
       description: template.description ?? "",
       timeStart: template.timeStart ?? "",
       timeEnd: template.timeEnd ?? "",
-      metrics: template.metrics ?? [],
+      metrics:
+        template.metrics?.map((metric) => ({
+          ...metric,
+          values: metric.values.map((value) => ({
+            unitId: value.unitId,
+            value: formatMetricValueForForm(value.value),
+          })),
+        })) ?? [],
     });
     setEditId(id);
     setEditOpen(true);

@@ -8,6 +8,7 @@ import DiaryEntryForm, {
 
 import { diaryApi } from "@/api/diaryApi";
 import type { DiaryEntry, DiaryEntryUpdate, EntryStatus } from "@/shared/types/diary";
+import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 
 import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -47,7 +48,7 @@ export default function DiaryEditPage() {
                 metricTypeId: m.metricTypeId,
                 values: m.values.map((v) => ({
                   unitId: v.unitId,
-                  value: v.value,
+                  value: formatMetricValueForForm(v.value),
                 })),
               })) ?? [],
           });

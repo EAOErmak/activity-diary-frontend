@@ -14,6 +14,7 @@ import DiaryEntryForm, {
 
 import { diaryApi } from "@/api/diaryApi";
 import type { DiaryEntry, DiaryEntryUpdate } from "@/shared/types/diary";
+import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 
 type Props = {
   entryId: number;
@@ -51,7 +52,10 @@ useEffect(() => {
         metrics: entry.metrics.map(m => ({
           id: m.id,
           metricTypeId: m.metricTypeId,
-          values: m.values,
+          values: m.values.map((value) => ({
+            unitId: value.unitId,
+            value: formatMetricValueForForm(value.value),
+          })),
         })),
       });
     } finally {

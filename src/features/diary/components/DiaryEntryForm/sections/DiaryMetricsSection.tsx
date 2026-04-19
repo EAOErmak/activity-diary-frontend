@@ -2,7 +2,7 @@ import { Button } from "@/shared/components/ui/button";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { DiaryMetricItem } from "./DiaryMetricItem";
-import { DiaryEntryFormValues } from "../DiaryEntryForm";
+import type { MetricsFormSectionValue } from "@/shared/types/metricForm";
 
 type Props = {
   metricTypes: { id: number; label: string }[];
@@ -14,14 +14,14 @@ export function DiaryMetricsSection({
   copyFirstMetricOnAppend = false,
 }: Props) {
   const { t } = useTranslation();
-  const { control, getValues } = useFormContext<DiaryEntryFormValues>();
+  const { control, getValues } = useFormContext<MetricsFormSectionValue>();
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "metrics",
   });
 
-  const buildMetricDraft = (): DiaryEntryFormValues["metrics"][number] => {
+  const buildMetricDraft = (): MetricsFormSectionValue["metrics"][number] => {
     if (!copyFirstMetricOnAppend) {
       return {
         metricTypeId: null,

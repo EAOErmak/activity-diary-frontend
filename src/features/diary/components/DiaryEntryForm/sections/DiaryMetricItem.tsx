@@ -3,6 +3,7 @@ import {
   FormField,
   FormItem,
   FormControl,
+  FormMessage,
 } from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
@@ -16,6 +17,15 @@ import {
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useMetricUnits } from "@/shared/hooks/useMetricUnits";
+import {
+  isMetricValueDraft,
+  METRIC_VALUE_MAX_DECIMALS,
+  validateMetricValueInput,
+} from "@/shared/lib/metricValue";
+import type {
+  MetricsFormSectionValue,
+  MetricValueFormValue,
+} from "@/shared/types/metricForm";
 
 type Props = {
   index: number;
@@ -31,7 +41,7 @@ export function DiaryMetricItem({
   canRemove,
 }: Props) {
   const { t } = useTranslation();
-  const form = useFormContext();
+  const form = useFormContext<MetricsFormSectionValue>();
   const metricTypeId = useWatch({
     control: form.control,
     name: `metrics.${index}.metricTypeId`,
@@ -42,7 +52,7 @@ export function DiaryMetricItem({
       control: form.control,
       name: `metrics.${index}.values`,
     }) ?? []
-  ) as { unitId: number | null; value: number }[];
+  ) as MetricValueFormValue[];
 
   const selectedMetricTypeId =
     typeof metricTypeId === "number" ? metricTypeId : null;
@@ -106,6 +116,23 @@ export function DiaryMetricItem({
         : units.length === 0
           ? t("diary.noUnitsShort")
           : t("diary.unitShort");
+
+  const getMetricValueErrorMessage = (value: string) => {
+    const error = validateMetricValueInput(value);
+
+    switch (error) {
+      case "required":
+        return t("diary.metricValueRequired");
+      case "positive":
+        return t("diary.metricValuePositive");
+      case "scale":
+        return t("diary.metricValueScale", { count: METRIC_VALUE_MAX_DECIMALS });
+      case "invalid":
+        return t("diary.metricValueInvalid");
+      default:
+        return true;
+    }
+  };
 
   return (
     <div className="bg-metricSurface rounded-xl p-3 space-y-3">
@@ -201,31 +228,42 @@ export function DiaryMetricItem({
             <FormField
               control={form.control}
               name={`metrics.${index}.values.${valueIndex}.value`}
+              rules={{
+                validate: (value) => {
+                  const currentValue = values[valueIndex];
+                  const shouldValidate =
+                    currentValue?.unitId != null ||
+                    (currentValue?.value ?? "").trim() !== "";
+
+                  if (!shouldValidate) {
+                    return true;
+                  }
+
+                  return getMetricValueErrorMessage(value ?? "");
+                },
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
                     <Input
                       type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
+                      inputMode="decimal"
+                      pattern="^[0-9]*([.,][0-9]{0,5})?$"
                       placeholder="0"
-                      value={
-                        field.value === 0
-                          ? ""
-                          : String(field.value ?? "")
-                      }
-                      onBlur={(e) => {
-                        if (e.target.value === "") {
-                          field.onChange(0);
-                        }
-                        field.onBlur();
-                      }}
+                      value={field.value ?? ""}
+                      onBlur={field.onBlur}
                       onChange={(e) => {
-                        const next = e.target.value.replace(/\D+/g, "");
-                        field.onChange(next === "" ? "" : Number(next));
+                        const next = e.target.value;
+
+                        if (!isMetricValueDraft(next)) {
+                          return;
+                        }
+
+                        field.onChange(next);
                       }}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -257,7 +295,7 @@ export function DiaryMetricItem({
         onClick={() => {
           form.setValue(`metrics.${index}.values`, [
             ...values,
-            { unitId: null, value: 0 },
+            { unitId: null, value: "" },
           ]);
         }}
       >
