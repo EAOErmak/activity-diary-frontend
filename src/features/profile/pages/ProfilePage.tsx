@@ -139,7 +139,7 @@ function ProfilePageSkeleton() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1">
               {Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={index}
@@ -167,8 +167,8 @@ function ProfilePageSkeleton() {
           ))}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
-          <Card className="border border-border/70 bg-surface shadow-none">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.05fr)_minmax(340px,0.95fr)] xl:items-start">
+          <Card className="border border-border/70 bg-surface shadow-none xl:col-span-2">
             <CardHeader className="space-y-4">
               <Skeleton className="h-6 w-44" />
               <Skeleton className="h-4 w-full max-w-2xl" />
@@ -179,20 +179,40 @@ function ProfilePageSkeleton() {
             </CardContent>
           </Card>
 
-          <div className="space-y-6">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Card key={index} className="border border-border/70 bg-surface shadow-none">
-                <CardHeader>
-                  <Skeleton className="h-6 w-36" />
-                  <Skeleton className="h-4 w-full" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-20 w-full rounded-[24px]" />
-                  <Skeleton className="h-20 w-full rounded-[24px]" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card className="border border-border/70 bg-surface shadow-none xl:order-4">
+            <CardHeader>
+              <Skeleton className="h-6 w-36" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-20 w-full rounded-[24px]" />
+              <Skeleton className="h-20 w-full rounded-[24px]" />
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/70 bg-surface shadow-none xl:order-5">
+            <CardHeader>
+              <Skeleton className="h-6 w-36" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-20 w-full rounded-[24px]" />
+              <Skeleton className="h-20 w-full rounded-[24px]" />
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/70 bg-surface shadow-none xl:order-3 xl:row-span-2">
+            <CardHeader>
+              <Skeleton className="h-6 w-44" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-16 w-full rounded-[22px]" />
+              <Skeleton className="h-16 w-full rounded-[22px]" />
+              <Skeleton className="h-36 w-full rounded-[22px]" />
+              <Skeleton className="h-24 w-full rounded-[22px]" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
@@ -330,14 +350,14 @@ export default function ProfilePage() {
             <CardContent className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.9fr)]">
               <div className="space-y-6">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex items-start gap-4">
+                  <div className="flex min-w-0 items-start gap-4">
                     <Avatar className="h-20 w-20 border border-border/70 shadow-sm">
                       <AvatarFallback className="bg-primary/15 text-2xl font-semibold text-primary">
                         {initials}
                       </AvatarFallback>
                     </Avatar>
 
-                    <div className="space-y-4">
+                    <div className="min-w-0 space-y-4">
                       <div className="space-y-1">
                         <div className="text-3xl font-semibold tracking-tight text-foreground">
                           {preview.hero.name}
@@ -400,7 +420,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1">
                 {preview.hero.insightCards.map((item) => (
                   <div
                     key={item.label}
@@ -428,10 +448,10 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)] xl:items-start">
-          <Card className="border border-border/70 bg-surface shadow-none">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.05fr)_minmax(340px,0.95fr)] xl:items-start">
+          <Card className="border border-border/70 bg-surface shadow-none xl:col-span-2">
             <CardHeader className="space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-surfaceMuted/80 text-primary">
                   <Activity className="h-5 w-5" />
                 </div>
@@ -446,24 +466,24 @@ export default function ProfilePage() {
 
             <CardContent className="space-y-5">
               <Tabs defaultValue="rhythm" className="space-y-5">
-                <TabsList className="grid h-auto w-full grid-cols-3 gap-2 rounded-[22px] bg-surfaceMuted/70 p-2">
+                <TabsList className="grid h-auto w-full grid-cols-1 gap-2 rounded-[22px] bg-surfaceMuted/70 p-2 md:grid-cols-3">
                   <TabsTrigger
                     value="rhythm"
-                    className="flex min-h-[64px] items-center gap-2 rounded-[18px] px-4 py-3 text-sm"
+                    className="flex min-h-[64px] justify-start gap-2 whitespace-normal rounded-[18px] px-4 py-3 text-left text-sm"
                   >
                     <Clock3 className="h-4 w-4" />
                     {preview.behavior.tabs.rhythm}
                   </TabsTrigger>
                   <TabsTrigger
                     value="focus"
-                    className="flex min-h-[64px] items-center gap-2 rounded-[18px] px-4 py-3 text-sm"
+                    className="flex min-h-[64px] justify-start gap-2 whitespace-normal rounded-[18px] px-4 py-3 text-left text-sm"
                   >
                     <Compass className="h-4 w-4" />
                     {preview.behavior.tabs.focus}
                   </TabsTrigger>
                   <TabsTrigger
                     value="highlights"
-                    className="flex min-h-[64px] items-center gap-2 rounded-[18px] px-4 py-3 text-sm"
+                    className="flex min-h-[64px] justify-start gap-2 whitespace-normal rounded-[18px] px-4 py-3 text-left text-sm"
                   >
                     <Sparkles className="h-4 w-4" />
                     {preview.behavior.tabs.highlights}
@@ -471,7 +491,7 @@ export default function ProfilePage() {
                 </TabsList>
 
                 <TabsContent value="rhythm" className="m-0">
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
                     <section className="rounded-[24px] border border-border/70 bg-surfaceMuted/60 p-4">
                       <div className="space-y-1">
                         <h3 className="text-base font-semibold text-foreground">
@@ -482,22 +502,24 @@ export default function ProfilePage() {
                         </p>
                       </div>
 
-                      <div className="mt-6 flex items-end gap-3">
-                        {preview.behavior.rhythmDays.map((day) => (
-                          <div key={day.label} className="flex flex-1 flex-col items-center gap-3">
-                            <div className="flex h-36 w-full items-end rounded-[20px] border border-border/70 bg-background/80 p-2">
-                              <div
-                                className="w-full rounded-[14px] bg-primary/90"
-                                style={{ height: `${Math.max(day.score, 12)}%` }}
-                              />
+                      <div className="mt-6 overflow-x-auto pb-2">
+                        <div className="flex min-w-[32rem] items-end gap-3">
+                          {preview.behavior.rhythmDays.map((day) => (
+                            <div key={day.label} className="flex flex-1 flex-col items-center gap-3">
+                              <div className="flex h-36 w-full items-end rounded-[20px] border border-border/70 bg-background/80 p-2">
+                                <div
+                                  className="w-full rounded-[14px] bg-primary/90"
+                                  style={{ height: `${Math.max(day.score, 12)}%` }}
+                                />
+                              </div>
+                              <div className="space-y-1 text-center">
+                                <div className="text-sm font-medium text-foreground">{day.label}</div>
+                                <div className="text-xs text-mutedForeground">{day.score}%</div>
+                                <div className="text-[11px] text-mutedForeground">{day.note}</div>
+                              </div>
                             </div>
-                            <div className="space-y-1 text-center">
-                              <div className="text-sm font-medium text-foreground">{day.label}</div>
-                              <div className="text-xs text-mutedForeground">{day.score}%</div>
-                              <div className="text-[11px] text-mutedForeground">{day.note}</div>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </section>
 
@@ -512,8 +534,8 @@ export default function ProfilePage() {
                               key={window.label}
                               className="rounded-[18px] border border-border/70 bg-surface px-4 py-3"
                             >
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
                                   <p className="text-sm font-semibold text-foreground">
                                     {window.label}
                                   </p>
@@ -523,7 +545,7 @@ export default function ProfilePage() {
                                 </div>
                                 <Badge
                                   variant="outline"
-                                  className="rounded-full border-border/70 bg-background px-2.5 py-1 text-xs text-mutedForeground"
+                                  className="shrink-0 rounded-full border-border/70 bg-background px-2.5 py-1 text-xs text-mutedForeground"
                                 >
                                   {window.time}
                                 </Badge>
@@ -551,7 +573,7 @@ export default function ProfilePage() {
                 </TabsContent>
 
                 <TabsContent value="focus" className="m-0">
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
                     <section className="space-y-3 rounded-[24px] border border-border/70 bg-surfaceMuted/50 p-4">
                       <div className="space-y-1">
                         <h3 className="text-base font-semibold text-foreground">
@@ -568,7 +590,7 @@ export default function ProfilePage() {
                             key={area.label}
                             className="rounded-[20px] border border-border/70 bg-background/85 p-4"
                           >
-                            <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-foreground">
                                   {area.label}
@@ -579,16 +601,16 @@ export default function ProfilePage() {
                               </div>
                               <Badge
                                 variant="outline"
-                                className="rounded-full border-border/70 bg-surface px-2.5 py-1 text-xs text-mutedForeground"
+                                className="shrink-0 rounded-full border-border/70 bg-surface px-2.5 py-1 text-xs text-mutedForeground"
                               >
                                 {area.trend}
                               </Badge>
                             </div>
 
                             <div className="mt-4 space-y-2">
-                              <div className="flex items-center justify-between text-xs text-mutedForeground">
-                                <span>{area.label}</span>
-                                <span>{area.share}%</span>
+                              <div className="flex items-center justify-between gap-3 text-xs text-mutedForeground">
+                                <span className="min-w-0">{area.label}</span>
+                                <span className="shrink-0">{area.share}%</span>
                               </div>
                               <Progress value={area.share} className="h-2.5" />
                             </div>
@@ -631,7 +653,7 @@ export default function ProfilePage() {
                 </TabsContent>
 
                 <TabsContent value="highlights" className="m-0">
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
                     <section className="rounded-[24px] border border-border/70 bg-surfaceMuted/50 p-4">
                       <div className="space-y-1">
                         <h3 className="text-base font-semibold text-foreground">
@@ -642,7 +664,7 @@ export default function ProfilePage() {
                         </p>
                       </div>
 
-                      <ScrollArea className="mt-4 h-[27rem] pr-4">
+                      <ScrollArea className="mt-4 h-[24rem] pr-4 sm:h-[27rem]">
                         <div className="space-y-3">
                           {preview.behavior.highlights.map((highlight) => (
                             <HighlightTimelineItem
@@ -656,11 +678,11 @@ export default function ProfilePage() {
 
                     <div className="space-y-4">
                       <section className="rounded-[24px] border border-border/70 bg-background/85 p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
                             <Sparkles className="h-4.5 w-4.5" />
                           </div>
-                          <div className="space-y-1">
+                          <div className="min-w-0 space-y-1">
                             <h3 className="text-base font-semibold text-foreground">
                               {preview.behavior.reflectionCueTitle}
                             </h3>
@@ -691,202 +713,205 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <div className="space-y-6">
-            <Card className="border border-border/70 bg-surface shadow-none">
-              <CardHeader className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-surfaceMuted/80 text-primary">
-                    <Target className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl">{preview.goals.title}</CardTitle>
-                    <CardDescription className="text-sm leading-6 text-mutedForeground">
-                      {preview.goals.description}
-                    </CardDescription>
-                  </div>
+          <Card className="border border-border/70 bg-surface shadow-none xl:order-4">
+            <CardHeader className="space-y-2">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-surfaceMuted/80 text-primary">
+                  <Target className="h-5 w-5" />
                 </div>
-              </CardHeader>
+                <div className="space-y-1">
+                  <CardTitle className="text-xl">{preview.goals.title}</CardTitle>
+                  <CardDescription className="text-sm leading-6 text-mutedForeground">
+                    {preview.goals.description}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
 
-              <CardContent className="space-y-4">
-                {preview.goals.items.map((goal) => (
-                  <div
-                    key={goal.label}
-                    className="rounded-[24px] border border-border/70 bg-surfaceMuted/40 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-foreground">{goal.label}</p>
-                        <p className="text-sm leading-6 text-mutedForeground">{goal.detail}</p>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className="rounded-full border-border/70 bg-background px-2.5 py-1 text-xs text-mutedForeground"
-                      >
-                        {goal.streak}
-                      </Badge>
+            <CardContent className="space-y-4">
+              {preview.goals.items.map((goal) => (
+                <div
+                  key={goal.label}
+                  className="rounded-[24px] border border-border/70 bg-surfaceMuted/40 p-4"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between xl:flex-col 2xl:flex-row">
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-sm font-semibold text-foreground">{goal.label}</p>
+                      <p className="text-sm leading-6 text-mutedForeground">{goal.detail}</p>
                     </div>
-
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-between text-xs text-mutedForeground">
-                        <span>{goal.cadence}</span>
-                        <span>{goal.progress}%</span>
-                      </div>
-                      <Progress value={goal.progress} className="h-2.5" />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-border/70 bg-surface shadow-none">
-              <CardHeader className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-surfaceMuted/80 text-primary">
-                    <BadgeCheck className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl">{preview.milestones.title}</CardTitle>
-                    <CardDescription className="text-sm leading-6 text-mutedForeground">
-                      {preview.milestones.description}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {preview.milestones.items.map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-[22px] border border-border/70 bg-surfaceMuted/35 p-4"
-                  >
-                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="mt-2 text-sm leading-6 text-mutedForeground">{item.detail}</p>
-                  </div>
-                ))}
-
-                <div className="rounded-[24px] border border-primary/15 bg-primary/5 p-4">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-mutedForeground">
-                      {preview.milestones.nextMilestoneLabel}
-                    </p>
-                    <p className="text-base font-semibold text-foreground">
-                      {preview.milestones.nextMilestoneValue}
-                    </p>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    <Progress value={preview.milestones.nextMilestoneProgress} className="h-2.5" />
-                    <p className="text-xs text-mutedForeground">
-                      {preview.milestones.nextMilestoneDetail}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-border/70 bg-surface shadow-none">
-              <CardHeader className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-surfaceMuted/80 text-primary">
-                    <Settings2 className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl">{preview.setup.title}</CardTitle>
-                    <CardDescription className="text-sm leading-6 text-mutedForeground">
-                      {preview.setup.description}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-5">
-                <div className="space-y-3">
-                  {preview.setup.preferences.map((preference) => (
-                    <div
-                      key={preference.label}
-                      className="flex items-start justify-between gap-4 rounded-[22px] border border-border/70 bg-surfaceMuted/35 p-4"
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 self-start rounded-full border-border/70 bg-background px-2.5 py-1 text-xs text-mutedForeground"
                     >
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-foreground">
-                          {preference.label}
-                        </p>
-                        <p className="text-sm leading-6 text-mutedForeground">
-                          {preference.detail}
-                        </p>
-                      </div>
-                      <Switch checked={preference.enabled} disabled aria-label={preference.label} />
+                      {goal.streak}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between gap-3 text-xs text-mutedForeground">
+                      <span className="min-w-0">{goal.cadence}</span>
+                      <span className="shrink-0">{goal.progress}%</span>
+                    </div>
+                    <Progress value={goal.progress} className="h-2.5" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/70 bg-surface shadow-none xl:order-5">
+            <CardHeader className="space-y-2">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-surfaceMuted/80 text-primary">
+                  <BadgeCheck className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <CardTitle className="text-xl">{preview.milestones.title}</CardTitle>
+                  <CardDescription className="text-sm leading-6 text-mutedForeground">
+                    {preview.milestones.description}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {preview.milestones.items.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-[22px] border border-border/70 bg-surfaceMuted/35 p-4"
+                >
+                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-mutedForeground">{item.detail}</p>
+                </div>
+              ))}
+
+              <div className="rounded-[24px] border border-primary/15 bg-primary/5 p-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-mutedForeground">
+                    {preview.milestones.nextMilestoneLabel}
+                  </p>
+                  <p className="text-base font-semibold text-foreground">
+                    {preview.milestones.nextMilestoneValue}
+                  </p>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <Progress value={preview.milestones.nextMilestoneProgress} className="h-2.5" />
+                  <p className="text-xs text-mutedForeground">
+                    {preview.milestones.nextMilestoneDetail}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/70 bg-surface shadow-none xl:order-3 xl:row-span-2">
+            <CardHeader className="space-y-2">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-surfaceMuted/80 text-primary">
+                  <Settings2 className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <CardTitle className="text-xl">{preview.setup.title}</CardTitle>
+                  <CardDescription className="text-sm leading-6 text-mutedForeground">
+                    {preview.setup.description}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-5">
+              <div className="space-y-3">
+                {preview.setup.preferences.map((preference) => (
+                  <div
+                    key={preference.label}
+                    className="flex flex-col gap-4 rounded-[22px] border border-border/70 bg-surfaceMuted/35 p-4 md:flex-row md:items-start md:justify-between xl:flex-col 2xl:flex-row"
+                  >
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        {preference.label}
+                      </p>
+                      <p className="text-sm leading-6 text-mutedForeground">
+                        {preference.detail}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preference.enabled}
+                      disabled
+                      aria-label={preference.label}
+                      className="self-start"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4.5 w-4.5 text-primary" />
+                  <h3 className="text-base font-semibold text-foreground">
+                    {preview.setup.privacyTitle}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                  {preview.setup.privacyFacts.map((fact) => (
+                    <div
+                      key={fact.label}
+                      className="rounded-[22px] border border-border/70 bg-background/85 p-4"
+                    >
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-mutedForeground">
+                        {fact.label}
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-foreground">{fact.value}</p>
+                      <p className="mt-2 text-sm leading-6 text-mutedForeground">{fact.detail}</p>
                     </div>
                   ))}
                 </div>
+              </div>
 
-                <Separator />
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Link2 className="h-4.5 w-4.5 text-primary" />
+                  <h3 className="text-base font-semibold text-foreground">
+                    {preview.setup.connectionsTitle}
+                  </h3>
+                </div>
 
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-4.5 w-4.5 text-primary" />
-                    <h3 className="text-base font-semibold text-foreground">
-                      {preview.setup.privacyTitle}
-                    </h3>
-                  </div>
+                  {preview.setup.connections.map((connection) => {
+                    const tone = connectionToneMap[connection.state];
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {preview.setup.privacyFacts.map((fact) => (
+                    return (
                       <div
-                        key={fact.label}
-                        className="rounded-[22px] border border-border/70 bg-background/85 p-4"
+                        key={connection.label}
+                        className={cn("rounded-[22px] border p-4 transition-colors", tone.container)}
                       >
-                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-mutedForeground">
-                          {fact.label}
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-foreground">{fact.value}</p>
-                        <p className="mt-2 text-sm leading-6 text-mutedForeground">{fact.detail}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Link2 className="h-4.5 w-4.5 text-primary" />
-                    <h3 className="text-base font-semibold text-foreground">
-                      {preview.setup.connectionsTitle}
-                    </h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    {preview.setup.connections.map((connection) => {
-                      const tone = connectionToneMap[connection.state];
-
-                      return (
-                        <div
-                          key={connection.label}
-                          className={cn("rounded-[22px] border p-4 transition-colors", tone.container)}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-1">
-                              <p className="text-sm font-semibold text-foreground">
-                                {connection.label}
-                              </p>
-                              <p className="text-sm leading-6 text-mutedForeground">
-                                {connection.description}
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className={cn("rounded-full px-2.5 py-1 text-xs", tone.badge)}
-                            >
-                              {connection.stateLabel}
-                            </Badge>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between xl:flex-col 2xl:flex-row">
+                          <div className="min-w-0 space-y-1">
+                            <p className="text-sm font-semibold text-foreground">
+                              {connection.label}
+                            </p>
+                            <p className="text-sm leading-6 text-mutedForeground">
+                              {connection.description}
+                            </p>
                           </div>
+                          <Badge
+                            variant="outline"
+                            className={cn("shrink-0 self-start rounded-full px-2.5 py-1 text-xs", tone.badge)}
+                          >
+                            {connection.stateLabel}
+                          </Badge>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
