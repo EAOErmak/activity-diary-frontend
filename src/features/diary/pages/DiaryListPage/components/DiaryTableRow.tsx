@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog";
 import { getIntlLocale } from "@/shared/i18n/locale";
-import { getUiStatus, STATUS_LEFT_BAR, STATUS_STYLES } from "@/shared/lib/uiStatus";
+import { getEntryStatus, STATUS_LEFT_BAR, STATUS_STYLES } from "@/shared/lib/entryStatus";
 
 import { getStatusLabel } from "../statusConfig";
 import { DiaryTableRowLayout } from "./DiaryTableRowLayout";
@@ -41,7 +41,7 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
   const location = useLocation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const uiStatus = getUiStatus(entry);
+  const entryStatus = getEntryStatus(entry);
   const canEdit = entry.status !== "DELETED";
   const canDelete = entry.status !== "DELETED" && !isDeleting;
   const entryLabel = entry.firstTag?.trim() || t("diary.entryWithId", { id: String(entry.id) });
@@ -63,12 +63,12 @@ export function DiaryTableRow({ entry, isDeleting, onEdit, onDelete }: Props) {
 
   return (
     <DiaryTableRowLayout
-      indicator={<DiaryTableIndicator className={STATUS_LEFT_BAR[uiStatus]} />}
+      indicator={<DiaryTableIndicator className={STATUS_LEFT_BAR[entryStatus]} />}
       category={<DiaryTableCategoryContent>{entry.firstTag}</DiaryTableCategoryContent>}
       date={<DiaryTableDateContent>{formattedStartTime}</DiaryTableDateContent>}
       status={
-        <DiaryTableStatusBadge toneClassName={STATUS_STYLES[uiStatus]}>
-          {getStatusLabel(uiStatus)}
+        <DiaryTableStatusBadge toneClassName={STATUS_STYLES[entryStatus]}>
+          {getStatusLabel(entryStatus)}
         </DiaryTableStatusBadge>
       }
       actions={

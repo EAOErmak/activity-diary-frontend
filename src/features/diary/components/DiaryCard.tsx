@@ -1,10 +1,10 @@
 import React from "react";
 import { Card } from "@/shared/components/ui/card";
-import { getUiStatus } from "@/shared/lib/uiStatus";
+import { getEntryStatus } from "@/shared/lib/entryStatus";
 import { getStatusLabel } from "@/features/diary/pages/DiaryListPage/statusConfig";
 
 export function DiaryCard({ entry }: any) {
-  const uiStatus = getUiStatus({
+  const entryStatus = getEntryStatus({
     id: entry.id ?? 0,
     whenStarted: entry.whenStarted ?? null,
     whenEnded: entry.whenEnded ?? null,
@@ -13,13 +13,13 @@ export function DiaryCard({ entry }: any) {
   });
 
   const statusClass =
-    uiStatus === "FINISHED"
+    entryStatus === "FINISHED"
       ? "text-green-400"
-      : uiStatus === "FAILED"
+      : entryStatus === "FAILED"
       ? "text-rose-400"
-      : uiStatus === "PLANNED"
+      : entryStatus === "PLANNED"
       ? "text-yellow-400"
-      : uiStatus === "OVERDUE"
+      : entryStatus === "OVERDUE"
       ? "text-orange-400"
       : "text-blue-400";
 
@@ -39,7 +39,7 @@ export function DiaryCard({ entry }: any) {
             : "Р”Р°С‚Р° РЅРµ СѓРєР°Р·Р°РЅР°"}
         </span>
         <span className={`font-medium ${statusClass}`}>
-          {getStatusLabel(uiStatus)}
+          {getStatusLabel(entryStatus)}
         </span>
       </div>
     </Card>

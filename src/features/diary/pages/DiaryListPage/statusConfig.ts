@@ -1,17 +1,15 @@
 import i18n from "@/shared/i18n/config";
-import type { UiStatus } from "@/shared/lib/uiStatus";
+import type { EntryStatus } from "@/shared/types/diary";
 
-export type DisplayStatus = UiStatus;
-
-export const DISPLAY_STATUSES: DisplayStatus[] = [
+export const DISPLAY_STATUSES = [
   "ACTIVE",
   "PLANNED",
   "OVERDUE",
   "FINISHED",
   "FAILED",
-];
+] as const satisfies readonly EntryStatus[];
 
-export function getStatusLabel(status: DisplayStatus): string {
+export function getStatusLabel(status: EntryStatus): string {
   switch (status) {
     case "PLANNED":
       return i18n.t("diary.status.planned");

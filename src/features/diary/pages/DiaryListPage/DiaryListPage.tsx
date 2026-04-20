@@ -4,7 +4,6 @@ import { DiaryListHeader } from "@/features/diary/pages/DiaryListPage/components
 import { DiaryListFilters } from "@/features/diary/pages/DiaryListPage/components/DiaryListFilters";
 import { CreateEntryDialog } from "@/features/diary/components/CreateEntryDialog";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
-import type { DisplayStatus } from "@/features/diary/pages/DiaryListPage/statusConfig";
 import { DiaryTable } from "@/features/diary/pages/DiaryListPage/components/DiaryTable";
 import {
   Pagination,
@@ -16,7 +15,7 @@ import {
   PaginationPrevious,
 } from "@/shared/components/ui/pagination";
 import { cn } from "@/shared/lib/utils";
-import type { DiaryEntryView, Page } from "@/shared/types/diary";
+import type { DiaryEntryView, EntryStatus, Page } from "@/shared/types/diary";
 import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 8;
@@ -101,7 +100,7 @@ export default function DiaryListPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [paginationMetaByContext, setPaginationMetaByContext] = useState<Record<string, PaginationMeta>>({});
 
-  const [status, setStatus] = useState<DisplayStatus | "">("");
+  const [status, setStatus] = useState<EntryStatus | "">("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagQuery, setTagQuery] = useState("");
   const [date, setDate] = useState<Date | undefined>();
@@ -141,7 +140,7 @@ export default function DiaryListPage() {
 
     try {
       const result = await diaryApi.getMyEntries(page, PAGE_SIZE, {
-        uiStatus: status || undefined,
+        status: status || undefined,
         now: nowIso,
         tags: tagsParam,
         from,

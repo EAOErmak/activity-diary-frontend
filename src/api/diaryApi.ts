@@ -5,15 +5,15 @@ import type {
   DiaryEntry,
   Page,
   DiaryEntryView,
+  EntryStatus,
 } from "@/shared/types/diary";
 import type { ApiResponse } from "@/shared/types/api";
-import type { UiStatus } from "@/shared/lib/uiStatus";
 
 // ==============================
 // GET MY ENTRIES (PAGE)
 // ==============================
 type DiaryMineFilters = {
-  uiStatus?: UiStatus;
+  status?: EntryStatus;
   now?: string;
   tags?: string[];
   from?: string;
@@ -28,7 +28,11 @@ export const getMyEntries = async (
   const { data } = await api.get<ApiResponse<Page<DiaryEntryView>>>(
     "/diary/mine",
     {
-      params: { page, size, ...filters },
+      params: {
+        page,
+        size,
+        ...filters,
+      },
     }
   );
 

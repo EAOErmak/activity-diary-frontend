@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { CalendarEvent } from "../lib/calendarTypes";
 import { getEventPosition } from "../utils/eventPosition";
-import { getUiStatus, STATUS_STYLES, getLeftBarColor } from "../../../shared/lib/uiStatus";
+import { getEntryStatus, STATUS_STYLES, getLeftBarColor } from "../../../shared/lib/entryStatus";
 
 type Props = {
   event: CalendarEvent;
@@ -28,8 +28,7 @@ export default function EventBlock({
 
   const title = event.firstTag ?? t("calendar.untitledEvent");
 
-  // ✅ ВАЖНО: вычисляем UI-статус
-  const uiStatus = getUiStatus({
+  const entryStatus = getEntryStatus({
     id: event.id,
     status: event.status,
     whenStarted: event.start.toISOString(),
@@ -50,7 +49,7 @@ export default function EventBlock({
         shadow-sm
         overflow-hidden
         cursor-pointer
-        ${STATUS_STYLES[uiStatus]}
+        ${STATUS_STYLES[entryStatus]}
         bg-opacity-[var(--event-opacity)]
       `}
       style={{
@@ -80,7 +79,7 @@ export default function EventBlock({
         className={`
           absolute left-0 top-0 bottom-0
           w-1.5
-          ${getLeftBarColor(uiStatus)}
+          ${getLeftBarColor(entryStatus)}
         `}
       />
 

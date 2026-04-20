@@ -8,7 +8,7 @@ import { Edit3, Calendar, Activity, Trash2, X } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 
 import type { DiaryEntry } from "@/shared/types/diary";
-import { getUiStatus, STATUS_STYLES } from "@/shared/lib/uiStatus";
+import { getEntryStatus, STATUS_STYLES } from "@/shared/lib/entryStatus";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
 import { getStatusLabel } from "@/features/diary/pages/DiaryListPage/statusConfig";
@@ -79,7 +79,7 @@ export default function DiaryDetailsPage() {
     );
   }
 
-  const uiStatus = getUiStatus({
+  const entryStatus = getEntryStatus({
     id: entry.id,
     whenStarted: entry.whenStarted,
     whenEnded: entry.whenEnded,
@@ -232,10 +232,10 @@ export default function DiaryDetailsPage() {
             <Activity className="w-5 h-5 text-primary" />
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium ${
-                STATUS_STYLES[uiStatus]
+                STATUS_STYLES[entryStatus]
               }`}
             >
-              {getStatusLabel(uiStatus)}
+              {getStatusLabel(entryStatus)}
             </span>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function DiaryDetailsPage() {
         </div>
 
         <div className="flex items-center justify-center gap-2">
-          {(uiStatus === "PLANNED" || uiStatus === "OVERDUE") && (
+          {(entryStatus === "PLANNED" || entryStatus === "OVERDUE") && (
             <Button
               onClick={handleDelete}
               variant="primary"

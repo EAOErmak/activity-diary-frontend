@@ -2,7 +2,6 @@
 import {
   DISPLAY_STATUSES,
   getStatusLabel,
-  type DisplayStatus,
 } from "@/features/diary/pages/DiaryListPage/statusConfig";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
@@ -17,14 +16,15 @@ import {
   SelectItem,
 } from "@/shared/components/ui/select";
 import { Badge } from "@/shared/components/ui/badge";
+import type { EntryStatus } from "@/shared/types/diary";
 import { useTranslation } from "react-i18next";
 
 type Props = {
-  status: DisplayStatus | "";
+  status: EntryStatus | "";
   tags: string[];
   tagQuery: string;
   date?: Date;
-  onStatusChange: (value: DisplayStatus | "") => void;
+  onStatusChange: (value: EntryStatus | "") => void;
   onTagsChange: (value: string[]) => void;
   onTagQueryChange: (value: string) => void;
   onDateChange: (value: Date | undefined) => void;
@@ -64,7 +64,7 @@ export function DiaryListFilters(props: Props) {
           <Select
             value={props.status || "ALL"}
             onValueChange={(v) =>
-              props.onStatusChange(v === "ALL" ? "" : (v as DisplayStatus))
+              props.onStatusChange(v === "ALL" ? "" : (v as EntryStatus))
             }
           >
             <SelectTrigger>
