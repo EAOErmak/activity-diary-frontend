@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   FormField,
   FormItem,
@@ -34,6 +34,8 @@ type Props = {
   canRemove: boolean;
 };
 
+const EMPTY_METRIC_VALUES: MetricValueFormValue[] = [];
+
 export function DiaryMetricItem({
   index,
   metricTypes,
@@ -47,12 +49,12 @@ export function DiaryMetricItem({
     name: `metrics.${index}.metricTypeId`,
   });
 
-  const values = (
-    useWatch({
-      control: form.control,
-      name: `metrics.${index}.values`,
-    }) ?? []
-  ) as MetricValueFormValue[];
+  const watchedValues = useWatch({
+    control: form.control,
+    name: `metrics.${index}.values`,
+  }) as MetricValueFormValue[] | undefined;
+
+  const values = watchedValues ?? EMPTY_METRIC_VALUES;
 
   const selectedMetricTypeId =
     typeof metricTypeId === "number" ? metricTypeId : null;
@@ -62,6 +64,33 @@ export function DiaryMetricItem({
   );
 
   const previousMetricTypeIdRef = useRef<number | null>(selectedMetricTypeId);
+
+  const selectedUnitIds = useMemo(() => {
+    const ids = new Set<number>();
+
+    values.forEach((value) => {
+      if (value?.unitId != null) {
+        ids.add(value.unitId);
+      }
+    });
+
+    return ids;
+  }, [values]);
+
+  const hasAvailableUnitForNewValue =
+    selectedMetricTypeId != null &&
+    !isUnitsLoading &&
+    units.some((unit) => !selectedUnitIds.has(unit.id));
+
+  const canAddMetricValue =
+    selectedMetricTypeId != null &&
+    !isUnitsLoading &&
+    hasAvailableUnitForNewValue;
+
+  const getUnitOptionsForValue = (currentUnitId?: number | null) =>
+    units.filter(
+      (unit) => unit.id === currentUnitId || !selectedUnitIds.has(unit.id)
+    );
 
   useEffect(() => {
     if (previousMetricTypeIdRef.current === selectedMetricTypeId) {
@@ -182,7 +211,7 @@ export function DiaryMetricItem({
 
       {/* ===== VALUES ===== */}
       <div className="space-y-2">
-        {values.map((_: any, valueIndex: number) => (
+        {values.map((_, valueIndex) => (
           <div
             key={valueIndex}
             className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end"
@@ -191,37 +220,45 @@ export function DiaryMetricItem({
             <FormField
               control={form.control}
               name={`metrics.${index}.values.${valueIndex}.unitId`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Select
-                      value={field.value ? String(field.value) : ""}
-                      onValueChange={(v) =>
-                        field.onChange(v ? Number(v) : null)
-                      }
-                      disabled={selectedMetricTypeId == null || isUnitsLoading}
-                    >
-                      <SelectTrigger title={unitPlaceholder}>
-                        <SelectValue placeholder={t("diary.unitShort")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selectedMetricTypeId != null &&
-                          !isUnitsLoading &&
-                          units.length === 0 && (
+              render={({ field }) => {
+                const currentUnitId =
+                  typeof field.value === "number" ? field.value : null;
+                const unitOptions = getUnitOptionsForValue(currentUnitId);
+                const hasNoUnitOptions =
+                  selectedMetricTypeId != null &&
+                  !isUnitsLoading &&
+                  unitOptions.length === 0;
+
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <Select
+                        value={field.value != null ? String(field.value) : ""}
+                        onValueChange={(v) =>
+                          field.onChange(v ? Number(v) : null)
+                        }
+                        disabled={selectedMetricTypeId == null || isUnitsLoading}
+                      >
+                        <SelectTrigger title={unitPlaceholder}>
+                          <SelectValue placeholder={t("diary.unitShort")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hasNoUnitOptions && (
                             <SelectItem value="no-units" disabled>
                               {t("diary.noUnitsAvailable")}
                             </SelectItem>
                           )}
-                        {units.map((u) => (
-                          <SelectItem key={u.id} value={String(u.id)}>
-                            {u.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
+                          {unitOptions.map((u) => (
+                            <SelectItem key={u.id} value={String(u.id)}>
+                              {u.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                );
+              }}
             />
 
             {/* VALUE */}
@@ -292,6 +329,16 @@ export function DiaryMetricItem({
         type="button"
         variant="form"
         size="sm"
+        disabled={!canAddMetricValue}
+        title={
+          selectedMetricTypeId == null
+            ? t("diary.selectMetricFirst")
+            : isUnitsLoading
+              ? t("diary.unitsLoading")
+              : !hasAvailableUnitForNewValue
+                ? t("diary.noUnitsAvailable")
+                : undefined
+        }
         onClick={() => {
           form.setValue(`metrics.${index}.values`, [
             ...values,
