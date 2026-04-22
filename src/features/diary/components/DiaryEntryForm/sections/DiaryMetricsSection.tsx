@@ -7,11 +7,15 @@ import type { MetricsFormSectionValue } from "@/shared/types/metricForm";
 type Props = {
   metricTypes: { id: number; label: string }[];
   copyFirstMetricOnAppend?: boolean;
+  disabled?: boolean;
+  message?: string;
 };
 
 export function DiaryMetricsSection({
   metricTypes,
   copyFirstMetricOnAppend = false,
+  disabled = false,
+  message,
 }: Props) {
   const { t } = useTranslation();
   const { control, getValues } = useFormContext<MetricsFormSectionValue>();
@@ -54,15 +58,21 @@ export function DiaryMetricsSection({
           key={field.id}
           index={index}
           metricTypes={metricTypes}
+          disabled={disabled}
           canRemove={fields.length > 0}
           onRemove={() => remove(index)}
         />
       ))}
 
+      {message && (
+        <p className="text-sm text-muted-foreground">{message}</p>
+      )}
+
       <Button
         type="button"
         variant="form"
         onClick={() => append(buildMetricDraft())}
+        disabled={disabled || metricTypes.length === 0}
       >
         {t("diary.addMetric")}
       </Button>

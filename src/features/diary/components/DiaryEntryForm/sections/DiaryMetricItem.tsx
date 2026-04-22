@@ -30,6 +30,7 @@ import type {
 type Props = {
   index: number;
   metricTypes: { id: number; label: string }[];
+  disabled?: boolean;
   onRemove: () => void;
   canRemove: boolean;
 };
@@ -39,6 +40,7 @@ const EMPTY_METRIC_VALUES: MetricValueFormValue[] = [];
 export function DiaryMetricItem({
   index,
   metricTypes,
+  disabled = false,
   onRemove,
   canRemove,
 }: Props) {
@@ -79,11 +81,13 @@ export function DiaryMetricItem({
 
   const hasAvailableUnitForNewValue =
     selectedMetricTypeId != null &&
+    !disabled &&
     !isUnitsLoading &&
     units.some((unit) => !selectedUnitIds.has(unit.id));
 
   const canAddMetricValue =
     selectedMetricTypeId != null &&
+    !disabled &&
     !isUnitsLoading &&
     hasAvailableUnitForNewValue;
 
@@ -178,6 +182,7 @@ export function DiaryMetricItem({
                   onValueChange={(v) =>
                     field.onChange(v ? Number(v) : null)
                   }
+                  disabled={disabled}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t("diary.metricTypePlaceholder")} />
@@ -237,7 +242,11 @@ export function DiaryMetricItem({
                         onValueChange={(v) =>
                           field.onChange(v ? Number(v) : null)
                         }
-                        disabled={selectedMetricTypeId == null || isUnitsLoading}
+                        disabled={
+                          disabled ||
+                          selectedMetricTypeId == null ||
+                          isUnitsLoading
+                        }
                       >
                         <SelectTrigger title={unitPlaceholder}>
                           <SelectValue placeholder={t("diary.unitShort")} />
@@ -289,6 +298,7 @@ export function DiaryMetricItem({
                       placeholder="0"
                       value={field.value ?? ""}
                       onBlur={field.onBlur}
+                      disabled={disabled}
                       onChange={(e) => {
                         const next = e.target.value;
 
@@ -316,6 +326,7 @@ export function DiaryMetricItem({
                 next.splice(valueIndex, 1);
                 form.setValue(`metrics.${index}.values`, next);
               }}
+              disabled={disabled}
               aria-label={t("diary.removeMetricValue")}
             >
               ✕

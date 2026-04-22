@@ -1,5 +1,6 @@
 ﻿import React from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Form } from "@/shared/components/ui/form";
 import {
@@ -10,7 +11,8 @@ import {
   CardFooter,
 } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
-import { useDictionary } from "@/shared/hooks/useDictionary";
+import { useMetricsByTags } from "@/shared/hooks/useMetricsByTags";
+import { useTagsQuery } from "@/shared/hooks/useTags";
 import { parseMetricValueInput } from "@/shared/lib/metricValue";
 
 import type {
@@ -28,6 +30,10 @@ import {
   DiaryStatusSection,
   DiaryTimeSection,   
 } from "./sections";
+import {
+  extractDescriptionTagNames,
+  normalizeDescriptionTagName,
+} from "./sections/descriptionTagAutocomplete";
 import { useTranslation } from "react-i18next";
 
 void React;
@@ -102,7 +108,145 @@ export default function DiaryEntryForm(props: Props) {
 
   const { formState: { isSubmitting }} = form;
 
-  const metricTypes = useDictionary("METRIC_NAME");
+  const {
+    tags: availableTags,
+    isLoading: areTagsLoading,
+    isPending: areTagsPending,
+    isLoaded: areTagsLoaded,
+  } = useTagsQuery();
+  const description =
+    useWatch({
+      control: form.control,
+      name: "description",
+    }) ?? "";
+  const watchedMetrics =
+    useWatch({
+      control: form.control,
+      name: "metrics",
+    }) ?? [];
+
+  const descriptionTagNames = useMemo(
+    () => new Set(extractDescriptionTagNames(description)),
+    [description]
+  );
+
+  const selectedTags = useMemo(
+    () =>
+      availableTags.filter((tag) => {
+        const normalizedName = normalizeDescriptionTagName(tag.name);
+        if (normalizedName == null || normalizedName === "") {
+          return false;
+        }
+
+        const descriptionName = normalizedName.startsWith("#")
+          ? normalizedName
+          : `#${normalizedName}`;
+
+        return descriptionTagNames.has(descriptionName);
+      }),
+    [availableTags, descriptionTagNames]
+  );
+
+  const selectedTagIds = useMemo(
+    () =>
+      [...new Set(selectedTags.map((tag) => tag.id))].sort(
+        (left, right) => left - right
+      ),
+    [selectedTags]
+  );
+
+  const selectedTagNames = useMemo(
+    () => selectedTags.map((tag) => tag.name),
+    [selectedTags]
+  );
+
+  const selectedTagIdsKey = selectedTagIds.join(",");
+
+  const metricsByTags = useMetricsByTags(selectedTagIds);
+  const metricTypes = metricsByTags.metrics;
+  const hasSelectedTags = selectedTagIds.length > 0;
+  const hasDescriptionTags = descriptionTagNames.size > 0;
+  const hasMetricData = watchedMetrics.some(
+    (metric) =>
+      metric.metricTypeId != null ||
+      metric.values.some(
+        (value) => value.unitId != null || value.value.trim() !== ""
+      )
+  );
+
+  useEffect(() => {
+    const currentTags = form.getValues("tags") ?? [];
+
+    if (
+      currentTags.length === selectedTagNames.length &&
+      currentTags.every((tag, index) => tag === selectedTagNames[index])
+    ) {
+      return;
+    }
+
+    form.setValue("tags", selectedTagNames);
+  }, [form, selectedTagNames]);
+
+  useEffect(() => {
+    const currentMetrics = form.getValues("metrics") ?? [];
+
+    if (!hasSelectedTags) {
+      if (hasDescriptionTags && (!areTagsLoaded || areTagsPending)) {
+        return;
+      }
+
+      if (currentMetrics.length > 0) {
+        form.setValue("metrics", [], {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+
+      return;
+    }
+
+    if (!metricsByTags.isSuccess) {
+      return;
+    }
+
+    const allowedMetricTypeIds = new Set(metricTypes.map((metric) => metric.id));
+    const validMetrics = currentMetrics.filter(
+      (metric) =>
+        metric.metricTypeId == null ||
+        allowedMetricTypeIds.has(metric.metricTypeId)
+    );
+
+    if (validMetrics.length !== currentMetrics.length) {
+      form.setValue("metrics", validMetrics, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [
+    form,
+    areTagsLoaded,
+    areTagsPending,
+    hasDescriptionTags,
+    hasSelectedTags,
+    metricTypes,
+    metricsByTags.isSuccess,
+    selectedTagIdsKey,
+  ]);
+
+  const metricSelectorMessage = areTagsLoading
+    ? t("diary.tagsLoading")
+    : !hasSelectedTags
+    ? t("diary.selectTagForMetrics")
+    : metricsByTags.isLoading
+      ? t("diary.metricsLoading")
+      : metricsByTags.isError
+        ? t("diary.metricsLoadError")
+        : metricTypes.length === 0
+          ? t("diary.noMetricsForTags")
+          : undefined;
+  const isMetricStatePending =
+    hasMetricData &&
+    (areTagsLoading || metricsByTags.isLoading || metricsByTags.isError);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
@@ -178,13 +322,20 @@ export default function DiaryEntryForm(props: Props) {
             <DiaryMetricsSection
               metricTypes={metricTypes}
               copyFirstMetricOnAppend={mode === "create"}
+              disabled={
+                areTagsLoading ||
+                !hasSelectedTags ||
+                metricsByTags.isLoading ||
+                metricsByTags.isError
+              }
+              message={metricSelectorMessage}
             />
 
             <CardFooter className="px-0">
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isMetricStatePending}
               >
                 {isSubmitting ? t("common.saving") : submitLabel}
               </Button>

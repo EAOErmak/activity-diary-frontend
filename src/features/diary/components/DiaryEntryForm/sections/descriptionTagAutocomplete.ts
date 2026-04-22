@@ -1,4 +1,6 @@
 const TAG_CHARACTER_PATTERN = /^[\p{L}\p{N}_-]$/u;
+const DESCRIPTION_TAG_PATTERN = /#\S+/gu;
+const MAX_TAG_NAME_LENGTH = 64;
 
 export type ActiveDescriptionTag = {
   hashIndex: number;
@@ -12,6 +14,58 @@ function isTagCharacter(character: string | undefined) {
   }
 
   return TAG_CHARACTER_PATTERN.test(character);
+}
+
+export function normalizeDescriptionTagName(raw: string | null | undefined) {
+  if (raw == null) {
+    return null;
+  }
+
+  let value = raw.trim().toLowerCase();
+  const hadHash = value.startsWith("#");
+
+  while (value.startsWith("#")) {
+    value = value.slice(1);
+  }
+
+  value = value.trim();
+
+  return hadHash ? `#${value}` : value;
+}
+
+export function isValidDescriptionTagName(
+  value: string | null | undefined
+) {
+  if (value == null || value.trim() === "") {
+    return false;
+  }
+
+  return (
+    value.startsWith("#") &&
+    value.length > 1 &&
+    value.length <= MAX_TAG_NAME_LENGTH &&
+    !/\s/u.test(value.slice(1))
+  );
+}
+
+export function extractDescriptionTagNames(value: string) {
+  const tagNames: string[] = [];
+  const seen = new Set<string>();
+
+  for (const match of value.matchAll(DESCRIPTION_TAG_PATTERN)) {
+    const normalized = normalizeDescriptionTagName(match[0]);
+
+    if (!isValidDescriptionTagName(normalized) || normalized == null) {
+      continue;
+    }
+
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      tagNames.push(normalized);
+    }
+  }
+
+  return tagNames;
 }
 
 export function findActiveDescriptionTag(
