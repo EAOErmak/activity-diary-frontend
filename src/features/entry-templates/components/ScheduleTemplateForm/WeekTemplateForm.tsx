@@ -118,7 +118,7 @@ export default function WeekTemplateForm({
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-1 no-scrollbar">
-      <Card className="mx-auto mt-4 w-full max-w-[29rem] min-w-0 border border-border/70 bg-background/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+      <Card className="mx-auto mt-4 w-full max-w-[29rem] min-w-0 bg-background/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
         <CardHeader className="pb-4">
           <CardTitle>{title}</CardTitle>
           <CardDescription>
