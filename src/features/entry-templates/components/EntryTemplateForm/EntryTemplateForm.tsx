@@ -430,7 +430,11 @@ export default function EntryTemplateForm(props: Props) {
               <CardFooter className="justify-end px-0 pt-2">
                 <Button
                   type="submit"
-                  className="w-full sm:w-auto sm:min-w-[12rem]"
+                  className={
+                    mode === "create"
+                      ? "w-full"
+                      : "w-full sm:w-auto sm:min-w-[12rem]"
+                  }
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? t("common.saving") : submitLabel}
