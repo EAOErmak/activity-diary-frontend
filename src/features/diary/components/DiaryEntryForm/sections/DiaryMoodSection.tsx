@@ -16,6 +16,14 @@ const MOOD_COLORS: Record<number, string> = {
   5: "bg-green-500",
 };
 
+const MOOD_HIGHLIGHTS: Record<number, string> = {
+  1: "ring-red-300 shadow-[0_0_18px_rgba(248,113,113,0.42)]",
+  2: "ring-orange-300 shadow-[0_0_18px_rgba(251,146,60,0.42)]",
+  3: "ring-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.42)]",
+  4: "ring-lime-300 shadow-[0_0_18px_rgba(163,230,53,0.42)]",
+  5: "ring-green-300 shadow-[0_0_18px_rgba(74,222,128,0.42)]",
+};
+
 export function DiaryMoodSection() {
   const { t } = useTranslation();
   return (
@@ -41,7 +49,7 @@ export function DiaryMoodSection() {
                     "focus-visible:ring-2 focus-visible:ring-ring",
                     MOOD_COLORS[lvl],
                     isActive
-                      ? "scale-110 opacity-100 ring-2 ring-white/70 shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+                      ? cn("scale-110 opacity-100 ring-4", MOOD_HIGHLIGHTS[lvl])
                       : "scale-95 opacity-55 hover:scale-100 hover:opacity-80"
                   )}
                 />
