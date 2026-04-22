@@ -1,10 +1,10 @@
-import { Button } from "@/shared/components/ui/button";
 import { useTranslation } from "react-i18next";
 import {
   FormField,
   FormItem,
   FormLabel,
 } from "@/shared/components/ui/form";
+import { cn } from "@/shared/lib/utils";
 
 const MOODS = [1, 2, 3, 4, 5] as const;
 
@@ -14,10 +14,6 @@ const MOOD_COLORS: Record<number, string> = {
   3: "bg-yellow-500",
   4: "bg-lime-500",
   5: "bg-green-500",
-};
-
-type Props = {
-  show: boolean;
 };
 
 export function DiaryMoodSection() {
@@ -39,12 +35,15 @@ export function DiaryMoodSection() {
                   type="button"
                   onClick={() => field.onChange(lvl)}
                   aria-pressed={isActive}
-                  className={`
-                    h-10 w-10 rounded-full
-                    transition-transform
-                    ${MOOD_COLORS[lvl]}
-                    ${isActive ? "scale-110 ring-2 ring-white/70" : "opacity-70"}
-                  `}
+                  className={cn(
+                    "h-10 w-10 rounded-full shadow-none outline-none",
+                    "transition-all duration-1000 ease-out",
+                    "focus-visible:ring-2 focus-visible:ring-ring",
+                    MOOD_COLORS[lvl],
+                    isActive
+                      ? "scale-110 opacity-100 ring-2 ring-white/70 shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+                      : "scale-95 opacity-55 hover:scale-100 hover:opacity-80"
+                  )}
                 />
               );
             })}
