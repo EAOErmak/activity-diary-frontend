@@ -1,7 +1,6 @@
 import { Check, Clock3, X } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
   FormControl,
@@ -15,16 +14,6 @@ export function DiaryStatusSection() {
   const { t } = useTranslation();
   const { watch, setValue } = useFormContext();
   const status = watch("status") as EntryStatus;
-  const derivedStatus =
-    status === "ACTIVE" || status === "OVERDUE" ? status : null;
-  const derivedStatusClass =
-    derivedStatus === "ACTIVE"
-      ? "border-sky-400/40 bg-sky-500/10 text-sky-600"
-      : "border-orange-400/40 bg-orange-500/10 text-orange-600";
-  const derivedStatusLabel =
-    derivedStatus === "ACTIVE"
-      ? t("diary.status.active")
-      : t("diary.status.overdue");
 
   return (
     <FormField
@@ -35,15 +24,6 @@ export function DiaryStatusSection() {
 
           <FormControl>
             <div className="flex flex-wrap items-center gap-3">
-              {derivedStatus ? (
-                <Badge
-                  variant="outline"
-                  className={derivedStatusClass}
-                >
-                  {derivedStatusLabel}
-                </Badge>
-              ) : null}
-
               <Button
                 type="button"
                 size="sm"
