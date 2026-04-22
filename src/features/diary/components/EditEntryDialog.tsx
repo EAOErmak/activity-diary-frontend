@@ -3,7 +3,6 @@
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { useTranslation } from "react-i18next";
@@ -73,9 +72,7 @@ useEffect(() => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{t("diary.editEntryTitle")}</DialogTitle>
-        </DialogHeader>
+        <DialogTitle className="sr-only">{t("diary.editEntryTitle")}</DialogTitle>
 
         {loading || !values ? (
           <p className="text-white text-center py-10">

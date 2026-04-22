@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import MiniCalendar from "@/features/calendar/components/MiniCalendar";
 import { Card } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
 
 type Props = {
   onSelectDay?: (day: Date) => void;
@@ -35,7 +34,6 @@ export function CalendarSidebar({ onSelectDay, tags, onTagsChange }: Props) {
 
       <Card className="p-4">
         <h3 className="text-sm font-medium mb-3">{t("calendar.tagsTitle")}</h3>
-        <Label className="mb-2 block text-xs text-mutedForeground">{t("calendar.newItemLabel")}</Label>
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
