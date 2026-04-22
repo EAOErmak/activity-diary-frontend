@@ -727,6 +727,10 @@ const ruExtensions = {
       deprecateDescription:
         "Тег \"{{name}}\" будет помечен как устаревший.",
       deprecateConfirm: "Пометить",
+      deleteTitle: "Удалить тег?",
+      deleteDescription:
+        "Тег \"{{name}}\" будет удален. Это действие нельзя отменить.",
+      deleteConfirm: "Удалить",
       statusProposed: "Ожидает",
       statusApproved: "Одобрен",
       statusRejected: "Отклонен",

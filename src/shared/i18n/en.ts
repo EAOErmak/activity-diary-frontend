@@ -726,6 +726,10 @@ const enExtensions = {
       deprecateDescription:
         "Tag \"{{name}}\" will be marked as deprecated.",
       deprecateConfirm: "Mark",
+      deleteTitle: "Delete tag?",
+      deleteDescription:
+        "Tag \"{{name}}\" will be deleted. This action cannot be undone.",
+      deleteConfirm: "Delete",
       statusProposed: "Pending",
       statusApproved: "Approved",
       statusRejected: "Rejected",

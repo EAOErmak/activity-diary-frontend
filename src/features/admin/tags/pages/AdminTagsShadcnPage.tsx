@@ -7,6 +7,7 @@ import { useRef } from "react";
 import {
   approveTag,
   createAdminTag,
+  deleteTag,
   deprecateTag,
   getAdminTags,
   rejectTag,
@@ -191,6 +192,19 @@ export default function AdminTagsShadcnPage() {
     });
   }
 
+  function requestDelete(tag: Tag) {
+    setPendingAction({
+      title: t("admin.tagsPage.deleteTitle"),
+      description: t("admin.tagsPage.deleteDescription", { name: tag.name }),
+      confirmLabel: t("admin.tagsPage.deleteConfirm"),
+      tone: "danger",
+      run: async () => {
+        await deleteTag(tag.id);
+        await load();
+      },
+    });
+  }
+
   async function handleConfirmAction() {
     if (!pendingAction) return;
 
@@ -337,7 +351,7 @@ export default function AdminTagsShadcnPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="inline-grid grid-cols-[max-content_max-content] justify-items-start gap-2">
                           <Button
                             size="sm"
                             variant="surface"
@@ -361,6 +375,14 @@ export default function AdminTagsShadcnPage() {
                             onClick={() => requestDeprecate(tag)}
                           >
                             {t("admin.tagsPage.deprecateConfirm")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={isMutating}
+                            onClick={() => requestDelete(tag)}
+                            className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
+                          >
+                            {t("admin.tagsPage.deleteConfirm")}
                           </Button>
                         </div>
                       </TableCell>

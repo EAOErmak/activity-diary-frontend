@@ -40,3 +40,7 @@ export const rejectTag = async (id: number): Promise<void> => {
 export const deprecateTag = async (id: number): Promise<void> => {
   await api.post(`/admin/tags/${id}/deprecate`);
 };
+
+export const deleteTag = async (id: number): Promise<void> => {
+  await api.delete(`/admin/tags/${id}`);
+};
