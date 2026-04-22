@@ -32,6 +32,7 @@ export function CreateDayTemplateDialog({
         <DialogDescription />
 
         <DayTemplateForm
+          mode="create"
           title={t("templates.dayTitle")}
           namePlaceholder={t("templates.dayNamePlaceholder")}
           itemPlaceholder={t("templates.dayItemPlaceholder")}

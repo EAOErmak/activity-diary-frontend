@@ -32,6 +32,7 @@ export function CreateWeekTemplateDialog({
         <DialogDescription />
 
         <WeekTemplateForm
+          mode="create"
           title={t("templates.weekTitle")}
           namePlaceholder={t("templates.weekNamePlaceholder")}
           itemPlaceholder={t("templates.weekItemPlaceholder")}
