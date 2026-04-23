@@ -6,19 +6,30 @@ import axios, {
 import { toast } from "sonner";
 import i18n from "@/shared/i18n/config";
 import { isAuthEndpoint } from "@/api/authRoutes";
+import { debugAuthFlow } from "@/api/http/authDebug";
 import { API_BASE_URL } from "@/api/http/apiConfig";
 import {
   getAccessToken,
   hasRefreshToken,
+  isAuthRefreshInFlight,
   refreshAuthSession,
-  refreshAuthSessionIfNeeded,
+  resolveAccessTokenForRequest,
 } from "@/api/http/authSession";
 import { clearAuthSession } from "@/shared/store/authStore";
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _retryAfterRefresh?: boolean;
   skipAuthRefresh?: boolean;
+  _authAccessToken?: string | null;
+  _authTokenWasRefreshed?: boolean;
 };
+
+const MAX_TRACKED_REFRESH_ATTEMPTS = 10;
+const RECENT_REFRESH_ATTEMPT_WINDOW_MS = 30_000;
+const refreshAttemptedAccessTokens: Array<{
+  accessToken: string;
+  attemptedAt: number;
+}> = [];
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -55,6 +66,103 @@ function setAuthorizationHeader(
   config.headers.Authorization = `Bearer ${accessToken}`;
 }
 
+function clearAuthorizationHeader(config: InternalAxiosRequestConfig) {
+  if (typeof config.headers?.delete === "function") {
+    config.headers.delete("Authorization");
+    return;
+  }
+
+  if (!config.headers) {
+    return;
+  }
+
+  delete config.headers.Authorization;
+  delete config.headers.authorization;
+}
+
+function getAuthorizationHeader(
+  config: InternalAxiosRequestConfig | undefined
+): string | null {
+  if (!config?.headers) {
+    return null;
+  }
+
+  if (typeof config.headers.get === "function") {
+    const headerValue = config.headers.get("Authorization");
+    return typeof headerValue === "string" ? headerValue : null;
+  }
+
+  const headerValue = config.headers.Authorization ?? config.headers.authorization;
+
+  return typeof headerValue === "string" ? headerValue : null;
+}
+
+function getRequestAccessToken(
+  config: RetriableRequestConfig | undefined
+): string | null {
+  if (!config) {
+    return null;
+  }
+
+  if (config._authAccessToken !== undefined) {
+    return config._authAccessToken;
+  }
+
+  const authorizationHeader = getAuthorizationHeader(config);
+
+  if (!authorizationHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return authorizationHeader.slice("Bearer ".length);
+}
+
+function pruneRefreshAttempts() {
+  const cutoff = Date.now() - RECENT_REFRESH_ATTEMPT_WINDOW_MS;
+
+  for (let index = refreshAttemptedAccessTokens.length - 1; index >= 0; index -= 1) {
+    if (refreshAttemptedAccessTokens[index].attemptedAt < cutoff) {
+      refreshAttemptedAccessTokens.splice(index, 1);
+    }
+  }
+}
+
+function rememberRefreshAttempt(accessToken: string | null) {
+  if (!accessToken) {
+    return;
+  }
+
+  pruneRefreshAttempts();
+
+  const existingIndex = refreshAttemptedAccessTokens.findIndex(
+    (entry) => entry.accessToken === accessToken
+  );
+  if (existingIndex >= 0) {
+    refreshAttemptedAccessTokens.splice(existingIndex, 1);
+  }
+
+  refreshAttemptedAccessTokens.push({
+    accessToken,
+    attemptedAt: Date.now(),
+  });
+
+  if (refreshAttemptedAccessTokens.length > MAX_TRACKED_REFRESH_ATTEMPTS) {
+    refreshAttemptedAccessTokens.shift();
+  }
+}
+
+function hasRefreshAttemptForAccessToken(accessToken: string | null) {
+  if (!accessToken) {
+    return false;
+  }
+
+  pruneRefreshAttempts();
+
+  return refreshAttemptedAccessTokens.some(
+    (entry) => entry.accessToken === accessToken
+  );
+}
+
 function showErrorToast(error: unknown) {
   const message = extractErrorMessage(error);
 
@@ -70,13 +178,19 @@ api.interceptors.request.use(async (config) => {
     return config;
   }
 
-  const accessToken = hasRefreshToken()
-    ? await refreshAuthSessionIfNeeded()
-    : getAccessToken();
+  const { accessToken, refreshed } = await resolveAccessTokenForRequest();
 
   if (accessToken) {
     setAuthorizationHeader(config, accessToken);
+  } else {
+    clearAuthorizationHeader(config);
   }
+
+  requestConfig._authAccessToken = accessToken ?? null;
+  requestConfig._authTokenWasRefreshed =
+    requestConfig._authTokenWasRefreshed === true ||
+    requestConfig._retryAfterRefresh === true ||
+    refreshed;
 
   return config;
 });
@@ -102,6 +216,8 @@ api.interceptors.response.use(
 
   async (error: AxiosError) => {
     const requestConfig = error.config as RetriableRequestConfig | undefined;
+    const requestAccessToken = getRequestAccessToken(requestConfig);
+    const currentAccessToken = getAccessToken();
     const shouldAttemptRefresh =
       error.response?.status === 401 &&
       !!requestConfig &&
@@ -111,21 +227,58 @@ api.interceptors.response.use(
       hasRefreshToken();
 
     if (shouldAttemptRefresh && requestConfig) {
-      requestConfig._retryAfterRefresh = true;
+      if (
+        currentAccessToken &&
+        requestAccessToken !== currentAccessToken &&
+        hasRefreshAttemptForAccessToken(requestAccessToken)
+      ) {
+        debugAuthFlow("refresh:retry-with-latest-token", {
+          url: requestConfig.url,
+        });
+        requestConfig._retryAfterRefresh = true;
+        requestConfig._authAccessToken = currentAccessToken;
+        requestConfig._authTokenWasRefreshed = true;
+        setAuthorizationHeader(requestConfig, currentAccessToken);
+        return api.request(requestConfig);
+      }
 
-      try {
-        const accessToken = await refreshAuthSession();
-
-        if (!accessToken) {
-          clearAuthSession();
-          return Promise.reject(error);
+      if (
+        requestConfig._authTokenWasRefreshed ||
+        (hasRefreshAttemptForAccessToken(requestAccessToken) &&
+          !isAuthRefreshInFlight())
+      ) {
+        debugAuthFlow("refresh:skip", {
+          reason: requestConfig._authTokenWasRefreshed
+            ? "request-already-used-refreshed-token"
+            : "token-already-triggered-refresh",
+          url: requestConfig.url,
+        });
+      } else {
+        if (!isAuthRefreshInFlight()) {
+          rememberRefreshAttempt(requestAccessToken);
         }
 
-        setAuthorizationHeader(requestConfig, accessToken);
-        return api.request(requestConfig);
-      } catch (refreshError) {
-        showErrorToast(refreshError);
-        return Promise.reject(refreshError);
+        debugAuthFlow("refresh:triggered-by-401", {
+          url: requestConfig.url,
+        });
+        requestConfig._retryAfterRefresh = true;
+
+        try {
+          const accessToken = await refreshAuthSession();
+
+          if (!accessToken) {
+            clearAuthSession();
+            return Promise.reject(error);
+          }
+
+          requestConfig._authAccessToken = accessToken;
+          requestConfig._authTokenWasRefreshed = true;
+          setAuthorizationHeader(requestConfig, accessToken);
+          return api.request(requestConfig);
+        } catch (refreshError) {
+          showErrorToast(refreshError);
+          return Promise.reject(refreshError);
+        }
       }
     }
 

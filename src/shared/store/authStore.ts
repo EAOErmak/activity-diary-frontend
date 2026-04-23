@@ -1,4 +1,4 @@
-import { queryClient } from "@/providers/QueryProvider";
+import { queryClient } from "@/providers/queryClient";
 import { useDiaryRepository } from "@/shared/repository/diaryRepository";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -6,6 +6,7 @@ import { useCurrentUserStore } from "./currentUserStore";
 
 export type UserRole = "ADMIN" | "USER" | "PREMIUM";
 export const AUTH_STORAGE_KEY = "auth-storage";
+let isAuthStorageSyncBound = false;
 
 interface AuthState {
   accessToken: string | null;
@@ -108,3 +109,26 @@ export function clearAuthSession(options?: { preserveLoggingOut?: boolean }) {
 
   useAuthStore.persist.clearStorage();
 }
+
+function bindAuthStorageSync() {
+  if (isAuthStorageSyncBound || typeof window === "undefined") {
+    return;
+  }
+
+  isAuthStorageSyncBound = true;
+
+  window.addEventListener("storage", (event) => {
+    if (event.key !== AUTH_STORAGE_KEY) {
+      return;
+    }
+
+    if (event.newValue === null) {
+      clearAuthSession();
+      return;
+    }
+
+    void useAuthStore.persist.rehydrate();
+  });
+}
+
+bindAuthStorageSync();
