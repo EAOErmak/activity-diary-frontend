@@ -787,6 +787,57 @@ const enExtensions = {
         "Chart type \"{{chartType}}\" was added for tag \"{{tagName}}\".",
       linkDeleted: "Link \"{{chartType}}\" deleted.",
     },
+    tagMetricNames: {
+      title: "Allowed metric names",
+      description:
+        "Configure which metric names are available in diary entry create and edit forms when a tag is selected.",
+      linksCount: "Metric names: {{count}}",
+      tagSearchLabel: "Tag search",
+      tagSearchPlaceholder: "Start typing a tag name...",
+      tagLabel: "Tag",
+      tagLoading: "Loading tags...",
+      tagEmpty: "No tags found",
+      tagPlaceholder: "Select a tag",
+      metricSearchLabel: "Metric name search",
+      metricSearchPlaceholder: "Search metric names...",
+      currentLinksTitle: "Allowed metric names {{suffix}}",
+      currentLinksSuffix: "for \"{{name}}\"",
+      currentLinksDescription:
+        "Review the current selection, then add or remove metric names before saving.",
+      unsavedChanges: "Unsaved changes",
+      saveHintDirty:
+        "You have local changes. Save to replace the backend relation set for the selected tag.",
+      saveHintClean:
+        "The table below reflects the saved backend relation set for the selected tag.",
+      selectTagHint: "Select a tag to manage allowed metric names.",
+      emptyCurrentLinks:
+        "There are no linked metric names for this tag yet.",
+      metricColumn: "Metric name",
+      statusColumn: "Status",
+      relationColumn: "Relation",
+      actionColumn: "Action",
+      activeStatus: "Active",
+      inactiveStatus: "Inactive",
+      linkedStatus: "Allowed",
+      unlinkedStatus: "Not allowed",
+      addAction: "Allow",
+      removeAction: "Remove",
+      loadingMetricNames: "Loading metric names...",
+      loadingLinks: "Loading links...",
+      emptyMetricNames:
+        "There are no metric names available in the dictionary.",
+      emptySearch: "No metric names match this search.",
+      metricMeta: "ID: {{id}}",
+      tagsLoadError: "Failed to load the tag list.",
+      metricNamesLoadError: "Failed to load metric names.",
+      linksLoadError:
+        "Failed to load tag ↔ metric-name links.",
+      saveError:
+        "Failed to save metric names for the selected tag.",
+      selectTagError: "Select a tag first.",
+      saveSuccess:
+        "Allowed metric names were saved for tag \"{{tagName}}\".",
+    },
   },
   food: {
     dictionaryItemId: "Dictionary ID: {{id}}",

@@ -14,6 +14,7 @@ import {
 } from "@/api/admin/adminTagsApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
 import { AdminTagChartTypesManager } from "@/features/admin/tags/components/AdminTagChartTypesManager";
+import { AdminTagMetricNamesManager } from "@/features/admin/tags/components/AdminTagMetricNamesManager";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -422,6 +423,7 @@ export default function AdminTagsShadcnPage() {
       </Card>
 
       <AdminTagChartTypesManager />
+      <AdminTagMetricNamesManager />
 
       <AdminConfirmationDialog
         open={pendingAction !== null}

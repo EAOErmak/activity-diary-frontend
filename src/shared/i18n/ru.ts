@@ -788,6 +788,58 @@ const ruExtensions = {
         "Тип графика \"{{chartType}}\" добавлен для тега \"{{tagName}}\".",
       linkDeleted: "Связь \"{{chartType}}\" удалена.",
     },
+    tagMetricNames: {
+      title: "Разрешенные названия метрик",
+      description:
+        "Настройте, какие названия метрик доступны в формах создания и редактирования записей дневника при выборе тега.",
+      linksCount: "Названий метрик: {{count}}",
+      tagSearchLabel: "Поиск тега",
+      tagSearchPlaceholder: "Начните вводить название тега...",
+      tagLabel: "Тег",
+      tagLoading: "Загрузка тегов...",
+      tagEmpty: "Теги не найдены",
+      tagPlaceholder: "Выберите тег",
+      metricSearchLabel: "Поиск названия метрики",
+      metricSearchPlaceholder: "Искать названия метрик...",
+      currentLinksTitle: "Разрешенные названия метрик {{suffix}}",
+      currentLinksSuffix: "для \"{{name}}\"",
+      currentLinksDescription:
+        "Просмотрите текущий набор, затем добавьте или уберите названия метрик перед сохранением.",
+      unsavedChanges: "Есть несохраненные изменения",
+      saveHintDirty:
+        "У вас есть локальные изменения. Сохранение заменит backend-набор связей для выбранного тега.",
+      saveHintClean:
+        "Таблица ниже отражает сохраненный backend-набор связей для выбранного тега.",
+      selectTagHint:
+        "Выберите тег, чтобы управлять разрешенными названиями метрик.",
+      emptyCurrentLinks:
+        "Для этого тега пока нет связанных названий метрик.",
+      metricColumn: "Название метрики",
+      statusColumn: "Статус",
+      relationColumn: "Связь",
+      actionColumn: "Действие",
+      activeStatus: "Активно",
+      inactiveStatus: "Неактивно",
+      linkedStatus: "Разрешено",
+      unlinkedStatus: "Не разрешено",
+      addAction: "Разрешить",
+      removeAction: "Убрать",
+      loadingMetricNames: "Загрузка названий метрик...",
+      loadingLinks: "Загрузка связей...",
+      emptyMetricNames:
+        "В словаре нет доступных названий метрик.",
+      emptySearch: "По этому поиску названия метрик не найдены.",
+      metricMeta: "ID: {{id}}",
+      tagsLoadError: "Не удалось загрузить список тегов.",
+      metricNamesLoadError: "Не удалось загрузить названия метрик.",
+      linksLoadError:
+        "Не удалось загрузить связи tag ↔ metric name.",
+      saveError:
+        "Не удалось сохранить названия метрик для выбранного тега.",
+      selectTagError: "Сначала выберите тег.",
+      saveSuccess:
+        "Разрешенные названия метрик сохранены для тега \"{{tagName}}\".",
+    },
   },
   food: {
     dictionaryItemId: "ID словаря: {{id}}",
