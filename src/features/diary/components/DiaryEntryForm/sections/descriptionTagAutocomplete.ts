@@ -118,6 +118,10 @@ type CandidateTag = {
   normalizedName: string;
 };
 
+function stripLeadingHash(value: string) {
+  return value.startsWith("#") ? value.slice(1) : value;
+}
+
 export function findBestMatchingTag(
   query: string,
   tags: readonly string[],
@@ -132,7 +136,7 @@ export function findBestMatchingTag(
   const uniqueCandidates = new Map<string, CandidateTag>();
 
   for (const tag of tags) {
-    const trimmedTag = tag.trim();
+    const trimmedTag = stripLeadingHash(tag.trim());
 
     if (!trimmedTag) {
       continue;

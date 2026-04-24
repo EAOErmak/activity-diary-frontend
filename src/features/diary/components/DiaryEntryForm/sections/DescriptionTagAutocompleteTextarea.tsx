@@ -157,6 +157,10 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
       value.slice(activeTag.cursorIndex);
     const nextCursorIndex = activeTag.cursorIndex + completion.length;
 
+    setSelection({
+      start: nextCursorIndex,
+      end: nextCursorIndex,
+    });
     onChange(nextValue);
     setDismissedSuggestionKey(null);
 
@@ -169,10 +173,6 @@ export const DescriptionTagAutocompleteTextarea = React.forwardRef<
 
       textarea.focus();
       textarea.setSelectionRange(nextCursorIndex, nextCursorIndex);
-      setSelection({
-        start: nextCursorIndex,
-        end: nextCursorIndex,
-      });
     });
   }, [activeTag, completion, disabled, onChange, value]);
 
