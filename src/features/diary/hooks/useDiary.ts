@@ -4,7 +4,6 @@ import { useDiaryRepository } from "@/shared/repository/diaryRepository";
 import type {
   DiaryEntryCreate,
   DiaryEntryUpdate,
-  DiaryEntry,
 } from "@/shared/types/diary";
 import { toast } from "sonner";
 
@@ -39,6 +38,7 @@ export function useDiaryActions() {
       status: updated.status,
       firstTag: updated.firstTag ?? null,
     });
+    window.dispatchEvent(new Event("diary:changed"));
 
     return updated;
   }

@@ -13,6 +13,29 @@ import { getIntlLocale } from "@/shared/i18n/locale";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
 import { getStatusLabel } from "@/features/diary/pages/DiaryListPage/statusConfig";
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+
+  return "Unknown error";
+}
+
 export default function DiaryDetailsPage() {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -32,8 +55,8 @@ export default function DiaryDetailsPage() {
       try {
         const data = await diaryApi.getEntry(Number(id));
         setEntry(data);
-      } catch (err: any) {
-        setError(err?.response?.data?.message ?? err.message);
+      } catch (error) {
+        setError(getErrorMessage(error));
       } finally {
         setLoading(false);
       }
@@ -323,6 +346,7 @@ export default function DiaryDetailsPage() {
           entryId={entry.id}
           open={editOpen}
           onOpenChange={setEditOpen}
+          onUpdated={setEntry}
         />
       )}
     </div>

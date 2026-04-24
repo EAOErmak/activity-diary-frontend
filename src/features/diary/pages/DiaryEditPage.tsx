@@ -7,6 +7,7 @@ import DiaryEntryForm, {
 } from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
 
 import { diaryApi } from "@/api/diaryApi";
+import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import type { DiaryEntry, DiaryEntryUpdate, EntryStatus } from "@/shared/types/diary";
 import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 
@@ -17,6 +18,7 @@ export default function DiaryEditPage() {
   const { t } = useTranslation();
   const { id } = useParams();
   const nav = useNavigate();
+  const { updateEntry } = useDiaryActions();
 
   const [values, setValues] = useState<DiaryEntryFormValues | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function DiaryEditPage() {
   }, [id]);
 
   const handleSubmit = async (payload: DiaryEntryUpdate) => {
-    await diaryApi.updateEntry(Number(id), payload);
+    await updateEntry(Number(id), payload);
     nav(`/diary/${id}`);
   };
 

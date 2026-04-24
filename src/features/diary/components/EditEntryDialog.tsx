@@ -12,6 +12,7 @@ import DiaryEntryForm, {
 } from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
 
 import { diaryApi } from "@/api/diaryApi";
+import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import type { DiaryEntry, DiaryEntryUpdate } from "@/shared/types/diary";
 import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 
@@ -19,14 +20,17 @@ type Props = {
   entryId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUpdated?: (entry: DiaryEntry) => void;
 };
 
 export function EditEntryDialog({
   entryId,
   open,
   onOpenChange,
+  onUpdated,
 }: Props) {
   const { t } = useTranslation();
+  const { updateEntry } = useDiaryActions();
   const [values, setValues] =
     useState<DiaryEntryFormValues | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +69,8 @@ useEffect(() => {
 
 
   const handleSubmit = async (payload: DiaryEntryUpdate) => {
-    await diaryApi.updateEntry(entryId, payload);
+    const updated = await updateEntry(entryId, payload);
+    onUpdated?.(updated);
     onOpenChange(false);
   };
 
