@@ -58,6 +58,7 @@ export default function AppRouter() {
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/diary/:id/edit" element={<DiaryEditPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/analytics" element={<DashboardPageV3 />} />
           <Route path="/dashboard" element={<DashboardPageV3 />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />

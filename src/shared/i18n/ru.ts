@@ -57,6 +57,13 @@ const ruBase = {
     quickAccess: "Быстрый доступ к разделам",
     logout: "Выйти",
   },
+  analytics: {
+    chartDisplayMode: {
+      label: "Режим графика",
+      bar: "Столбцы",
+      linear: "Линии",
+    },
+  },
   home: {
     greeting: "Привет, {{username}}",
     guestTitle: "Activity Diary",

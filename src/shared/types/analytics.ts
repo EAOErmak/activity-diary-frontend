@@ -47,6 +47,11 @@ export type ChartPoint = {
 };
 
 export type ChartSeries = {
+  label?: string | null;
+  name?: string | null;
+  title?: string | null;
+  date?: string | null;
+  x?: string | null;
   points: ChartPoint[];
 };
 

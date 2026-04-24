@@ -34,6 +34,9 @@ type ChartContainerProps = React.ComponentProps<"div"> & {
   children: React.ReactElement;
 };
 
+type ChartCssVariables = React.CSSProperties &
+  Partial<Record<`--color-${string}`, string>>;
+
 type ChartDimensions = {
   width: number;
   height: number;
@@ -44,13 +47,24 @@ function hasValidChartDimensions(dimensions: ChartDimensions | null) {
 }
 
 const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
-  ({ className, config, children, ...props }, ref) => {
+  ({ className, config, children, style, ...props }, ref) => {
     const [containerNode, setContainerNode] = React.useState<HTMLDivElement | null>(
       null
     );
     const [dimensions, setDimensions] = React.useState<ChartDimensions | null>(
       null
     );
+    const colorVars = React.useMemo<ChartCssVariables>(() => {
+      const vars: ChartCssVariables = {};
+
+      Object.entries(config).forEach(([key, item]) => {
+        if (item.color) {
+          vars[`--color-${key}`] = item.color;
+        }
+      });
+
+      return vars;
+    }, [config]);
 
     const setRefs = React.useCallback(
       (node: HTMLDivElement | null) => {
@@ -119,6 +133,7 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
             "[&_.recharts-reference-line_line]:stroke-border",
             className
           )}
+          style={{ ...colorVars, ...style }}
           {...props}
         >
           {isChartReady && dimensions ? (

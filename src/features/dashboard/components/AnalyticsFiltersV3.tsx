@@ -15,6 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import {
+  isChartDisplayMode,
+  type ChartDisplayMode,
+} from "@/features/dashboard/types";
 import TagAutocompleteV2 from "./TagAutocompleteV2";
 
 type Props = {
@@ -29,6 +34,8 @@ type Props = {
   isLoadingChartTypes: boolean;
   chartTypesErrorMessage?: string | null;
   onChartTypeChange: (value: ChartType | null) => void;
+  chartDisplayMode: ChartDisplayMode;
+  onChartDisplayModeChange: (value: ChartDisplayMode) => void;
   fromDate?: Date;
   toDate?: Date;
   onFromDateChange: (value: Date | undefined) => void;
@@ -48,6 +55,8 @@ export default function AnalyticsFiltersV3({
   isLoadingChartTypes,
   chartTypesErrorMessage,
   onChartTypeChange,
+  chartDisplayMode,
+  onChartDisplayModeChange,
   fromDate,
   toDate,
   onFromDateChange,
@@ -66,61 +75,84 @@ export default function AnalyticsFiltersV3({
 
   return (
     <Card className="mb-6 shadow-sm">
-      <CardContent className="grid gap-4 pt-3 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.35fr)_minmax(12rem,1fr)_minmax(9rem,0.82fr)_minmax(9rem,0.82fr)_auto] xl:items-end xl:[&>*]:min-w-0">
-        <div className="mb-1 min-w-0">
-          <TagAutocompleteV2
-            tags={tags}
-            isLoading={isLoadingTags}
-            value={tagQuery}
-            selectedTagId={selectedTagId}
-            onValueChange={onTagQueryChange}
-            onSelect={(tag) => onSelectedTagIdChange(tag.id)}
-          />
+      <CardContent className="space-y-4 pt-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.35fr)_minmax(12rem,1fr)_minmax(9rem,0.82fr)_minmax(9rem,0.82fr)_auto] xl:items-end xl:[&>*]:min-w-0">
+          <div className="mb-1 min-w-0">
+            <TagAutocompleteV2
+              tags={tags}
+              isLoading={isLoadingTags}
+              value={tagQuery}
+              selectedTagId={selectedTagId}
+              onValueChange={onTagQueryChange}
+              onSelect={(tag) => onSelectedTagIdChange(tag.id)}
+            />
+          </div>
+
+          <div className="mb-1 space-y-2">
+            <Label>{t("dashboard.chartTypeLabel")}</Label>
+            <Select
+              value={chartType ?? ""}
+              onValueChange={(value) => onChartTypeChange(value || null)}
+              disabled={
+                selectedTagId == null ||
+                Boolean(chartTypesErrorMessage) ||
+                isLoadingChartTypes ||
+                availableChartTypes.length === 0
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={chartTypePlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableChartTypes.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {getChartTypeLabel(value)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mb-1 space-y-2">
+            <Label>{t("dashboard.startDateLabel")}</Label>
+            <DatePicker date={fromDate} setDate={onFromDateChange} showTime={false} />
+          </div>
+
+          <div className="mb-1 space-y-2">
+            <Label>{t("dashboard.endDateLabel")}</Label>
+            <DatePicker date={toDate} setDate={onToDateChange} showTime={false} />
+          </div>
+
+          <div className="mb-1 flex items-end md:col-span-2 xl:col-span-1">
+            <Button
+              variant="primary"
+              className="w-full xl:min-w-[8.5rem] xl:w-auto"
+              onClick={onReset}
+            >
+              {t("common.reset")}
+            </Button>
+          </div>
         </div>
 
-        <div className="mb-1 space-y-2">
-          <Label>{t("dashboard.chartTypeLabel")}</Label>
-          <Select
-            value={chartType ?? ""}
-            onValueChange={(value) => onChartTypeChange(value || null)}
-            disabled={
-              selectedTagId == null ||
-              Boolean(chartTypesErrorMessage) ||
-              isLoadingChartTypes ||
-              availableChartTypes.length === 0
-            }
+        <div className="flex flex-col gap-2 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <Label>{t("analytics.chartDisplayMode.label")}</Label>
+          <Tabs
+            value={chartDisplayMode}
+            onValueChange={(value) => {
+              if (isChartDisplayMode(value)) {
+                onChartDisplayModeChange(value);
+              }
+            }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder={chartTypePlaceholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {availableChartTypes.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {getChartTypeLabel(value)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="mb-1 space-y-2">
-          <Label>{t("dashboard.startDateLabel")}</Label>
-          <DatePicker date={fromDate} setDate={onFromDateChange} showTime={false} />
-        </div>
-
-        <div className="mb-1 space-y-2">
-          <Label>{t("dashboard.endDateLabel")}</Label>
-          <DatePicker date={toDate} setDate={onToDateChange} showTime={false} />
-        </div>
-
-        <div className="mb-1 flex items-end md:col-span-2 xl:col-span-1">
-          <Button
-            variant="primary"
-            className="w-full xl:min-w-[8.5rem] xl:w-auto"
-            onClick={onReset}
-          >
-            {t("common.reset")}
-          </Button>
+            <TabsList aria-label={t("analytics.chartDisplayMode.label")}>
+              <TabsTrigger value="bar">
+                {t("analytics.chartDisplayMode.bar")}
+              </TabsTrigger>
+              <TabsTrigger value="linear">
+                {t("analytics.chartDisplayMode.linear")}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </CardContent>
     </Card>

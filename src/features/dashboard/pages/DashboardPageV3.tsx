@@ -3,8 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getAnalyticsChart, getAnalyticsChartTypes } from "@/api/analyticsApi";
 import { getAllTags } from "@/api/tagApi";
+import AnalyticsLineChart from "@/features/dashboard/components/AnalyticsLineChart";
 import ActivityBarChart from "@/features/dashboard/components/ActivityBarChart";
 import AnalyticsFiltersV3 from "@/features/dashboard/components/AnalyticsFiltersV3";
+import {
+  DEFAULT_CHART_DISPLAY_MODE,
+  type ChartDisplayMode,
+} from "@/features/dashboard/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +46,9 @@ export default function DashboardPageV3() {
   const [tagQuery, setTagQuery] = useState("");
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [chartType, setChartType] = useState<ChartType | null>(null);
+  const [chartDisplayMode, setChartDisplayMode] = useState<ChartDisplayMode>(
+    DEFAULT_CHART_DISPLAY_MODE
+  );
   const [fromDate, setFromDate] = useState<Date | undefined>(
     buildDefaultFromDate()
   );
@@ -185,6 +193,7 @@ export default function DashboardPageV3() {
     isLoadingChartTypes,
     isTagsError,
     selectedTagId,
+    t,
     toDate,
   ]);
 
@@ -262,6 +271,8 @@ export default function DashboardPageV3() {
           isLoadingChartTypes={isLoadingChartTypes}
           chartTypesErrorMessage={chartTypesErrorMessage}
           onChartTypeChange={setChartType}
+          chartDisplayMode={chartDisplayMode}
+          onChartDisplayModeChange={setChartDisplayMode}
           fromDate={fromDate}
           toDate={toDate}
           onFromDateChange={setFromDate}
@@ -290,7 +301,11 @@ export default function DashboardPageV3() {
           chartType !== null &&
           data && (
             <div className="min-w-0">
-              <ActivityBarChart data={data} tagName={selectedTagName} />
+              {chartDisplayMode === "linear" ? (
+                <AnalyticsLineChart data={data} tagName={selectedTagName} />
+              ) : (
+                <ActivityBarChart data={data} tagName={selectedTagName} />
+              )}
             </div>
           )}
       </div>

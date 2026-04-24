@@ -59,6 +59,13 @@ const enBase = {
     quickAccess: "Quick access to sections",
     logout: "Log out",
   },
+  analytics: {
+    chartDisplayMode: {
+      label: "Chart mode",
+      bar: "Bars",
+      linear: "Lines",
+    },
+  },
   home: {
     greeting: "Hello, {{username}}",
     guestTitle: "Activity Diary",

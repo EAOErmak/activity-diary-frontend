@@ -20,6 +20,13 @@
     --input: 222 35% 13%;
     --input-hover: 222 35% 16%;
 
+    /* charts */
+    --chart-1: hsl(217 91% 65%);
+    --chart-2: hsl(173 80% 45%);
+    --chart-3: hsl(32 95% 58%);
+    --chart-4: hsl(263 90% 70%);
+    --chart-5: hsl(340 82% 67%);
+
     /* diary metrics */
     --metric-surface: 222 47% 12%;
   }
