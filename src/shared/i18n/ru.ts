@@ -193,7 +193,6 @@ const ruBase = {
     descriptionMaxLength: "Максимум {{count}} символов",
     tagRequired: "Добавь тег вида #тег (минимум 2 символа)",
     tagsLoading: "Loading tags...",
-    selectTagForMetrics: "Select at least one tag to choose metrics",
     metricsLoading: "Loading metrics...",
     metricsLoadError: "Failed to load metrics for the selected tags.",
     noMetricsForTags: "No metrics are available for the selected tags.",
@@ -235,6 +234,11 @@ const ruBase = {
       win: "Успех",
       lose: "Провал",
       activeShort: "Активно",
+    },
+  },
+  diaryEntry: {
+    metrics: {
+      selectTagBeforeAdd: "Сначала выберите хотя бы один тег, чтобы добавить метрику",
     },
   },
   calendar: {

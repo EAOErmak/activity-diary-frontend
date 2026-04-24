@@ -1,12 +1,14 @@
 import { Button } from "@/shared/components/ui/button";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { DiaryMetricItem } from "./DiaryMetricItem";
 import type { MetricsFormSectionValue } from "@/shared/types/metricForm";
 
 type Props = {
   metricTypes: { id: number; label: string }[];
   copyFirstMetricOnAppend?: boolean;
+  hasSelectedTags?: boolean;
   disabled?: boolean;
   message?: string;
 };
@@ -14,6 +16,7 @@ type Props = {
 export function DiaryMetricsSection({
   metricTypes,
   copyFirstMetricOnAppend = false,
+  hasSelectedTags = true,
   disabled = false,
   message,
 }: Props) {
@@ -51,6 +54,15 @@ export function DiaryMetricsSection({
     };
   };
 
+  const handleAddMetricClick = () => {
+    if (!hasSelectedTags) {
+      toast.error(t("diaryEntry.metrics.selectTagBeforeAdd"));
+      return;
+    }
+
+    append(buildMetricDraft());
+  };
+
   return (
     <div className="space-y-4">
       {fields.map((field, index) => (
@@ -71,8 +83,8 @@ export function DiaryMetricsSection({
       <Button
         type="button"
         variant="form"
-        onClick={() => append(buildMetricDraft())}
-        disabled={disabled || metricTypes.length === 0}
+        onClick={handleAddMetricClick}
+        disabled={disabled || (hasSelectedTags && metricTypes.length === 0)}
       >
         {t("diary.addMetric")}
       </Button>

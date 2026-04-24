@@ -195,7 +195,6 @@ const enBase = {
     descriptionMaxLength: "Maximum {{count}} characters",
     tagRequired: "Add a tag like #tag (minimum 2 characters)",
     tagsLoading: "Loading tags...",
-    selectTagForMetrics: "Select at least one tag to choose metrics",
     metricsLoading: "Loading metrics...",
     metricsLoadError: "Failed to load metrics for the selected tags.",
     noMetricsForTags: "No metrics are available for the selected tags.",
@@ -237,6 +236,11 @@ const enBase = {
       win: "Success",
       lose: "Failed",
       activeShort: "Active",
+    },
+  },
+  diaryEntry: {
+    metrics: {
+      selectTagBeforeAdd: "Select at least one tag before adding a metric",
     },
   },
   calendar: {

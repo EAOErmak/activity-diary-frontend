@@ -235,13 +235,11 @@ export default function DiaryEntryForm(props: Props) {
 
   const metricSelectorMessage = areTagsLoading
     ? t("diary.tagsLoading")
-    : !hasSelectedTags
-    ? t("diary.selectTagForMetrics")
-    : metricsByTags.isLoading
+    : hasMetricData && metricsByTags.isLoading
       ? t("diary.metricsLoading")
       : metricsByTags.isError
         ? t("diary.metricsLoadError")
-        : metricTypes.length === 0
+        : hasSelectedTags && metricTypes.length === 0
           ? t("diary.noMetricsForTags")
           : undefined;
   const isMetricStatePending =
@@ -322,9 +320,9 @@ export default function DiaryEntryForm(props: Props) {
             <DiaryMetricsSection
               metricTypes={metricTypes}
               copyFirstMetricOnAppend={mode === "create"}
+              hasSelectedTags={hasSelectedTags}
               disabled={
                 areTagsLoading ||
-                !hasSelectedTags ||
                 metricsByTags.isLoading ||
                 metricsByTags.isError
               }
