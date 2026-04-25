@@ -27,7 +27,7 @@ export function CalendarSidebar({ onSelectDay, tags, onTagsChange }: Props) {
   };
 
   return (
-    <aside className="w-[320px] space-y-4">
+    <aside className="min-h-0 w-[320px] overflow-hidden space-y-4">
       <Card className="p-4">
         <MiniCalendar onSelect={onSelectDay} />
       </Card>
