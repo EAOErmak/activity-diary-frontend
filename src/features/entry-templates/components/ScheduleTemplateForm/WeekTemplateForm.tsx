@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -17,7 +18,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -137,13 +137,9 @@ export default function WeekTemplateForm({
               onSubmit={form.handleSubmit(async (values) => {
                 const name = values.name.trim();
                 if (!name) {
-                  form.setError("name", {
-                    type: "required",
-                    message: t("templates.nameRequired"),
-                  });
+                  toast.error(t("templates.nameRequired"));
                   return;
                 }
-                form.clearErrors("name");
 
                 if (requireAllDays) {
                   const hasEmptySlot = values.items.some(
@@ -198,7 +194,6 @@ export default function WeekTemplateForm({
                           {...field}
                         />
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />

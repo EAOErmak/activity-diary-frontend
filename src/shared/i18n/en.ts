@@ -321,7 +321,7 @@ const enBase = {
     weekTitle: "Week template",
     editWeekTitle: "Edit week template",
     nameLabel: "Name",
-    nameRequired: "Name is required",
+    nameRequired: "Template name is required",
     entryNamePlaceholder: "For example: Morning, Workout",
     dayNamePlaceholder: "For example: Workout day",
     weekNamePlaceholder: "For example: Work week",

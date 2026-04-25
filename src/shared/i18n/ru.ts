@@ -244,7 +244,7 @@ const ruBase = {
   },
   diaryEntry: {
     metrics: {
-      selectTagBeforeAdd: "Сначала выберите хотя бы один тег, чтобы добавить метрику",
+      selectTagBeforeAdd: "Сначала введите хотя бы один тег, чтобы добавить метрику",
     },
   },
   calendar: {
@@ -319,7 +319,7 @@ const ruBase = {
     weekTitle: "Шаблон недели",
     editWeekTitle: "Редактировать шаблон недели",
     nameLabel: "Название",
-    nameRequired: "Название обязательно",
+    nameRequired: "Название шаблона обязательно",
     entryNamePlaceholder: "Например: Утро, Тренировка",
     dayNamePlaceholder: "Например: День тренировок",
     weekNamePlaceholder: "Например: Рабочая неделя",

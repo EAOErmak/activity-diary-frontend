@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useWatch } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
   Form,
@@ -358,13 +359,9 @@ export default function EntryTemplateForm(props: Props) {
               onSubmit={form.handleSubmit(async (values) => {
                 const name = values.name.trim();
                 if (!name) {
-                  form.setError("name", {
-                    type: "required",
-                    message: t("templates.nameRequired"),
-                  });
+                  toast.error(t("templates.nameRequired"));
                   return;
                 }
-                form.clearErrors("name");
 
                 const metrics = values.metrics
                   .filter((m) => m.metricTypeId && m.values.length > 0)
@@ -416,7 +413,6 @@ export default function EntryTemplateForm(props: Props) {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
