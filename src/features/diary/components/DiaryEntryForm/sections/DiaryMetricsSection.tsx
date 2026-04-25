@@ -76,13 +76,6 @@ export function DiaryMetricsSection({
         />
       ))}
 
-      <div
-        aria-live="polite"
-        className="min-h-5 text-sm text-muted-foreground"
-      >
-        {message ?? null}
-      </div>
-
       <Button
         type="button"
         variant="form"
