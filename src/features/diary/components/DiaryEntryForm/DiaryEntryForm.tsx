@@ -60,6 +60,16 @@ export type DiaryEntryFormValues = {
   metrics: MetricFormValue[]
 }
 
+const EMPTY_FORM_VALUES: DiaryEntryFormValues = {
+  description: "",
+  mood: 3,
+  status: "PLANNED",
+  whenStarted: "",
+  whenEnded: "",
+  metrics: [],
+  tags: [],
+};
+
 type Props =
   | {
       mode: "create";
@@ -87,26 +97,26 @@ export default function DiaryEntryForm(props: Props) {
     (mode === "create" ? t("diary.newEntryTitle") : t("diary.editEntryTitle"));
   const submitLabel =
     props.submitLabel ?? (mode === "create" ? t("common.create") : t("common.save"));
+  const initialValues = mode === "edit" ? props.initialValues : undefined;
+  const defaultValues = useMemo<DiaryEntryFormValues>(
+    () =>
+      initialValues
+        ? {
+            ...EMPTY_FORM_VALUES,
+            ...initialValues,
+            tags: initialValues.tags ?? [],
+          }
+        : EMPTY_FORM_VALUES,
+    [initialValues]
+  );
 
   const form = useForm<DiaryEntryFormValues>({
-    defaultValues:
-      mode === "edit"
-        ? {
-            ...props.initialValues,
-            tags: props.initialValues.tags ?? [], // ← ОБЯЗАТЕЛЬНО
-          }
-        : {
-            description: "",
-            mood: 3,
-            status: "PLANNED",
-            whenStarted: "",
-            whenEnded: "",
-            metrics: [],
-            tags: [],
-          },
+    defaultValues,
   });
 
-  const { formState: { isSubmitting }} = form;
+  const {
+    formState: { isSubmitting, dirtyFields },
+  } = form;
 
   const {
     tags: availableTags,
@@ -173,6 +183,14 @@ export default function DiaryEntryForm(props: Props) {
         (value) => value.unitId != null || value.value.trim() !== ""
       )
   );
+  const shouldPreserveInitialEditMetrics =
+    mode === "edit" &&
+    props.initialValues.metrics.length > 0 &&
+    !dirtyFields.description;
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
 
   useEffect(() => {
     const currentTags = form.getValues("tags") ?? [];
@@ -195,6 +213,10 @@ export default function DiaryEntryForm(props: Props) {
         return;
       }
 
+      if (shouldPreserveInitialEditMetrics) {
+        return;
+      }
+
       if (currentMetrics.length > 0) {
         form.setValue("metrics", [], {
           shouldDirty: true,
@@ -206,6 +228,10 @@ export default function DiaryEntryForm(props: Props) {
     }
 
     if (!metricsByTags.isSuccess) {
+      return;
+    }
+
+    if (shouldPreserveInitialEditMetrics) {
       return;
     }
 
@@ -231,6 +257,7 @@ export default function DiaryEntryForm(props: Props) {
     metricTypes,
     metricsByTags.isSuccess,
     selectedTagIdsKey,
+    shouldPreserveInitialEditMetrics,
   ]);
 
   const metricSelectorMessage = areTagsLoading

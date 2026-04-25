@@ -46,20 +46,15 @@ export function DiaryMetricItem({
 }: Props) {
   const { t } = useTranslation();
   const form = useFormContext<MetricsFormSectionValue>();
-  const metricTypeId = useWatch({
+  const metric = useWatch({
     control: form.control,
-    name: `metrics.${index}.metricTypeId`,
-  });
-
-  const watchedValues = useWatch({
-    control: form.control,
-    name: `metrics.${index}.values`,
-  }) as MetricValueFormValue[] | undefined;
-
-  const values = watchedValues ?? EMPTY_METRIC_VALUES;
+    name: `metrics.${index}`,
+  }) as MetricsFormSectionValue["metrics"][number] | undefined;
+  const values = metric?.values ?? EMPTY_METRIC_VALUES;
 
   const selectedMetricTypeId =
-    typeof metricTypeId === "number" ? metricTypeId : null;
+    typeof metric?.metricTypeId === "number" ? metric.metricTypeId : null;
+  const currentMetricTypeName = metric?.metricTypeName?.trim() ?? "";
 
   const { units, isLoading: isUnitsLoading } = useMetricUnits(
     selectedMetricTypeId
@@ -91,10 +86,56 @@ export function DiaryMetricItem({
     !isUnitsLoading &&
     hasAvailableUnitForNewValue;
 
-  const getUnitOptionsForValue = (currentUnitId?: number | null) =>
-    units.filter(
+  const metricTypeOptions = useMemo(() => {
+    if (
+      selectedMetricTypeId == null ||
+      metricTypes.some((metricType) => metricType.id === selectedMetricTypeId) ||
+      currentMetricTypeName === ""
+    ) {
+      return metricTypes;
+    }
+
+    return [
+      {
+        id: selectedMetricTypeId,
+        label: currentMetricTypeName,
+      },
+      ...metricTypes,
+    ];
+  }, [currentMetricTypeName, metricTypes, selectedMetricTypeId]);
+
+  const getUnitOptionsForValue = (
+    currentValue: MetricValueFormValue | undefined
+  ) => {
+    const currentUnitId =
+      typeof currentValue?.unitId === "number" ? currentValue.unitId : null;
+    const availableOptions = units.filter(
       (unit) => unit.id === currentUnitId || !selectedUnitIds.has(unit.id)
     );
+
+    if (
+      currentUnitId == null ||
+      availableOptions.some((unit) => unit.id === currentUnitId)
+    ) {
+      return availableOptions;
+    }
+
+    const currentUnitName = currentValue?.unitName?.trim();
+
+    if (!currentUnitName) {
+      return availableOptions;
+    }
+
+    return [
+      {
+        id: currentUnitId,
+        type: "METRIC_UNIT" as const,
+        label: currentUnitName,
+        parentId: selectedMetricTypeId,
+      },
+      ...availableOptions,
+    ];
+  };
 
   useEffect(() => {
     if (previousMetricTypeIdRef.current === selectedMetricTypeId) {
@@ -112,6 +153,7 @@ export function DiaryMetricItem({
       values.map((value) => ({
         ...value,
         unitId: null,
+        unitName: undefined,
       })),
       { shouldDirty: true }
     );
@@ -135,7 +177,7 @@ export function DiaryMetricItem({
       `metrics.${index}.values`,
       values.map((value) =>
         value.unitId != null && !availableUnitIds.has(value.unitId)
-          ? { ...value, unitId: null }
+          ? { ...value, unitId: null, unitName: undefined }
           : value
       )
     );
@@ -179,16 +221,26 @@ export function DiaryMetricItem({
               <FormControl>
                 <Select
                   value={field.value ? String(field.value) : ""}
-                  onValueChange={(v) =>
-                    field.onChange(v ? Number(v) : null)
-                  }
+                  onValueChange={(value) => {
+                    const nextMetricTypeId = value ? Number(value) : null;
+                    const selectedMetricType = metricTypeOptions.find(
+                      (metricType) => metricType.id === nextMetricTypeId
+                    );
+
+                    field.onChange(nextMetricTypeId);
+                    form.setValue(
+                      `metrics.${index}.metricTypeName`,
+                      selectedMetricType?.label,
+                      { shouldDirty: true }
+                    );
+                  }}
                   disabled={disabled}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t("diary.metricTypePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {metricTypes.map((m) => (
+                    {metricTypeOptions.map((m) => (
                       <SelectItem key={m.id} value={String(m.id)}>
                         {m.label}
                       </SelectItem>
@@ -226,9 +278,7 @@ export function DiaryMetricItem({
               control={form.control}
               name={`metrics.${index}.values.${valueIndex}.unitId`}
               render={({ field }) => {
-                const currentUnitId =
-                  typeof field.value === "number" ? field.value : null;
-                const unitOptions = getUnitOptionsForValue(currentUnitId);
+                const unitOptions = getUnitOptionsForValue(values[valueIndex]);
                 const hasNoUnitOptions =
                   selectedMetricTypeId != null &&
                   !isUnitsLoading &&
@@ -239,9 +289,19 @@ export function DiaryMetricItem({
                     <FormControl>
                       <Select
                         value={field.value != null ? String(field.value) : ""}
-                        onValueChange={(v) =>
-                          field.onChange(v ? Number(v) : null)
-                        }
+                        onValueChange={(value) => {
+                          const nextUnitId = value ? Number(value) : null;
+                          const selectedUnit = unitOptions.find(
+                            (unit) => unit.id === nextUnitId
+                          );
+
+                          field.onChange(nextUnitId);
+                          form.setValue(
+                            `metrics.${index}.values.${valueIndex}.unitName`,
+                            selectedUnit?.label,
+                            { shouldDirty: true }
+                          );
+                        }}
                         disabled={
                           disabled ||
                           selectedMetricTypeId == null ||
@@ -353,7 +413,7 @@ export function DiaryMetricItem({
         onClick={() => {
           form.setValue(`metrics.${index}.values`, [
             ...values,
-            { unitId: null, value: "" },
+            { unitId: null, unitName: undefined, value: "" },
           ]);
         }}
       >

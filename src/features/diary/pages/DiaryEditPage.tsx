@@ -5,11 +5,11 @@ import { useTranslation } from "react-i18next";
 import DiaryEntryForm, {
   DiaryEntryFormValues,
 } from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
+import { mapDiaryEntryToFormValues } from "@/features/diary/components/DiaryEntryForm/mapDiaryEntryToFormValues";
 
 import { diaryApi } from "@/api/diaryApi";
 import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import type { DiaryEntry, DiaryEntryUpdate, EntryStatus } from "@/shared/types/diary";
-import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 
 import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -35,25 +35,7 @@ export default function DiaryEditPage() {
 
         // Fill the form only when the entry is not deleted.
         if (entry.status !== "DELETED") {
-          setValues({     
-            description: entry.description ?? "",
-            mood: entry.mood ?? 3,
-            status: entry.status,
-
-            whenStarted: entry.whenStarted ?? "",
-            whenEnded: entry.whenEnded ?? "",
-            tags: [],
-
-            metrics:
-              entry.metrics?.map((m) => ({
-                id: m.id,
-                metricTypeId: m.metricTypeId,
-                values: m.values.map((v) => ({
-                  unitId: v.unitId,
-                  value: formatMetricValueForForm(v.value),
-                })),
-              })) ?? [],
-          });
+          setValues(mapDiaryEntryToFormValues(entry));
         }
 
       } finally {

@@ -10,11 +10,11 @@ import { useTranslation } from "react-i18next";
 import DiaryEntryForm, {
   DiaryEntryFormValues,
 } from "@/features/diary/components/DiaryEntryForm/DiaryEntryForm";
+import { mapDiaryEntryToFormValues } from "@/features/diary/components/DiaryEntryForm/mapDiaryEntryToFormValues";
 
 import { diaryApi } from "@/api/diaryApi";
 import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import type { DiaryEntry, DiaryEntryUpdate } from "@/shared/types/diary";
-import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 
 type Props = {
   entryId: number;
@@ -31,41 +31,23 @@ export function EditEntryDialog({
 }: Props) {
   const { t } = useTranslation();
   const { updateEntry } = useDiaryActions();
-  const [values, setValues] =
-    useState<DiaryEntryFormValues | null>(null);
+  const [values, setValues] = useState<DiaryEntryFormValues | null>(null);
   const [loading, setLoading] = useState(false);
 
-useEffect(() => {
-  if (!open) return;
+  useEffect(() => {
+    if (!open) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  (async () => {
-    try {
-      const entry: DiaryEntry = await diaryApi.getEntry(entryId);
-
-      setValues({
-        description: entry.description ?? "",
-        mood: entry.mood ?? 3,
-        status: entry.status,
-        whenStarted: entry.whenStarted ?? "",
-        whenEnded: entry.whenEnded ?? "",
-        tags: [],
-
-        metrics: entry.metrics.map(m => ({
-          id: m.id,
-          metricTypeId: m.metricTypeId,
-          values: m.values.map((value) => ({
-            unitId: value.unitId,
-            value: formatMetricValueForForm(value.value),
-          })),
-        })),
-      });
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, [entryId, open]);
+    (async () => {
+      try {
+        const entry: DiaryEntry = await diaryApi.getEntry(entryId);
+        setValues(mapDiaryEntryToFormValues(entry));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [entryId, open]);
 
 
   const handleSubmit = async (payload: DiaryEntryUpdate) => {

@@ -26,6 +26,7 @@ export function DiaryMetricsSection({
   const { fields, append, remove } = useFieldArray({
     control,
     name: "metrics",
+    keyName: "fieldKey",
   });
 
   const buildMetricDraft = (): MetricsFormSectionValue["metrics"][number] => {
@@ -47,8 +48,10 @@ export function DiaryMetricsSection({
 
     return {
       metricTypeId: firstMetric.metricTypeId,
+      metricTypeName: firstMetric.metricTypeName,
       values: firstMetric.values.map((value) => ({
         unitId: value.unitId,
+        unitName: value.unitName,
         value: value.value,
       })),
     };
@@ -67,7 +70,7 @@ export function DiaryMetricsSection({
     <div className="space-y-4">
       {fields.map((field, index) => (
         <DiaryMetricItem
-          key={field.id}
+          key={field.fieldKey}
           index={index}
           metricTypes={metricTypes}
           disabled={disabled}
