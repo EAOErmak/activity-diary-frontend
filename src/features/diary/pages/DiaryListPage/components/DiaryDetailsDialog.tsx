@@ -12,7 +12,7 @@ export function DiaryDetailsDialog() {
 
   return (
     <Dialog open onOpenChange={() => navigate(-1)}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
         <DialogTitle></DialogTitle>
         <DialogDescription></DialogDescription>
         <DiaryDetailsPage />

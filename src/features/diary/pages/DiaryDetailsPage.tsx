@@ -5,12 +5,12 @@ import { diaryApi } from "@/api/diaryApi";
 import { Button } from "@/shared/components/ui/button";
 import { motion } from "framer-motion";
 import { Edit3, Calendar, Activity, Trash2, X } from "lucide-react";
-import ReactECharts from "echarts-for-react";
 
 import type { DiaryEntry } from "@/shared/types/diary";
 import { getEntryStatus, STATUS_STYLES } from "@/shared/lib/entryStatus";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
+import { EntryMetricValueCarousel } from "@/features/diary/components/EntryMetricValueCarousel";
 import { getStatusLabel } from "@/features/diary/pages/DiaryListPage/statusConfig";
 
 function getErrorMessage(error: unknown) {
@@ -112,117 +112,18 @@ export default function DiaryDetailsPage() {
   const canEdit = entry.status !== "DELETED";
   const title = entry.firstTag ?? t("diary.entryTitleFallback");
 
-  const readCssVar = (name: string) => {
-    if (typeof window === "undefined") return "";
-    const style = getComputedStyle(document.documentElement);
-    const raw = style.getPropertyValue(name).trim();
-    if (raw.startsWith("var(")) {
-      const inner = raw.slice(4, -1).trim();
-      return style.getPropertyValue(inner).trim();
-    }
-    return raw;
-  };
-
-  const toHsl = (value: string, fallback: string) =>
-    value ? `hsl(${value})` : fallback;
-
-  const colorPrimary = toHsl(readCssVar("--primary"), "#3b82f6");
-  const colorMutedFg = toHsl(readCssVar("--muted-foreground"), "#94a3b8");
-  const colorPopover = toHsl(readCssVar("--popover"), "#0b1220");
-  const colorPopoverFg = toHsl(
-    readCssVar("--popover-foreground"),
-    "#e2e8f0"
-  );
-  const colorBorder = toHsl(readCssVar("--border"), "#1f2937");
-
-  const buildMiniChartOption = (
-    values: { value: number; unitName?: string }[],
-    unitLabel: string
-  ) => {
-    const labels = values.map((_, idx) => `${idx + 1}`);
-    const data = values.map((v) => v.value);
-
-    return {
-      backgroundColor: "transparent",
-      grid: { left: 8, right: 8, top: 10, bottom: 18 },
-      xAxis: {
-        type: "category",
-        data: labels,
-        axisLabel: { fontSize: 10, color: colorMutedFg },
-        axisLine: { show: true, lineStyle: { color: colorBorder, opacity: 0.35, width: 2 } },
-        axisTick: { show: false },
-      },
-      yAxis: {
-        type: "value",
-        axisLabel: {
-          show: true,
-          fontSize: 10,
-          color: colorMutedFg,
-          margin: 6,
-          formatter: (value: number) =>
-            value >= 1000 ? `${(value / 1000).toFixed(1)}k` : `${value}`,
-        },
-        splitNumber: 3,
-        splitLine: { show: false },
-        axisLine: { show: true, lineStyle: { color: colorBorder, opacity: 0.35, width: 2 } },
-        axisTick: { show: false },
-      },
-      tooltip: {
-        trigger: "item",
-        axisPointer: { type: "none" },
-        triggerOn: "mousemove",
-        valueFormatter: (value: number) => `${value} ${unitLabel}`,
-        backgroundColor: colorPopover,
-        borderColor: colorBorder,
-        textStyle: { color: colorPopoverFg },
-      },
-      series: [
-        {
-          type: "bar",
-          data,
-          barWidth: 14,
-          barCategoryGap: "20%",
-          itemStyle: { color: colorPrimary, borderColor: colorBorder, borderWidth: 1 },
-          emphasis: { itemStyle: { color: colorPrimary } },
-        },
-      ],
-    };
-  };
-
-  const groupedMetrics = entry.metrics.reduce<
-    { metricTypeName: string; unitLabel: string; values: { value: number; unitName?: string }[] }[]
-  >((acc, m) => {
-    for (const v of m.values) {
-      const unitLabel = v.unitName ?? t("diary.unitShort");
-      const key = `${m.metricTypeName}__${unitLabel}`;
-      const existing = acc.find(
-        (g) => g.metricTypeName + "__" + g.unitLabel === key
-      );
-      if (existing) {
-        existing.values.push(v);
-      } else {
-        acc.push({
-          metricTypeName: m.metricTypeName,
-          unitLabel,
-          values: [v],
-        });
-      }
-    }
-    return acc;
-  }, []);
-
   /* ================================
      RENDER
   ================================ */
 
   return (
-    <div className="">
+    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
       {/* CONTENT */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="relative max-w-3xl mx-auto bg-surface rounded-3xl p-8 shadow-xl"
+        className="relative mt-6 w-full max-w-2xl mx-auto bg-surface rounded-3xl p-8 shadow-xl"
       >
         <Button
           variant="ghost"
@@ -286,30 +187,9 @@ export default function DiaryDetailsPage() {
           </h3>
 
           {entry.metrics?.length ? (
-            <ul className="space-y-3 text-foreground">
-              {groupedMetrics.length ? (
-                groupedMetrics.map((g, idx) => (
-                  <li key={`${g.metricTypeName}__${g.unitLabel}__${idx}`}>
-                    <div className="font-medium text-primary">
-                      {g.metricTypeName}
-                    </div>
-                    <div className="text-xs text-mutedForeground mb-1">
-                      {g.unitLabel}
-                    </div>
-                    <div className="rounded-xl border border-border bg-surface_second p-2">
-                      <ReactECharts
-                        option={buildMiniChartOption(g.values, g.unitLabel)}
-                        style={{ height: 80, width: "100%" }}
-                      />
-                    </div>
-                  </li>
-                ))
-              ) : (
-                <li className="text-mutedForeground text-sm">
-                  {t("diary.noMetricValues")}
-                </li>
-              )}
-            </ul>
+            <div className="w-full max-w-full min-w-0 overflow-hidden">
+              <EntryMetricValueCarousel metrics={entry.metrics} />
+            </div>
           ) : (
             <p className="text-mutedForeground italic">
               {t("diary.activitiesMissing")}

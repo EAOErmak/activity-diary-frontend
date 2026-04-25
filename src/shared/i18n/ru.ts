@@ -225,6 +225,12 @@ const ruBase = {
     backToDiary: "Вернуться назад",
     entryWithId: "Запись #{{id}}",
     noMetricValues: "Нет значений",
+    details: {
+      metricValueChart: {
+        empty: "Нет значений для отображения",
+        fallbackLabel: "Значение",
+      },
+    },
     status: {
       planned: "Запланировано",
       active: "В процессе",

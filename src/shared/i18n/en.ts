@@ -227,6 +227,12 @@ const enBase = {
     backToDiary: "Go back",
     entryWithId: "Entry #{{id}}",
     noMetricValues: "No values",
+    details: {
+      metricValueChart: {
+        empty: "No values to display",
+        fallbackLabel: "Value",
+      },
+    },
     status: {
       planned: "Planned",
       active: "In progress",
