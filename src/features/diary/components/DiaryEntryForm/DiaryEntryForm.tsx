@@ -239,7 +239,7 @@ export default function DiaryEntryForm(props: Props) {
       ? t("diary.metricsLoading")
       : metricsByTags.isError
         ? t("diary.metricsLoadError")
-        : hasSelectedTags && metricTypes.length === 0
+        : hasSelectedTags && metricsByTags.isSuccess && metricTypes.length === 0
           ? t("diary.noMetricsForTags")
           : undefined;
   const isMetricStatePending =
