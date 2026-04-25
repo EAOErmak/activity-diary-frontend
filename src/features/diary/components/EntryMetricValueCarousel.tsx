@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, type MouseEvent, type TouchEvent } from "react"
 import { useTranslation } from "react-i18next"
 import {
   Bar,
@@ -92,7 +92,7 @@ function GroupedMetricMiniChart({ group }: { group: GroupedMetricChart }) {
   )
 
   return (
-    <Card className="w-full max-w-full min-w-0 overflow-hidden border border-border bg-surface_second shadow-none">
+    <Card className="w-full max-w-full min-w-0 overflow-hidden bg-input shadow-none">
       <CardContent className="p-2.5">
         <div className="mb-2 min-w-0">
           <div
@@ -155,9 +155,8 @@ function EmptyMetricChart() {
   const { t } = useTranslation()
 
   return (
-      <div className="relative flex h-[110px] items-center justify-center overflow-hidden rounded-[calc(var(--radius)-2px)] text-xs text-mutedForeground">
-      <div className="absolute inset-x-3 top-1/2 border-t border-border/60" />
-      <span className="relative bg-surface_second px-2">
+    <div className="relative flex h-[110px] items-center justify-center overflow-hidden rounded-[calc(var(--radius)-2px)] text-xs text-mutedForeground">
+      <span className="relative bg-input px-2">
         {t("diary.details.metricValueChart.empty")}
       </span>
     </div>
@@ -201,7 +200,7 @@ export function EntryMetricValueCarousel({
 
   if (!groups.length) {
     return (
-      <div className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-border bg-surface_second p-3">
+      <div className="w-full max-w-full min-w-0 overflow-hidden rounded-xl bg-input p-3">
         <div className="text-sm text-mutedForeground">
           {t("diary.details.metricValueChart.empty")}
         </div>
@@ -210,19 +209,31 @@ export function EntryMetricValueCarousel({
   }
 
   const hasMultipleGroups = groups.length > 1
+  const handleNavPointerRelease = (
+    event: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>
+  ) => {
+    event.currentTarget.blur()
+  }
+  const navButtonClassName =
+    "top-1/2 h-9 w-9 rounded-lg border-0 bg-input text-foreground shadow-none transition-[background-color,box-shadow] duration-300 ease-out hover:bg-[hsl(var(--input-hover))] focus:outline-none focus:ring-0 focus-visible:bg-[hsl(var(--input-hover))] focus-visible:ring-1 focus-visible:ring-ring/30 active:bg-[hsl(var(--input-hover))]"
 
   return (
     <div className="w-full max-w-full min-w-0 overflow-hidden">
       <Carousel
-        opts={{ align: "start", loop: hasMultipleGroups }}
+        opts={{
+          align: "start",
+          loop: hasMultipleGroups,
+          transitionDurationMs: 720,
+          transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
         className={cn(
           "w-full max-w-full min-w-0 overflow-hidden",
-          hasMultipleGroups && "px-9"
+          hasMultipleGroups && "px-[53px] py-2"
         )}
       >
-        <CarouselContent className="min-w-0">
+        <CarouselContent className="ml-0 min-w-0">
           {groups.map((group) => (
-            <CarouselItem key={group.key} className="basis-full min-w-0">
+            <CarouselItem key={group.key} className="basis-full min-w-0 pl-0">
               <div className="w-full max-w-full min-w-0 overflow-hidden p-1">
                 <GroupedMetricMiniChart group={group} />
               </div>
@@ -232,8 +243,16 @@ export function EntryMetricValueCarousel({
 
         {hasMultipleGroups ? (
           <>
-            <CarouselPrevious className="left-2 top-1/2 border border-border bg-surface/95 text-foreground shadow-sm hover:bg-accent" />
-            <CarouselNext className="right-2 top-1/2 border border-border bg-surface/95 text-foreground shadow-sm hover:bg-accent" />
+            <CarouselPrevious
+              className={cn("left-3", navButtonClassName)}
+              onMouseUp={handleNavPointerRelease}
+              onTouchEnd={handleNavPointerRelease}
+            />
+            <CarouselNext
+              className={cn("right-3", navButtonClassName)}
+              onMouseUp={handleNavPointerRelease}
+              onTouchEnd={handleNavPointerRelease}
+            />
           </>
         ) : null}
       </Carousel>
