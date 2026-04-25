@@ -1,6 +1,7 @@
 ﻿import { useForm } from "react-hook-form";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useWatch } from "react-hook-form";
 
 import {
   Form,
@@ -37,7 +38,12 @@ import {
   DiaryMoodSection,
   DiaryMetricsSection,
 } from "@/features/diary/components/DiaryEntryForm/sections";
+import {
+  extractDescriptionTagNames,
+  normalizeDescriptionTagName,
+} from "@/features/diary/components/DiaryEntryForm/sections/descriptionTagAutocomplete";
 import { useDictionary } from "@/shared/hooks/useDictionary";
+import { useTagsQuery } from "@/shared/hooks/useTags";
 import { useTranslation } from "react-i18next";
 import { parseMetricValueInput } from "@/shared/lib/metricValue";
 import type { MetricFormValue } from "@/shared/types/metricForm";
@@ -250,7 +256,34 @@ export default function EntryTemplateForm(props: Props) {
   } = form;
   const syncingRef = useRef<"timeStart" | "timeEnd" | null>(null);
 
+  const { tags: availableTags, isLoading: areTagsLoading } = useTagsQuery();
+  const description =
+    useWatch({
+      control: form.control,
+      name: "description",
+    }) ?? "";
   const metricTypes = useDictionary("METRIC_NAME");
+  const descriptionTagNames = useMemo(
+    () => new Set(extractDescriptionTagNames(description)),
+    [description]
+  );
+  const selectedTags = useMemo(
+    () =>
+      availableTags.filter((tag) => {
+        const normalizedName = normalizeDescriptionTagName(tag.name);
+        if (normalizedName == null || normalizedName === "") {
+          return false;
+        }
+
+        const descriptionName = normalizedName.startsWith("#")
+          ? normalizedName
+          : `#${normalizedName}`;
+
+        return descriptionTagNames.has(descriptionName);
+      }),
+    [availableTags, descriptionTagNames]
+  );
+  const hasSelectedTags = selectedTags.length > 0;
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -425,6 +458,9 @@ export default function EntryTemplateForm(props: Props) {
               <DiaryMetricsSection
                 metricTypes={metricTypes}
                 copyFirstMetricOnAppend={mode === "create"}
+                hasSelectedTags={hasSelectedTags}
+                disabled={areTagsLoading}
+                message={areTagsLoading ? t("diary.tagsLoading") : undefined}
               />
 
               <CardFooter className="justify-end px-0 pt-2">
