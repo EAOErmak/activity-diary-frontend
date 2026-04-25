@@ -29,6 +29,14 @@ export const createAdminTag = async (payload: TagCreate): Promise<Tag> => {
   return data.data;
 };
 
+export const updateTag = async (
+  id: number,
+  payload: { name: string }
+): Promise<Tag> => {
+  const { data } = await api.put<ApiResponse<Tag>>(`/admin/tags/${id}`, payload);
+  return data.data;
+};
+
 export const approveTag = async (id: number): Promise<void> => {
   await api.post(`/admin/tags/${id}/approve`);
 };

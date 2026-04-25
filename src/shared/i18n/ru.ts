@@ -737,6 +737,13 @@ const ruExtensions = {
       next: "Вперед",
       tagNameRequired: "Введите название тега.",
       tagCreated: "Тег \"{{name}}\" создан.",
+      renameButton: "Переименовать",
+      renameTitle: "Переименовать тег",
+      renameDescription:
+        "Введите новое название для тега \"{{name}}\". Символ # добавлять не нужно.",
+      renameConfirm: "Сохранить имя",
+      renamingButton: "Сохранение...",
+      tagRenamed: "Тег переименован в \"{{name}}\".",
       approveTitle: "Одобрить тег?",
       approveDescription:
         "Тег \"{{name}}\" будет переведен в статус \"Одобрен\".",

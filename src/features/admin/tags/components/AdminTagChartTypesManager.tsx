@@ -63,7 +63,13 @@ function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
   return fallbackMessage;
 }
 
-export function AdminTagChartTypesManager() {
+type AdminTagChartTypesManagerProps = {
+  updatedTag?: Tag | null;
+};
+
+export function AdminTagChartTypesManager({
+  updatedTag = null,
+}: AdminTagChartTypesManagerProps) {
   const { t, i18n } = useTranslation();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
@@ -143,6 +149,29 @@ export function AdminTagChartTypesManager() {
       isActive = false;
     };
   }, [debouncedTagQuery, locale, t]);
+
+  useEffect(() => {
+    if (updatedTag == null) {
+      return;
+    }
+
+    setAvailableTags((current) => {
+      if (!current.some((tag) => tag.id === updatedTag.id)) {
+        return current;
+      }
+
+      return sortTags(
+        current.map((tag) =>
+          tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
+        )
+      );
+    });
+
+    if (selectedTagId === updatedTag.id) {
+      setSelectedTagName(updatedTag.name);
+      setTagQuery(updatedTag.name);
+    }
+  }, [locale, selectedTagId, updatedTag]);
 
   useEffect(() => {
     if (selectedTagId == null) {

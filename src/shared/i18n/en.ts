@@ -736,6 +736,13 @@ const enExtensions = {
       next: "Next",
       tagNameRequired: "Enter a tag name.",
       tagCreated: "Tag \"{{name}}\" created.",
+      renameButton: "Rename",
+      renameTitle: "Rename tag",
+      renameDescription:
+        "Enter a new name for tag \"{{name}}\". The # prefix is not required.",
+      renameConfirm: "Save name",
+      renamingButton: "Saving...",
+      tagRenamed: "Tag renamed to \"{{name}}\".",
       approveTitle: "Approve tag?",
       approveDescription:
         "Tag \"{{name}}\" will be moved to the \"Approved\" status.",

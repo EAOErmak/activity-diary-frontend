@@ -75,7 +75,13 @@ function areSelectionsEqual(left: number[], right: number[]) {
   return left.every((value, index) => value === right[index]);
 }
 
-export function AdminTagMetricNamesManager() {
+type AdminTagMetricNamesManagerProps = {
+  updatedTag?: Tag | null;
+};
+
+export function AdminTagMetricNamesManager({
+  updatedTag = null,
+}: AdminTagMetricNamesManagerProps) {
   const { t, i18n } = useTranslation();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
@@ -146,6 +152,29 @@ export function AdminTagMetricNamesManager() {
       isActive = false;
     };
   }, [debouncedTagQuery, locale, t]);
+
+  useEffect(() => {
+    if (updatedTag == null) {
+      return;
+    }
+
+    setAvailableTags((current) => {
+      if (!current.some((tag) => tag.id === updatedTag.id)) {
+        return current;
+      }
+
+      return sortTags(
+        current.map((tag) =>
+          tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
+        )
+      );
+    });
+
+    if (selectedTagId === updatedTag.id) {
+      setSelectedTagName(updatedTag.name);
+      setTagQuery(updatedTag.name);
+    }
+  }, [locale, selectedTagId, updatedTag]);
 
   useEffect(() => {
     let isActive = true;

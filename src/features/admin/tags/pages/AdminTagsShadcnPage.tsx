@@ -1,8 +1,8 @@
-﻿import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Search, Tags } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useRef } from "react";
 
 import {
   approveTag,
@@ -11,6 +11,7 @@ import {
   deprecateTag,
   getAdminTags,
   rejectTag,
+  updateTag,
 } from "@/api/admin/adminTagsApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
 import { AdminTagChartTypesManager } from "@/features/admin/tags/components/AdminTagChartTypesManager";
@@ -24,7 +25,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 import {
   Table,
   TableBody,
@@ -34,6 +44,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
+import { tagRepository } from "@/shared/repository/tagRepository";
 import type { Tag } from "@/shared/types/tag";
 
 type Slice<T> = {
@@ -70,8 +81,15 @@ function getTagStatus(tag: Tag): TagStatus {
   return "PROPOSED";
 }
 
+function replaceTagInCollection(tags: Tag[], updatedTag: Tag) {
+  return tags.map((tag) =>
+    tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
+  );
+}
+
 export default function AdminTagsShadcnPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [queryInput, setQueryInput] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [page, setPage] = useState(0);
@@ -80,6 +98,10 @@ export default function AdminTagsShadcnPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [tagBeingRenamed, setTagBeingRenamed] = useState<Tag | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [lastUpdatedTag, setLastUpdatedTag] = useState<Tag | null>(null);
   const debouncedQuery = useDebouncedValue(queryInput, 180);
   const latestLoadRequestIdRef = useRef(0);
 
@@ -156,6 +178,73 @@ export default function AdminTagsShadcnPage() {
     }
   }
 
+  function syncSharedTagCaches(updatedTag: Tag) {
+    queryClient.setQueryData<Tag[]>(["tags", "all"], (current) =>
+      current ? replaceTagInCollection(current, updatedTag) : current
+    );
+
+    const cachedTagsState = tagRepository.get();
+    if (cachedTagsState.data.length > 0) {
+      tagRepository.set(
+        replaceTagInCollection(cachedTagsState.data, updatedTag),
+        cachedTagsState.version
+      );
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ["tags"] });
+    void queryClient.invalidateQueries({ queryKey: ["analytics-tags"] });
+  }
+
+  function resetRenameDialog() {
+    setTagBeingRenamed(null);
+    setRenameValue("");
+  }
+
+  function requestRename(tag: Tag) {
+    setTagBeingRenamed(tag);
+    setRenameValue(tag.name);
+  }
+
+  async function handleRenameTag(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!tagBeingRenamed) {
+      return;
+    }
+
+    const name = renameValue.trim();
+    if (!name) {
+      toast.error(t("admin.tagsPage.tagNameRequired"));
+      return;
+    }
+
+    if (name === tagBeingRenamed.name.trim()) {
+      return;
+    }
+
+    try {
+      setIsRenaming(true);
+
+      const updatedTag = await updateTag(tagBeingRenamed.id, { name });
+
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              content: replaceTagInCollection(current.content, updatedTag),
+            }
+          : current
+      );
+      setLastUpdatedTag(updatedTag);
+      syncSharedTagCaches(updatedTag);
+      resetRenameDialog();
+      toast.success(t("admin.tagsPage.tagRenamed", { name: updatedTag.name }));
+      await load();
+    } finally {
+      setIsRenaming(false);
+    }
+  }
+
   function requestApprove(tag: Tag) {
     setPendingAction({
       title: t("admin.tagsPage.approveTitle"),
@@ -220,6 +309,12 @@ export default function AdminTagsShadcnPage() {
 
   const tags = data?.content ?? [];
   const showInitialLoading = loading && data == null;
+  const trimmedRenameValue = renameValue.trim();
+  const isRenameSubmitDisabled =
+    isRenaming ||
+    !tagBeingRenamed ||
+    !trimmedRenameValue ||
+    trimmedRenameValue === tagBeingRenamed.name.trim();
 
   return (
     <div className="space-y-6">
@@ -312,20 +407,30 @@ export default function AdminTagsShadcnPage() {
               <TableRow>
                 <TableHead className="w-20">ID</TableHead>
                 <TableHead>{t("admin.tagsPage.tagColumn")}</TableHead>
-                <TableHead className="w-40">{t("admin.tagsPage.statusColumn")}</TableHead>
-                <TableHead className="w-[280px]">{t("admin.tagsPage.actionsColumn")}</TableHead>
+                <TableHead className="w-40">
+                  {t("admin.tagsPage.statusColumn")}
+                </TableHead>
+                <TableHead className="w-[280px]">
+                  {t("admin.tagsPage.actionsColumn")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {showInitialLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={4}
+                    className="py-8 text-center text-muted-foreground"
+                  >
                     {t("admin.tagsPage.loading")}
                   </TableCell>
                 </TableRow>
               ) : tags.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={4}
+                    className="py-8 text-center text-muted-foreground"
+                  >
                     {t("admin.tagsPage.empty")}
                   </TableCell>
                 </TableRow>
@@ -356,14 +461,27 @@ export default function AdminTagsShadcnPage() {
                           <Button
                             size="sm"
                             variant="surface"
-                            disabled={status === "APPROVED" || isMutating}
+                            disabled={isMutating || isRenaming}
+                            onClick={() => requestRename(tag)}
+                            className="col-span-2"
+                          >
+                            {t("admin.tagsPage.renameButton")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="surface"
+                            disabled={
+                              status === "APPROVED" || isMutating || isRenaming
+                            }
                             onClick={() => requestApprove(tag)}
                           >
                             {t("admin.tagsPage.approveConfirm")}
                           </Button>
                           <Button
                             size="sm"
-                            disabled={status === "REJECTED" || isMutating}
+                            disabled={
+                              status === "REJECTED" || isMutating || isRenaming
+                            }
                             onClick={() => requestReject(tag)}
                             className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
                           >
@@ -372,14 +490,16 @@ export default function AdminTagsShadcnPage() {
                           <Button
                             size="sm"
                             variant="surface"
-                            disabled={status === "DEPRECATED" || isMutating}
+                            disabled={
+                              status === "DEPRECATED" || isMutating || isRenaming
+                            }
                             onClick={() => requestDeprecate(tag)}
                           >
                             {t("admin.tagsPage.deprecateConfirm")}
                           </Button>
                           <Button
                             size="sm"
-                            disabled={isMutating}
+                            disabled={isMutating || isRenaming}
                             onClick={() => requestDelete(tag)}
                             className="!bg-destructive !text-destructive-foreground hover:!bg-destructive/90"
                           >
@@ -422,8 +542,61 @@ export default function AdminTagsShadcnPage() {
         </CardContent>
       </Card>
 
-      <AdminTagChartTypesManager />
-      <AdminTagMetricNamesManager />
+      <AdminTagChartTypesManager updatedTag={lastUpdatedTag} />
+      <AdminTagMetricNamesManager updatedTag={lastUpdatedTag} />
+
+      <Dialog
+        open={tagBeingRenamed !== null}
+        onOpenChange={(open) => {
+          if (!open && !isRenaming) {
+            resetRenameDialog();
+          }
+        }}
+      >
+        <DialogContent className="mb-0 w-[520px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-[28px] border border-border/70 bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+          <DialogHeader className="border-b border-border/70 px-4 py-3.5 text-left sm:px-5">
+            <DialogTitle>{t("admin.tagsPage.renameTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("admin.tagsPage.renameDescription", {
+                name: tagBeingRenamed?.name ?? "",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleRenameTag} className="space-y-4 px-4 py-4 sm:px-5">
+            <div className="space-y-2">
+              <Label htmlFor="admin-tag-rename-input">
+                {t("admin.tagsPage.tagNameLabel")}
+              </Label>
+              <Input
+                id="admin-tag-rename-input"
+                value={renameValue}
+                onChange={(event) => setRenameValue(event.target.value)}
+                placeholder={t("admin.tagsPage.tagNamePlaceholder")}
+                maxLength={255}
+                autoFocus
+                disabled={isRenaming}
+              />
+            </div>
+
+            <DialogFooter className="border-t border-border/70 pt-4">
+              <Button
+                type="button"
+                variant="surface"
+                disabled={isRenaming}
+                onClick={resetRenameDialog}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={isRenameSubmitDisabled}>
+                {isRenaming
+                  ? t("admin.tagsPage.renamingButton")
+                  : t("admin.tagsPage.renameConfirm")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <AdminConfirmationDialog
         open={pendingAction !== null}
