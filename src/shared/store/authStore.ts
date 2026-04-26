@@ -73,7 +73,9 @@ export const useAuthStore = create<AuthState>()(
           username: data.username,
           role: data.role,
           twoFactorRequired: data.twoFactorRequired,
-          isAuthenticated: !!data.accessToken,
+          isAuthenticated:
+            (!!data.accessToken || data.userId !== null) &&
+            !data.twoFactorRequired,
         }),
 
       logout: () => {

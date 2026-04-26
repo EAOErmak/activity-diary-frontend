@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 
 import { refreshAuthSessionOnStartup, getAccessToken } from "@/api/http/authSession";
-import { bootstrap } from "@/platform";
+import { bootstrap, runtime } from "@/platform";
 import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
 import { useDictionaryRepository } from "@/shared/repository/dictionaryRepository";
 import { useDiaryRepository } from "@/shared/repository/diaryRepository";
@@ -38,6 +38,27 @@ export function useAppBootstrap() {
 
       throw error;
     }
+
+    try {
+      await refreshDictionaryCache();
+    } catch (error) {
+      bootstrap.logRefreshCacheError(error);
+    }
+
+    return true;
+  }, [loadCurrentUser]);
+
+  const syncTrustedDesktopSession = useCallback(async () => {
+    const user = await loadCurrentUser();
+
+    useAuthStore.getState().setAuthData({
+      accessToken: null,
+      refreshToken: null,
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      twoFactorRequired: false,
+    });
 
     try {
       await refreshDictionaryCache();
@@ -89,12 +110,26 @@ export function useAppBootstrap() {
     const boot = async () => {
       try {
         await refreshAuthSessionOnStartup();
-      } catch {
-        markReady();
-        return;
+      } catch (error) {
+        if (runtime.kind !== "desktop") {
+          markReady();
+          return;
+        }
+
+        bootstrap.logStartupError(error);
       }
 
       if (!getAccessToken()) {
+        if (runtime.kind === "desktop") {
+          try {
+            await syncTrustedDesktopSession();
+          } catch (error) {
+            bootstrap.logStartupError(error);
+            markError();
+            return;
+          }
+        }
+
         markReady();
         return;
       }
@@ -119,7 +154,7 @@ export function useAppBootstrap() {
     return () => {
       isMounted = false;
     };
-  }, [isAuthHydrated, syncAuthorizedSession]);
+  }, [isAuthHydrated, syncAuthorizedSession, syncTrustedDesktopSession]);
 
   useEffect(() => {
     if (

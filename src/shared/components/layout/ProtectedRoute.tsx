@@ -7,9 +7,9 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  if (!accessToken) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
