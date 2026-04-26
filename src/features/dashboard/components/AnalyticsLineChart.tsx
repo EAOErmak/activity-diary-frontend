@@ -26,11 +26,17 @@ import {
   getChartTypeLabel,
   type ChartResponse,
 } from "@/shared/types/analytics";
-import { buildLineChartData } from "@/features/dashboard/lib/analyticsLineChart";
+import {
+  buildLineChartData,
+  type AnalyticsLineChartDatum,
+} from "@/features/dashboard/lib/analyticsLineChart";
+import MetricVisibilityControls from "@/features/dashboard/components/MetricVisibilityControls";
 
 type Props = {
   data: ChartResponse;
   tagName?: string | null;
+  enabledMetricLabelSet: Set<string>;
+  onMetricVisibilityToggle: (metricLabel: string) => void;
 };
 
 const formatAxisLabel = (value: string, maxLength = 12) =>
@@ -48,7 +54,12 @@ const formatMetricValue = (
   return unit ? `${formattedValue} ${unit}` : formattedValue;
 };
 
-export default function AnalyticsLineChart({ data, tagName }: Props) {
+export default function AnalyticsLineChart({
+  data,
+  tagName,
+  enabledMetricLabelSet,
+  onMetricVisibilityToggle,
+}: Props) {
   const { t } = useTranslation();
   const lineChartData = useMemo(
     () =>
@@ -61,9 +72,37 @@ export default function AnalyticsLineChart({ data, tagName }: Props) {
     [data, t]
   );
 
+  const visibleFeatures = useMemo(
+    () =>
+      lineChartData.features.filter((feature) =>
+        enabledMetricLabelSet.has(feature.label)
+      ),
+    [enabledMetricLabelSet, lineChartData.features]
+  );
+
+  const visibleRows = useMemo(
+    () =>
+      lineChartData.rows
+        .map((row) => {
+          const visibleRow: AnalyticsLineChartDatum = { x: row.x };
+
+          visibleFeatures.forEach((feature) => {
+            if (row[feature.key] !== undefined) {
+              visibleRow[feature.key] = row[feature.key];
+            }
+          });
+
+          return visibleRow;
+        })
+        .filter((row) =>
+          visibleFeatures.some((feature) => row[feature.key] !== undefined)
+        ),
+    [lineChartData.rows, visibleFeatures]
+  );
+
   const chartConfig = useMemo(
     () =>
-      lineChartData.features.reduce<ChartConfig>((config, feature) => {
+      visibleFeatures.reduce<ChartConfig>((config, feature) => {
         config[feature.key] = {
           label: feature.label,
           color: feature.color,
@@ -71,16 +110,20 @@ export default function AnalyticsLineChart({ data, tagName }: Props) {
 
         return config;
       }, {}),
-    [lineChartData.features]
+    [visibleFeatures]
   );
 
-  const rowsCount = lineChartData.rows.length;
+  const metricOptions = lineChartData.features.map((feature) => ({
+    label: feature.label,
+    color: feature.color,
+  }));
+
+  const rowsCount = visibleRows.length;
   const xAxisInterval = rowsCount > 28 ? 2 : rowsCount > 16 ? 1 : 0;
   const xAxisLabelMaxLength = rowsCount > 24 ? 7 : rowsCount > 14 ? 9 : 12;
   const xAxisLabelFontSize = rowsCount > 24 ? 10 : 11;
   const chartHeightClass = rowsCount > 24 ? "h-[420px]" : "h-[380px]";
-  const hasChartData =
-    lineChartData.rows.length > 0 && lineChartData.features.length > 0;
+  const hasChartData = visibleRows.length > 0 && visibleFeatures.length > 0;
 
   return (
     <Card className="min-w-0">
@@ -90,27 +133,11 @@ export default function AnalyticsLineChart({ data, tagName }: Props) {
           {tagName ? <CardDescription>{tagName}</CardDescription> : null}
         </div>
 
-        {lineChartData.features.length > 0 ? (
-          <div className="min-w-0 max-w-[62%] shrink-0 self-start">
-            <div className="flex max-w-full items-center justify-end gap-2 overflow-x-auto pb-1 pl-4">
-              {lineChartData.features.map((feature) => (
-                <div
-                  key={feature.key}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-full bg-input px-3.5 py-2 text-xs font-medium text-mutedForeground shadow-sm"
-                >
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: feature.color }}
-                    aria-hidden="true"
-                  />
-                  <span className="whitespace-nowrap leading-none">
-                    {feature.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <MetricVisibilityControls
+          metricOptions={metricOptions}
+          enabledMetricLabelSet={enabledMetricLabelSet}
+          onMetricVisibilityToggle={onMetricVisibilityToggle}
+        />
       </CardHeader>
 
       <CardContent className="min-w-0 space-y-4">
@@ -119,7 +146,7 @@ export default function AnalyticsLineChart({ data, tagName }: Props) {
             <ChartContainer config={chartConfig} className={chartHeightClass}>
               <LineChart
                 accessibilityLayer
-                data={lineChartData.rows}
+                data={visibleRows}
                 margin={{ top: 20, right: 16, left: 4, bottom: 12 }}
               >
                 <CartesianGrid vertical={false} />
@@ -154,7 +181,7 @@ export default function AnalyticsLineChart({ data, tagName }: Props) {
                   }
                 />
 
-                {lineChartData.features.map((feature) => (
+                {visibleFeatures.map((feature) => (
                   <Line
                     key={feature.key}
                     dataKey={feature.key}

@@ -11,6 +11,10 @@ import {
   type ChartDisplayMode,
 } from "@/features/dashboard/types";
 import {
+  extractChartMetricLabels,
+  useChartMetricVisibility,
+} from "@/features/dashboard/lib/chartMetricVisibility";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
@@ -31,6 +35,12 @@ type AnalyticsAlertState = {
   description: string;
 };
 
+type AnalyticsChartContentProps = {
+  data: ChartResponse;
+  tagName?: string | null;
+  chartDisplayMode: ChartDisplayMode;
+};
+
 const buildDateWithDayOffset = (offsetDays: number) => {
   const date = new Date();
   date.setDate(date.getDate() + offsetDays);
@@ -40,6 +50,32 @@ const buildDateWithDayOffset = (offsetDays: number) => {
 const buildDefaultFromDate = () => buildDateWithDayOffset(-15);
 
 const buildDefaultToDate = () => buildDateWithDayOffset(15);
+
+function AnalyticsChartContent({
+  data,
+  tagName,
+  chartDisplayMode,
+}: AnalyticsChartContentProps) {
+  const metricLabels = useMemo(() => extractChartMetricLabels(data), [data]);
+  const { enabledMetricLabelSet, toggleMetricVisibility } =
+    useChartMetricVisibility(metricLabels);
+
+  return chartDisplayMode === "linear" ? (
+    <AnalyticsLineChart
+      data={data}
+      tagName={tagName}
+      enabledMetricLabelSet={enabledMetricLabelSet}
+      onMetricVisibilityToggle={toggleMetricVisibility}
+    />
+  ) : (
+    <ActivityBarChart
+      data={data}
+      tagName={tagName}
+      enabledMetricLabelSet={enabledMetricLabelSet}
+      onMetricVisibilityToggle={toggleMetricVisibility}
+    />
+  );
+}
 
 export default function DashboardPageV3() {
   const { t } = useTranslation();
@@ -301,11 +337,11 @@ export default function DashboardPageV3() {
           chartType !== null &&
           data && (
             <div className="min-w-0">
-              {chartDisplayMode === "linear" ? (
-                <AnalyticsLineChart data={data} tagName={selectedTagName} />
-              ) : (
-                <ActivityBarChart data={data} tagName={selectedTagName} />
-              )}
+              <AnalyticsChartContent
+                data={data}
+                tagName={selectedTagName}
+                chartDisplayMode={chartDisplayMode}
+              />
             </div>
           )}
       </div>

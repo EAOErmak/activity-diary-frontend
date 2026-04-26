@@ -4,6 +4,10 @@ import { getAnalyticsChart, getAnalyticsChartTypes } from "@/api/analyticsApi";
 import { getAllTags } from "@/api/tagApi";
 import ActivityBarChart from "@/features/dashboard/components/ActivityBarChart";
 import AnalyticsFiltersV2 from "@/features/dashboard/components/AnalyticsFiltersV2";
+import {
+  extractChartMetricLabels,
+  useChartMetricVisibility,
+} from "@/features/dashboard/lib/chartMetricVisibility";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import {
   getChartTypeLabel,
@@ -20,6 +24,27 @@ const buildDateWithDayOffset = (offsetDays: number) => {
 const buildDefaultFromDate = () => buildDateWithDayOffset(-15);
 
 const buildDefaultToDate = () => buildDateWithDayOffset(15);
+
+function DashboardV2BarChart({
+  data,
+  tagName,
+}: {
+  data: ChartResponse;
+  tagName?: string | null;
+}) {
+  const metricLabels = useMemo(() => extractChartMetricLabels(data), [data]);
+  const { enabledMetricLabelSet, toggleMetricVisibility } =
+    useChartMetricVisibility(metricLabels);
+
+  return (
+    <ActivityBarChart
+      data={data}
+      tagName={tagName}
+      enabledMetricLabelSet={enabledMetricLabelSet}
+      onMetricVisibilityToggle={toggleMetricVisibility}
+    />
+  );
+}
 
 export default function DashboardPageV2() {
   const [tagQuery, setTagQuery] = useState("");
@@ -232,7 +257,7 @@ export default function DashboardPageV2() {
         )}
 
         {!isLoading && !isError && chartType !== null && data && (
-          <ActivityBarChart data={data} tagName={selectedTag?.name} />
+          <DashboardV2BarChart data={data} tagName={selectedTag?.name} />
         )}
       </div>
     </div>

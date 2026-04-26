@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Check } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -26,10 +25,12 @@ import { getIntlLocale } from "@/shared/i18n/locale";
 import { cn } from "@/shared/lib/utils";
 import {
   getChartTypeLabel,
-  type ChartPoint,
   type ChartResponse,
-  type ChartSeries,
 } from "@/shared/types/analytics";
+import MetricVisibilityControls, {
+  type MetricVisibilityOption,
+} from "@/features/dashboard/components/MetricVisibilityControls";
+import { getChartSourceSeries } from "@/features/dashboard/lib/chartMetricVisibility";
 
 export const description = "A grouped bar chart on a single axis";
 
@@ -57,6 +58,8 @@ const formatMetricValue = (
 type Props = {
   data: ChartResponse;
   tagName?: string | null;
+  enabledMetricLabelSet: Set<string>;
+  onMetricVisibilityToggle: (metricLabel: string) => void;
 };
 
 type FlattenedPoint = {
@@ -66,11 +69,6 @@ type FlattenedPoint = {
   color: string;
   seriesLabel: string;
   isSpacer: boolean;
-};
-
-type MetricOption = {
-  label: string;
-  color: string;
 };
 
 type NormalizedSeriesGroup = {
@@ -90,22 +88,15 @@ const createRandomPointPalette = (size: number) => {
   });
 };
 
-const getSourceSeries = (data: ChartResponse): ChartSeries[] => {
-  if (Array.isArray(data.series) && data.series.length > 0) {
-    return data.series;
-  }
-
-  if (Array.isArray(data.points) && data.points.length > 0) {
-    return [{ points: data.points as ChartPoint[] }];
-  }
-
-  return [];
-};
-
-export default function ActivityBarChart({ data, tagName }: Props) {
+export default function ActivityBarChart({
+  data,
+  tagName,
+  enabledMetricLabelSet,
+  onMetricVisibilityToggle,
+}: Props) {
   const { t } = useTranslation();
   const { metricOptions, normalizedGroups } = useMemo(() => {
-    const sourceSeries = getSourceSeries(data);
+    const sourceSeries = getChartSourceSeries(data);
     const paletteSize = sourceSeries.reduce((maxSize, series) => {
       const visiblePointsCount = (series.points ?? []).filter((point) =>
         point?.label
@@ -113,7 +104,7 @@ export default function ActivityBarChart({ data, tagName }: Props) {
       return Math.max(maxSize, visiblePointsCount);
     }, 0);
     const pointPalette = createRandomPointPalette(Math.max(paletteSize, 1));
-    const nextMetricOptions: MetricOption[] = [];
+    const nextMetricOptions: MetricVisibilityOption[] = [];
     const seenMetricLabels = new Set<string>();
 
     const nextNormalizedGroups: NormalizedSeriesGroup[] = sourceSeries
@@ -160,42 +151,6 @@ export default function ActivityBarChart({ data, tagName }: Props) {
     };
   }, [data, t]);
 
-  const [enabledMetricLabels, setEnabledMetricLabels] = useState<string[]>(() =>
-    metricOptions.map((metric) => metric.label)
-  );
-  const previousMetricLabelsRef = useRef<string[]>(metricOptions.map((metric) => metric.label));
-
-  useEffect(() => {
-    const availableLabels = metricOptions.map((metric) => metric.label);
-    const previousLabels = previousMetricLabelsRef.current;
-    const previousLabelSet = new Set(previousLabels);
-
-    setEnabledMetricLabels((currentLabels) => {
-      const nextLabels = currentLabels.filter((label) =>
-        availableLabels.includes(label)
-      );
-      const nextLabelSet = new Set(nextLabels);
-
-      availableLabels.forEach((label) => {
-        if (!nextLabelSet.has(label) && !previousLabelSet.has(label)) {
-          nextLabels.push(label);
-        }
-      });
-
-      return nextLabels.length === currentLabels.length &&
-        nextLabels.every((label, index) => label === currentLabels[index])
-        ? currentLabels
-        : nextLabels;
-    });
-
-    previousMetricLabelsRef.current = availableLabels;
-  }, [metricOptions]);
-
-  const enabledMetricLabelSet = useMemo(
-    () => new Set(enabledMetricLabels),
-    [enabledMetricLabels]
-  );
-
   const { chartPoints, pointByKey } = useMemo(() => {
     const filteredGroups = normalizedGroups
       .map((group) => ({
@@ -238,14 +193,6 @@ export default function ActivityBarChart({ data, tagName }: Props) {
     };
   }, [enabledMetricLabelSet, normalizedGroups]);
 
-  const toggleMetricVisibility = (metricLabel: string) => {
-    setEnabledMetricLabels((currentLabels) =>
-      currentLabels.includes(metricLabel)
-        ? currentLabels.filter((label) => label !== metricLabel)
-        : [...currentLabels, metricLabel]
-    );
-  };
-
   const primaryChartColor =
     chartPoints.find((point) => !point.isSpacer)?.color ?? "hsl(221, 83%, 53%)";
 
@@ -278,51 +225,11 @@ export default function ActivityBarChart({ data, tagName }: Props) {
           {tagName ? <CardDescription>{tagName}</CardDescription> : null}
         </div>
 
-        {metricOptions.length > 0 ? (
-          <div className="min-w-0 max-w-[62%] shrink-0 self-start">
-            <div className="flex max-w-full items-center justify-end gap-2 overflow-x-auto pb-1 pl-4">
-              {metricOptions.map((metric) => {
-                const isChecked = enabledMetricLabelSet.has(metric.label);
-
-                return (
-                  <button
-                    key={metric.label}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={isChecked}
-                    onClick={() => toggleMetricVisibility(metric.label)}
-                    className={cn(
-                      "inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-0",
-                      isChecked
-                        ? "bg-primary/15 text-foreground hover:bg-primary/20"
-                        : "bg-input text-mutedForeground hover:bg-accent"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors",
-                        isChecked
-                          ? "bg-primary/25 text-primary"
-                          : "bg-background/80 text-transparent"
-                      )}
-                      aria-hidden="true"
-                    >
-                      <Check className="h-3 w-3" />
-                    </span>
-
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: metric.color }}
-                      aria-hidden="true"
-                    />
-
-                    <span className="whitespace-nowrap leading-none">{metric.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
+        <MetricVisibilityControls
+          metricOptions={metricOptions}
+          enabledMetricLabelSet={enabledMetricLabelSet}
+          onMetricVisibilityToggle={onMetricVisibilityToggle}
+        />
       </CardHeader>
 
       <CardContent className="min-w-0 space-y-4">
