@@ -2,6 +2,7 @@
 import { BookOpen, Link2, Plus, Ruler, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { adminMetricLinksApi } from "@/api/admin/adminMetricLinksApi";
 import { getDictionaryByTypeAdmin } from "@/api/admin/dictionaryAdminApi";
@@ -31,11 +32,13 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import { syncMetricUnitLinkCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import type { DictionaryResponse } from "@/shared/types/adminDictionary";
 import type { MetricLinkResponse } from "@/shared/types/adminMetricLink";
 
 export default function AdminMetricLinksShadcnPage() {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [metricNames, setMetricNames] = useState<DictionaryResponse[]>([]);
   const [metricUnits, setMetricUnits] = useState<DictionaryResponse[]>([]);
@@ -175,6 +178,7 @@ export default function AdminMetricLinksShadcnPage() {
         metricNameId: selectedMetricNameId,
         metricUnitId: selectedMetricUnitId,
       });
+      await syncMetricUnitLinkCachesAfterAdminMutation(queryClient);
       setSelectedMetricUnitId(null);
       await loadLinks(selectedMetricNameId);
       toast.success(t("admin.metricLinksPage.linkCreated"));
@@ -196,6 +200,7 @@ export default function AdminMetricLinksShadcnPage() {
         selectedMetricNameId,
         pendingDelete.id
       );
+      await syncMetricUnitLinkCachesAfterAdminMutation(queryClient);
       setPendingDelete(null);
       await loadLinks(selectedMetricNameId);
       toast.success(t("admin.metricLinksPage.linkDeleted"));

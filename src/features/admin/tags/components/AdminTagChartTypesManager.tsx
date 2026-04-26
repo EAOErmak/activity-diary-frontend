@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Link2, Plus, Search, Tags, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { adminTagChartTypesApi } from "@/api/admin/adminTagChartTypesApi";
 import { getAllTags } from "@/api/tagApi";
@@ -34,6 +35,7 @@ import {
 } from "@/shared/components/ui/table";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import { syncTagChartTypeCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import type { ApiResponse } from "@/shared/types/api";
 import {
   ALL_CHART_TYPES,
@@ -65,12 +67,15 @@ function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
 
 type AdminTagChartTypesManagerProps = {
   updatedTag?: Tag | null;
+  reloadToken?: number;
 };
 
 export function AdminTagChartTypesManager({
   updatedTag = null,
+  reloadToken = 0,
 }: AdminTagChartTypesManagerProps) {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
@@ -148,7 +153,7 @@ export function AdminTagChartTypesManager({
     return () => {
       isActive = false;
     };
-  }, [debouncedTagQuery, locale, t]);
+  }, [debouncedTagQuery, locale, reloadToken, t]);
 
   useEffect(() => {
     if (updatedTag == null) {
@@ -172,6 +177,23 @@ export function AdminTagChartTypesManager({
       setTagQuery(updatedTag.name);
     }
   }, [locale, selectedTagId, updatedTag]);
+
+  useEffect(() => {
+    if (selectedTagId == null) {
+      return;
+    }
+
+    if (availableTags.some((tag) => tag.id === selectedTagId)) {
+      return;
+    }
+
+    setSelectedTagId(null);
+    setSelectedTagName(null);
+    setTagQuery("");
+    setLinks([]);
+    setSelectedChartType(null);
+    setLinksErrorMessage(null);
+  }, [availableTags, selectedTagId]);
 
   useEffect(() => {
     if (selectedTagId == null) {
@@ -311,6 +333,7 @@ export function AdminTagChartTypesManager({
         tagId: selectedTagId,
         chartType: selectedChartType,
       });
+      await syncTagChartTypeCachesAfterAdminMutation(queryClient);
       setSelectedChartType(null);
       await reloadLinks(selectedTagId);
       toast.success(
@@ -339,6 +362,7 @@ export function AdminTagChartTypesManager({
         selectedTagId,
         pendingDelete.chartType
       );
+      await syncTagChartTypeCachesAfterAdminMutation(queryClient);
       const deletedChartType = pendingDelete.chartType;
       setPendingDelete(null);
       await reloadLinks(selectedTagId);

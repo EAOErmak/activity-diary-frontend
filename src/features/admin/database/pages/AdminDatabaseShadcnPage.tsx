@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Database, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   clearAdminDatabase,
@@ -28,6 +29,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import { syncAllAdminManagedCaches } from "@/shared/lib/adminCacheSync";
 import type { AdminDatabaseTableType } from "@/shared/types/adminDatabase";
 
 type PendingAction =
@@ -41,6 +43,7 @@ function formatTableDisplayName(tableType: AdminDatabaseTableType) {
 
 export default function AdminDatabaseShadcnPage() {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tableTypes, setTableTypes] = useState<AdminDatabaseTableType[]>([]);
   const [isLoadingTableTypes, setIsLoadingTableTypes] = useState(false);
@@ -94,6 +97,7 @@ export default function AdminDatabaseShadcnPage() {
           ? await clearAdminDatabase()
           : await clearAdminDatabaseTable(pendingAction.tableType.value);
 
+      await syncAllAdminManagedCaches(queryClient);
       setPendingAction(null);
       toast.success(message);
     } catch {

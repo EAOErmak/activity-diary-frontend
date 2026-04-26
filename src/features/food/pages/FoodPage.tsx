@@ -1,4 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Database, Plus, Search, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ import {
 } from "@/shared/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import { generalFoodKeys } from "@/shared/lib/queryKeys";
 import type {
   FoodDictionaryOption,
   FoodUpsertDto,
@@ -75,11 +77,8 @@ export default function FoodPage() {
   const [activeTab, setActiveTab] = useState("general");
   const [generalQuery, setGeneralQuery] = useState("");
   const [userQuery, setUserQuery] = useState("");
-  const [generalFoods, setGeneralFoods] = useState<GeneralFoodResponseDto[]>([]);
   const [userFoods, setUserFoods] = useState<UserFoodResponseDto[]>([]);
-  const [isLoadingGeneralFoods, setIsLoadingGeneralFoods] = useState(false);
   const [isLoadingUserFoods, setIsLoadingUserFoods] = useState(false);
-  const [generalFoodsError, setGeneralFoodsError] = useState<string | null>(null);
   const [userFoodsError, setUserFoodsError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<UserFoodResponseDto | null>(null);
@@ -88,23 +87,16 @@ export default function FoodPage() {
   const deferredGeneralQuery = useDeferredValue(generalQuery);
   const deferredUserQuery = useDeferredValue(userQuery);
 
-  const loadGeneralFoods = useCallback(async (query = deferredGeneralQuery) => {
-    try {
-      setIsLoadingGeneralFoods(true);
-      setGeneralFoodsError(null);
-      const data = await getGeneralFoods(query);
-      setGeneralFoods(data);
-    } catch (error) {
-      setGeneralFoods([]);
-      setGeneralFoodsError(
-        error instanceof Error
-          ? error.message
-          : t("errors.foodBaseLoad")
-      );
-    } finally {
-      setIsLoadingGeneralFoods(false);
-    }
-  }, [deferredGeneralQuery, t]);
+  const {
+    data: generalFoods = [],
+    isPending: isGeneralFoodsPending,
+    error: generalFoodsError,
+  } = useQuery<GeneralFoodResponseDto[], Error>({
+    queryKey: generalFoodKeys.list(deferredGeneralQuery),
+    queryFn: () => getGeneralFoods(deferredGeneralQuery),
+    placeholderData: (previousData) => previousData,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const loadUserFoods = useCallback(async (query = deferredUserQuery) => {
     try {
@@ -123,10 +115,6 @@ export default function FoodPage() {
       setIsLoadingUserFoods(false);
     }
   }, [deferredUserQuery, t]);
-
-  useEffect(() => {
-    void loadGeneralFoods(deferredGeneralQuery);
-  }, [deferredGeneralQuery, loadGeneralFoods]);
 
   useEffect(() => {
     void loadUserFoods(deferredUserQuery);
@@ -190,6 +178,10 @@ export default function FoodPage() {
       setIsDeleting(false);
     }
   }
+
+  const generalFoodsErrorMessage = generalFoodsError?.message ?? null;
+  const showInitialGeneralFoodsLoading =
+    isGeneralFoodsPending && generalFoods.length === 0;
 
   return (
     <div className="min-h-screen bg-page text-foreground">
@@ -255,16 +247,16 @@ export default function FoodPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoadingGeneralFoods ? (
+                    {showInitialGeneralFoodsLoading ? (
                       <TableRow>
                         <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                           {t("common.loading")}
                         </TableCell>
                       </TableRow>
-                    ) : generalFoodsError ? (
+                    ) : generalFoodsErrorMessage && generalFoods.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="py-8 text-center text-destructive">
-                          {generalFoodsError}
+                          {generalFoodsErrorMessage}
                         </TableCell>
                       </TableRow>
                     ) : generalFoods.length === 0 ? (

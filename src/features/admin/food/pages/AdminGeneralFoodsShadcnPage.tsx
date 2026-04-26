@@ -1,4 +1,5 @@
-﻿import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Database, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -31,6 +32,8 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import { syncGeneralFoodCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
+import { generalFoodKeys } from "@/shared/lib/queryKeys";
 import type {
   FoodDictionaryOption,
   FoodUpsertDto,
@@ -65,36 +68,25 @@ function mapDictionaryOptions(
 
 export default function AdminGeneralFoodsShadcnPage() {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [query, setQuery] = useState("");
-  const [foods, setFoods] = useState<GeneralFoodResponseDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<GeneralFoodResponseDto | null>(null);
   const [pendingDelete, setPendingDelete] = useState<GeneralFoodResponseDto | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deferredQuery = useDeferredValue(query);
 
-  const loadFoods = useCallback(async (nextQuery = deferredQuery) => {
-    try {
-      setLoading(true);
-      setErrorMessage(null);
-      const data = await getGeneralFoods(nextQuery);
-      setFoods(data);
-    } catch (error) {
-      setFoods([]);
-      setErrorMessage(
-        error instanceof Error ? error.message : t("errors.foodBaseLoad")
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [deferredQuery, t]);
-
-  useEffect(() => {
-    void loadFoods(deferredQuery);
-  }, [deferredQuery, loadFoods]);
+  const {
+    data: foods = [],
+    isPending,
+    error,
+  } = useQuery<GeneralFoodResponseDto[], Error>({
+    queryKey: generalFoodKeys.list(deferredQuery),
+    queryFn: () => getGeneralFoods(deferredQuery),
+    placeholderData: (previousData) => previousData,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const loadAdminDictionaryOptions = useCallback(async (search: string) => {
     const trimmedSearch = search.trim();
@@ -124,9 +116,9 @@ export default function AdminGeneralFoodsShadcnPage() {
 
   async function handleCreate(payload: FoodUpsertDto) {
     await createGeneralFood(payload);
+    await syncGeneralFoodCachesAfterAdminMutation(queryClient);
     toast.success(t("admin.foodsPage.productCreated"));
     setCreateOpen(false);
-    await loadFoods(query);
   }
 
   async function handleUpdate(payload: FoodUpsertDto) {
@@ -135,9 +127,9 @@ export default function AdminGeneralFoodsShadcnPage() {
     }
 
     await updateGeneralFood(editingFood.id, payload);
+    await syncGeneralFoodCachesAfterAdminMutation(queryClient);
     toast.success(t("admin.foodsPage.productUpdated"));
     setEditingFood(null);
-    await loadFoods(query);
   }
 
   async function handleDelete() {
@@ -148,17 +140,20 @@ export default function AdminGeneralFoodsShadcnPage() {
     try {
       setIsDeleting(true);
       await deleteGeneralFood(pendingDelete.id);
+      await syncGeneralFoodCachesAfterAdminMutation(queryClient);
       toast.success(
         t("admin.foodsPage.productDeleted", {
           label: pendingDelete.dictionaryItemLabel,
         })
       );
       setPendingDelete(null);
-      await loadFoods(query);
     } finally {
       setIsDeleting(false);
     }
   }
+
+  const errorMessage = error?.message ?? null;
+  const showInitialLoading = isPending && foods.length === 0;
 
   return (
     <div className="space-y-6">
@@ -226,13 +221,13 @@ export default function AdminGeneralFoodsShadcnPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {showInitialLoading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                     {t("common.loading")}
                   </TableCell>
                 </TableRow>
-              ) : errorMessage ? (
+              ) : errorMessage && foods.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-destructive">
                     {errorMessage}

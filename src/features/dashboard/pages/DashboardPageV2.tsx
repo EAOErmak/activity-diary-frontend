@@ -15,6 +15,7 @@ import {
   type ChartResponse,
   type ChartType,
 } from "@/shared/types/analytics";
+import { analyticsKeys, tagKeys } from "@/shared/lib/queryKeys";
 
 const buildDateWithDayOffset = (offsetDays: number) => {
   const date = new Date();
@@ -64,7 +65,7 @@ export default function DashboardPageV2() {
     isLoading: isLoadingTags,
     isError: isTagsError,
   } = useQuery({
-    queryKey: ["analytics-tags", deferredTagQuery],
+    queryKey: tagKeys.list(deferredTagQuery),
     queryFn: () => getAllTags(deferredTagQuery),
   });
 
@@ -91,7 +92,7 @@ export default function DashboardPageV2() {
     isError: isChartTypesError,
     error: chartTypesError,
   } = useQuery<ChartType[], Error>({
-    queryKey: ["analytics-chart-types", selectedTagId],
+    queryKey: analyticsKeys.chartTypesByTag(selectedTagId),
     queryFn: () => getAnalyticsChartTypes(selectedTagId!),
     enabled: selectedTagId !== null,
   });
@@ -119,15 +120,12 @@ export default function DashboardPageV2() {
     isError,
     error,
   } = useQuery<ChartResponse, Error>({
-    queryKey: [
-      "analytics-chart",
-        {
-          tagId: selectedTagId,
-          chartType,
-        dateFrom: fromDate?.toISOString(),
-        dateTo: toDate?.toISOString(),
-      },
-    ],
+    queryKey: analyticsKeys.chart({
+      tagId: selectedTagId,
+      chartType,
+      dateFrom: fromDate?.toISOString(),
+      dateTo: toDate?.toISOString(),
+    }),
     queryFn: async () =>
       getAnalyticsChart({
         tagId: selectedTagId!,

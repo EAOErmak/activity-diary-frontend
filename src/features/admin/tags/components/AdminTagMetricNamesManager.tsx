@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Link2, Plus, Save, Search, Tags, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { adminTagMetricLinksApi } from "@/api/admin/adminTagMetricLinksApi";
 import { getDictionaryByTypeAdmin } from "@/api/admin/dictionaryAdminApi";
@@ -34,6 +35,7 @@ import {
 } from "@/shared/components/ui/table";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import { syncTagMetricCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import type { ApiResponse } from "@/shared/types/api";
 import type { DictionaryResponse } from "@/shared/types/adminDictionary";
 import type { AdminTagMetricLink } from "@/shared/types/adminTagMetricLink";
@@ -77,12 +79,15 @@ function areSelectionsEqual(left: number[], right: number[]) {
 
 type AdminTagMetricNamesManagerProps = {
   updatedTag?: Tag | null;
+  reloadToken?: number;
 };
 
 export function AdminTagMetricNamesManager({
   updatedTag = null,
+  reloadToken = 0,
 }: AdminTagMetricNamesManagerProps) {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
   const [metricQuery, setMetricQuery] = useState("");
@@ -151,7 +156,7 @@ export function AdminTagMetricNamesManager({
     return () => {
       isActive = false;
     };
-  }, [debouncedTagQuery, locale, t]);
+  }, [debouncedTagQuery, locale, reloadToken, t]);
 
   useEffect(() => {
     if (updatedTag == null) {
@@ -175,6 +180,24 @@ export function AdminTagMetricNamesManager({
       setTagQuery(updatedTag.name);
     }
   }, [locale, selectedTagId, updatedTag]);
+
+  useEffect(() => {
+    if (selectedTagId == null) {
+      return;
+    }
+
+    if (availableTags.some((tag) => tag.id === selectedTagId)) {
+      return;
+    }
+
+    setSelectedTagId(null);
+    setSelectedTagName(null);
+    setTagQuery("");
+    setMetricQuery("");
+    setInitialMetricNameIds([]);
+    setDraftMetricNameIds([]);
+    setLinksErrorMessage(null);
+  }, [availableTags, selectedTagId]);
 
   useEffect(() => {
     let isActive = true;
@@ -366,6 +389,7 @@ export function AdminTagMetricNamesManager({
         selectedTagId,
         { metricNameIds: draftMetricNameIds }
       );
+      await syncTagMetricCachesAfterAdminMutation(queryClient);
 
       const nextMetricNameIds = mapLinkMetricNameIds(data);
       setInitialMetricNameIds(nextMetricNameIds);

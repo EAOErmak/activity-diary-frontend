@@ -2,6 +2,7 @@
 import { BookOpen, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   createDictionaryItem,
@@ -35,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { syncDictionaryCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
 import type {
   DictionaryCreate,
@@ -55,6 +57,7 @@ type PendingAction =
 
 export default function AdminDictionaryShadcnPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("METRIC_NAME");
   const [items, setItems] = useState<DictionaryResponse[]>([]);
   const [label, setLabel] = useState("");
@@ -68,12 +71,14 @@ export default function AdminDictionaryShadcnPage() {
     void load();
   }, [tab]);
 
-  async function load() {
+  async function load(refreshSharedCache = true) {
     try {
       setIsLoadingItems(true);
       const data = await getDictionaryByTypeAdmin(tab);
       setItems(data);
-      await refreshDictionaryCache();
+      if (refreshSharedCache) {
+        await refreshDictionaryCache();
+      }
     } catch (error) {
       console.error(error);
       toast.error(t("admin.dictionaryPage.loadError"));
@@ -104,9 +109,10 @@ export default function AdminDictionaryShadcnPage() {
     try {
       setIsCreating(true);
       await createDictionaryItem(payload);
+      await syncDictionaryCachesAfterAdminMutation(queryClient);
       setLabel("");
       setAllowedRole(null);
-      await load();
+      await load(false);
     } finally {
       setIsCreating(false);
     }
@@ -129,7 +135,8 @@ export default function AdminDictionaryShadcnPage() {
         };
 
         await updateDictionaryItem(item.id, payload);
-        await load();
+        await syncDictionaryCachesAfterAdminMutation(queryClient);
+        await load(false);
       },
     });
   }
@@ -147,7 +154,8 @@ export default function AdminDictionaryShadcnPage() {
         };
 
         await updateDictionaryItem(item.id, payload);
-        await load();
+        await syncDictionaryCachesAfterAdminMutation(queryClient);
+        await load(false);
       },
     });
   }

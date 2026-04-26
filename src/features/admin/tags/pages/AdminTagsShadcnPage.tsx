@@ -44,7 +44,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
-import { tagRepository } from "@/shared/repository/tagRepository";
+import { syncTagCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import type { Tag } from "@/shared/types/tag";
 
 type Slice<T> = {
@@ -81,12 +81,6 @@ function getTagStatus(tag: Tag): TagStatus {
   return "PROPOSED";
 }
 
-function replaceTagInCollection(tags: Tag[], updatedTag: Tag) {
-  return tags.map((tag) =>
-    tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
-  );
-}
-
 export default function AdminTagsShadcnPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -102,6 +96,7 @@ export default function AdminTagsShadcnPage() {
   const [renameValue, setRenameValue] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
   const [lastUpdatedTag, setLastUpdatedTag] = useState<Tag | null>(null);
+  const [tagReloadToken, setTagReloadToken] = useState(0);
   const debouncedQuery = useDebouncedValue(queryInput, 180);
   const latestLoadRequestIdRef = useRef(0);
 
@@ -173,26 +168,15 @@ export default function AdminTagsShadcnPage() {
       setPage(0);
       toast.success(t("admin.tagsPage.tagCreated", { name: createdTag.name }));
       await load(0, "");
+      await syncSharedTagCaches();
     } finally {
       setIsCreating(false);
     }
   }
 
-  function syncSharedTagCaches(updatedTag: Tag) {
-    queryClient.setQueryData<Tag[]>(["tags", "all"], (current) =>
-      current ? replaceTagInCollection(current, updatedTag) : current
-    );
-
-    const cachedTagsState = tagRepository.get();
-    if (cachedTagsState.data.length > 0) {
-      tagRepository.set(
-        replaceTagInCollection(cachedTagsState.data, updatedTag),
-        cachedTagsState.version
-      );
-    }
-
-    void queryClient.invalidateQueries({ queryKey: ["tags"] });
-    void queryClient.invalidateQueries({ queryKey: ["analytics-tags"] });
+  async function syncSharedTagCaches() {
+    await syncTagCachesAfterAdminMutation(queryClient);
+    setTagReloadToken((current) => current + 1);
   }
 
   function resetRenameDialog() {
@@ -231,12 +215,14 @@ export default function AdminTagsShadcnPage() {
         current
           ? {
               ...current,
-              content: replaceTagInCollection(current.content, updatedTag),
+              content: current.content.map((tag) =>
+                tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
+              ),
             }
           : current
       );
       setLastUpdatedTag(updatedTag);
-      syncSharedTagCaches(updatedTag);
+      await syncSharedTagCaches();
       resetRenameDialog();
       toast.success(t("admin.tagsPage.tagRenamed", { name: updatedTag.name }));
       await load();
@@ -253,6 +239,7 @@ export default function AdminTagsShadcnPage() {
       run: async () => {
         await approveTag(tag.id);
         await load();
+        await syncSharedTagCaches();
       },
     });
   }
@@ -266,6 +253,7 @@ export default function AdminTagsShadcnPage() {
       run: async () => {
         await rejectTag(tag.id);
         await load();
+        await syncSharedTagCaches();
       },
     });
   }
@@ -278,6 +266,7 @@ export default function AdminTagsShadcnPage() {
       run: async () => {
         await deprecateTag(tag.id);
         await load();
+        await syncSharedTagCaches();
       },
     });
   }
@@ -291,6 +280,7 @@ export default function AdminTagsShadcnPage() {
       run: async () => {
         await deleteTag(tag.id);
         await load();
+        await syncSharedTagCaches();
       },
     });
   }
@@ -542,8 +532,14 @@ export default function AdminTagsShadcnPage() {
         </CardContent>
       </Card>
 
-      <AdminTagChartTypesManager updatedTag={lastUpdatedTag} />
-      <AdminTagMetricNamesManager updatedTag={lastUpdatedTag} />
+      <AdminTagChartTypesManager
+        updatedTag={lastUpdatedTag}
+        reloadToken={tagReloadToken}
+      />
+      <AdminTagMetricNamesManager
+        updatedTag={lastUpdatedTag}
+        reloadToken={tagReloadToken}
+      />
 
       <Dialog
         open={tagBeingRenamed !== null}
