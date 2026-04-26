@@ -6,6 +6,7 @@ import ActivityBarChart from "@/features/dashboard/components/ActivityBarChart";
 import AnalyticsFiltersV2 from "@/features/dashboard/components/AnalyticsFiltersV2";
 import {
   extractChartMetricLabels,
+  useChartMetricColors,
   useChartMetricVisibility,
 } from "@/features/dashboard/lib/chartMetricVisibility";
 import { Card, CardContent } from "@/shared/components/ui/card";
@@ -35,12 +36,14 @@ function DashboardV2BarChart({
   const metricLabels = useMemo(() => extractChartMetricLabels(data), [data]);
   const { enabledMetricLabelSet, toggleMetricVisibility } =
     useChartMetricVisibility(metricLabels);
+  const metricColorMap = useChartMetricColors(metricLabels);
 
   return (
     <ActivityBarChart
       data={data}
       tagName={tagName}
       enabledMetricLabelSet={enabledMetricLabelSet}
+      metricColorMap={metricColorMap}
       onMetricVisibilityToggle={toggleMetricVisibility}
     />
   );

@@ -30,12 +30,15 @@ import {
 import MetricVisibilityControls, {
   type MetricVisibilityOption,
 } from "@/features/dashboard/components/MetricVisibilityControls";
-import { getChartSourceSeries } from "@/features/dashboard/lib/chartMetricVisibility";
+import {
+  getChartSourceSeries,
+  type ChartMetricColorMap,
+} from "@/features/dashboard/lib/chartMetricVisibility";
 
 export const description = "A grouped bar chart on a single axis";
 
 const SERIES_SPACER_COUNT = 2;
-const GOLDEN_ANGLE = 137.508;
+const FALLBACK_CHART_COLOR = "hsl(221, 83%, 53%)";
 
 const toNumber = (value: number | string) =>
   typeof value === "number" ? value : Number(value);
@@ -59,6 +62,7 @@ type Props = {
   data: ChartResponse;
   tagName?: string | null;
   enabledMetricLabelSet: Set<string>;
+  metricColorMap: ChartMetricColorMap;
   onMetricVisibilityToggle: (metricLabel: string) => void;
 };
 
@@ -76,34 +80,16 @@ type NormalizedSeriesGroup = {
   points: FlattenedPoint[];
 };
 
-const createRandomPointPalette = (size: number) => {
-  let hue = Math.floor(Math.random() * 360);
-  return Array.from({ length: size }, () => {
-    hue = (hue + GOLDEN_ANGLE) % 360;
-
-    const saturation = 68 + Math.floor(Math.random() * 14);
-    const lightness = 48 + Math.floor(Math.random() * 10);
-
-    return `hsl(${Math.round(hue)}, ${saturation}%, ${lightness}%)`;
-  });
-};
-
 export default function ActivityBarChart({
   data,
   tagName,
   enabledMetricLabelSet,
+  metricColorMap,
   onMetricVisibilityToggle,
 }: Props) {
   const { t } = useTranslation();
   const { metricOptions, normalizedGroups } = useMemo(() => {
     const sourceSeries = getChartSourceSeries(data);
-    const paletteSize = sourceSeries.reduce((maxSize, series) => {
-      const visiblePointsCount = (series.points ?? []).filter((point) =>
-        point?.label
-      ).length;
-      return Math.max(maxSize, visiblePointsCount);
-    }, 0);
-    const pointPalette = createRandomPointPalette(Math.max(paletteSize, 1));
     const nextMetricOptions: MetricVisibilityOption[] = [];
     const seenMetricLabels = new Set<string>();
 
@@ -120,7 +106,7 @@ export default function ActivityBarChart({
             key: `series-${seriesIndex}-point-${pointIndex}`,
             label: point.label,
             value: toNumber(point.value),
-            color: pointPalette[pointIndex % pointPalette.length],
+            color: metricColorMap.get(point.label) ?? FALLBACK_CHART_COLOR,
             seriesLabel,
             isSpacer: false,
           }))
@@ -149,7 +135,7 @@ export default function ActivityBarChart({
       metricOptions: nextMetricOptions,
       normalizedGroups: nextNormalizedGroups,
     };
-  }, [data, t]);
+  }, [data, metricColorMap, t]);
 
   const { chartPoints, pointByKey } = useMemo(() => {
     const filteredGroups = normalizedGroups
@@ -194,7 +180,7 @@ export default function ActivityBarChart({
   }, [enabledMetricLabelSet, normalizedGroups]);
 
   const primaryChartColor =
-    chartPoints.find((point) => !point.isSpacer)?.color ?? "hsl(221, 83%, 53%)";
+    chartPoints.find((point) => !point.isSpacer)?.color ?? FALLBACK_CHART_COLOR;
 
   const chartConfig = {
     value: {

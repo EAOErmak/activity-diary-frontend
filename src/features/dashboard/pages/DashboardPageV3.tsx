@@ -12,6 +12,7 @@ import {
 } from "@/features/dashboard/types";
 import {
   extractChartMetricLabels,
+  useChartMetricColors,
   useChartMetricVisibility,
 } from "@/features/dashboard/lib/chartMetricVisibility";
 import {
@@ -59,12 +60,14 @@ function AnalyticsChartContent({
   const metricLabels = useMemo(() => extractChartMetricLabels(data), [data]);
   const { enabledMetricLabelSet, toggleMetricVisibility } =
     useChartMetricVisibility(metricLabels);
+  const metricColorMap = useChartMetricColors(metricLabels);
 
   return chartDisplayMode === "linear" ? (
     <AnalyticsLineChart
       data={data}
       tagName={tagName}
       enabledMetricLabelSet={enabledMetricLabelSet}
+      metricColorMap={metricColorMap}
       onMetricVisibilityToggle={toggleMetricVisibility}
     />
   ) : (
@@ -72,6 +75,7 @@ function AnalyticsChartContent({
       data={data}
       tagName={tagName}
       enabledMetricLabelSet={enabledMetricLabelSet}
+      metricColorMap={metricColorMap}
       onMetricVisibilityToggle={toggleMetricVisibility}
     />
   );

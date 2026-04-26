@@ -31,11 +31,13 @@ import {
   type AnalyticsLineChartDatum,
 } from "@/features/dashboard/lib/analyticsLineChart";
 import MetricVisibilityControls from "@/features/dashboard/components/MetricVisibilityControls";
+import type { ChartMetricColorMap } from "@/features/dashboard/lib/chartMetricVisibility";
 
 type Props = {
   data: ChartResponse;
   tagName?: string | null;
   enabledMetricLabelSet: Set<string>;
+  metricColorMap: ChartMetricColorMap;
   onMetricVisibilityToggle: (metricLabel: string) => void;
 };
 
@@ -58,6 +60,7 @@ export default function AnalyticsLineChart({
   data,
   tagName,
   enabledMetricLabelSet,
+  metricColorMap,
   onMetricVisibilityToggle,
 }: Props) {
   const { t } = useTranslation();
@@ -72,12 +75,21 @@ export default function AnalyticsLineChart({
     [data, t]
   );
 
+  const features = useMemo(
+    () =>
+      lineChartData.features.map((feature) => ({
+        ...feature,
+        color: metricColorMap.get(feature.label) ?? feature.color,
+      })),
+    [lineChartData.features, metricColorMap]
+  );
+
   const visibleFeatures = useMemo(
     () =>
-      lineChartData.features.filter((feature) =>
+      features.filter((feature) =>
         enabledMetricLabelSet.has(feature.label)
       ),
-    [enabledMetricLabelSet, lineChartData.features]
+    [enabledMetricLabelSet, features]
   );
 
   const visibleRows = useMemo(
@@ -113,7 +125,7 @@ export default function AnalyticsLineChart({
     [visibleFeatures]
   );
 
-  const metricOptions = lineChartData.features.map((feature) => ({
+  const metricOptions = features.map((feature) => ({
     label: feature.label,
     color: feature.color,
   }));
