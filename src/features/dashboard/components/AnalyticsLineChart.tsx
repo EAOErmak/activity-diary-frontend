@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CartesianGrid,
@@ -55,6 +55,11 @@ const formatMetricValue = (
   const formattedValue = numberFormatter.format(numericValue);
   return unit ? `${formattedValue} ${unit}` : formattedValue;
 };
+
+const lineCurveStyle = {
+  // Recharts reveals Line paths through stroke-dasharray; keep point animation but avoid a short-path tail during domain changes.
+  strokeDasharray: "none",
+} satisfies CSSProperties;
 
 export default function AnalyticsLineChart({
   data,
@@ -204,6 +209,7 @@ export default function AnalyticsLineChart({
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
                     connectNulls={false}
+                    style={lineCurveStyle}
                   />
                 ))}
               </LineChart>
