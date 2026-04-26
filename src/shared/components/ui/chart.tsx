@@ -164,7 +164,10 @@ type TooltipPayloadItem = {
   value?: number | string | null;
 };
 
-type ChartTooltipContentProps = React.ComponentProps<"div"> & {
+type ChartTooltipContentProps = Pick<
+  React.ComponentProps<"div">,
+  "className" | "style"
+> & {
   active?: boolean;
   payload?: TooltipPayloadItem[];
   label?: string | number;
@@ -190,10 +193,10 @@ const ChartTooltipContent = React.forwardRef<
       payload,
       label,
       className,
+      style,
       hideLabel = false,
       formatter,
       labelFormatter,
-      ...props
     },
     ref
   ) => {
@@ -208,7 +211,7 @@ const ChartTooltipContent = React.forwardRef<
           "min-w-[180px] rounded-xl border border-border bg-popover px-3 py-2 text-popoverForeground shadow-xl",
           className
         )}
-        {...props}
+        style={style}
       >
         {!hideLabel && (
           <div className="mb-2 text-xs font-medium text-mutedForeground">
