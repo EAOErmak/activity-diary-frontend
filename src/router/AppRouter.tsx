@@ -1,4 +1,10 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  type Location,
+  useLocation,
+} from "react-router-dom";
 
 import LoginPage from "@/features/auth/pages/LoginPage";
 import RegisterPage from "@/features/auth/pages/RegisterPage";
@@ -32,14 +38,18 @@ import { DiaryDetailsDialog } from "@/features/diary/pages/DiaryListPage/compone
 import ProfilePage from "@/features/profile/pages/ProfilePage";
 import ProfileEditPage from "@/features/profile/pages/ProfileEditPage";
 import AdminUserCreatePage from "@/features/admin/users/pages/AdminUserCreateShadcnPage";
+import RouteScrollManager from "@/shared/components/layout/RouteScrollManager";
 
 export default function AppRouter() {
   const location = useLocation();
-  const state = location.state as { background?: Location };
+  const state = location.state as { background?: Location } | null;
+  const routingLocation = state?.background || location;
 
   return (
     <>
-      <Routes location={state?.background || location}>
+      <RouteScrollManager location={routingLocation} />
+
+      <Routes location={routingLocation}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
