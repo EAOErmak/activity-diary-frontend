@@ -1,6 +1,6 @@
 ﻿import { useForm } from "react-hook-form";
 
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -51,7 +51,9 @@ import type { MetricFormValue } from "@/shared/types/metricForm";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+const TIME_WHEEL_STEP_HOURS = 1;
 const TIME_WHEEL_STEP_MINUTES = 1;
+const LOCKED_CREATE_DURATION_MINUTES = 1;
 
 function getCurrentTimeHHmm() {
   const now = new Date();
@@ -70,6 +72,12 @@ function splitTime(value?: string) {
 function buildTime(hour: string, minute: string) {
   if (!hour && !minute) return "";
   return `${hour || "00"}:${minute || "00"}`;
+}
+
+function normalizeTime(value?: string) {
+  const { hour, minute } = splitTime(value);
+  if (!hour || !minute) return "";
+  return buildTime(hour, minute);
 }
 
 function toMinutes(value?: string) {
@@ -95,7 +103,10 @@ type TimeSelectControlProps = {
   onChange: (next: string) => void;
 };
 
-function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
+const TimeSelectControl = memo(function TimeSelectControl({
+  value,
+  onChange,
+}: TimeSelectControlProps) {
   const hourRef = useRef<HTMLDivElement | null>(null);
   const minuteRef = useRef<HTMLDivElement | null>(null);
   const valueRef = useRef(value);
@@ -107,11 +118,8 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
     valueRef.current = value;
   }, [value]);
 
-  useEffect(() => {
-    const updateValueByPart = (
-      event: WheelEvent,
-      part: "hours" | "minutes"
-    ) => {
+  const updateValueByPart = useCallback(
+    (event: WheelEvent, part: "hours" | "minutes") => {
       const direction = Math.sign(event.deltaY);
       if (direction === 0) return;
 
@@ -122,33 +130,60 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
       const nextValue = addMinutes(
         currentValue,
         direction *
-          (part === "hours" ? 60 : TIME_WHEEL_STEP_MINUTES)
+          (part === "hours"
+            ? TIME_WHEEL_STEP_HOURS * 60
+            : TIME_WHEEL_STEP_MINUTES)
       );
 
       valueRef.current = nextValue;
       onChange(nextValue);
-    };
+    },
+    [onChange]
+  );
 
-    const handleHourWheel = (event: WheelEvent) => {
+  const handleHourWheel = useCallback(
+    (event: WheelEvent) => {
       updateValueByPart(event, "hours");
-    };
+    },
+    [updateValueByPart]
+  );
 
-    const handleMinuteWheel = (event: WheelEvent) => {
+  const handleMinuteWheel = useCallback(
+    (event: WheelEvent) => {
       updateValueByPart(event, "minutes");
-    };
+    },
+    [updateValueByPart]
+  );
 
-    hourRef.current?.addEventListener("wheel", handleHourWheel, {
-      passive: false,
-    });
-    minuteRef.current?.addEventListener("wheel", handleMinuteWheel, {
-      passive: false,
-    });
-
-    return () => {
+  const setHourWheelRef = useCallback(
+    (node: HTMLDivElement | null) => {
       hourRef.current?.removeEventListener("wheel", handleHourWheel);
+
+      if (node) {
+        node.addEventListener("wheel", handleHourWheel, {
+          passive: false,
+        });
+      }
+
+      hourRef.current = node;
+    },
+    [handleHourWheel]
+  );
+
+  const setMinuteWheelRef = useCallback(
+    (node: HTMLDivElement | null) => {
       minuteRef.current?.removeEventListener("wheel", handleMinuteWheel);
-    };
-  }, [onChange]);
+
+      if (node) {
+        node.addEventListener("wheel", handleMinuteWheel, {
+          passive: false,
+        });
+      }
+
+      minuteRef.current = node;
+    },
+    [handleMinuteWheel]
+  );
 
   return (
     <div className="flex items-center gap-2.5">
@@ -160,7 +195,7 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
           onChange(nextValue);
         }}
       >
-        <div ref={hourRef} className="w-[5.5rem]">
+        <div ref={setHourWheelRef} className="w-[5.5rem]">
           <SelectTrigger className="w-full font-mono tabular-nums">
             <SelectValue />
           </SelectTrigger>
@@ -184,7 +219,7 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
           onChange(nextValue);
         }}
       >
-        <div ref={minuteRef} className="w-[5.5rem]">
+        <div ref={setMinuteWheelRef} className="w-[5.5rem]">
           <SelectTrigger className="w-full font-mono tabular-nums">
             <SelectValue />
           </SelectTrigger>
@@ -199,7 +234,7 @@ function TimeSelectControl({ value, onChange }: TimeSelectControlProps) {
       </Select>
     </div>
   );
-}
+});
 
 export type EntryTemplateFormValues = {
   name: string;
@@ -233,21 +268,29 @@ export default function EntryTemplateForm(props: Props) {
     (mode === "create" ? t("templates.entryTitle") : t("templates.editEntryTitle"));
   const submitLabel = props.submitLabel ?? t("common.save");
   const currentTime = getCurrentTimeHHmm();
+  const defaultCreateTimeEnd = addMinutes(
+    currentTime,
+    LOCKED_CREATE_DURATION_MINUTES
+  );
+  const initialTimeStart =
+    mode === "edit" ? normalizeTime(props.initialValues.timeStart) : "";
+  const initialTimeEnd =
+    mode === "edit" ? normalizeTime(props.initialValues.timeEnd) : "";
 
   const form = useForm<EntryTemplateFormValues>({
     defaultValues:
       mode === "edit"
         ? {
             ...props.initialValues,
-            timeStart: props.initialValues.timeStart || currentTime,
-            timeEnd: props.initialValues.timeEnd || currentTime,
+            timeStart: initialTimeStart || currentTime,
+            timeEnd: initialTimeEnd || currentTime,
           }
         : {
             name: "",
             mood: 3,
             description: "",
             timeStart: currentTime,
-            timeEnd: currentTime,
+            timeEnd: defaultCreateTimeEnd,
             metrics: [],
           },
   });
@@ -255,7 +298,6 @@ export default function EntryTemplateForm(props: Props) {
   const {
     formState: { isSubmitting },
   } = form;
-  const syncingRef = useRef<"timeStart" | "timeEnd" | null>(null);
 
   const { tags: availableTags, isLoading: areTagsLoading } = useTagsQuery();
   const description =
@@ -286,65 +328,96 @@ export default function EntryTemplateForm(props: Props) {
   );
   const hasSelectedTags = selectedTags.length > 0;
 
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (syncingRef.current === name) {
-        syncingRef.current = null;
+  const setTimeFieldValue = useCallback(
+    (fieldName: "timeStart" | "timeEnd", nextValue: string) => {
+      if (form.getValues(fieldName) === nextValue) return;
+
+      form.setValue(fieldName, nextValue, {
+        shouldDirty: true,
+      });
+    },
+    [form]
+  );
+
+  const handleTimeStartChange = useCallback(
+    (nextValue: string) => {
+      const normalizedStartValue = normalizeTime(nextValue);
+      if (!normalizedStartValue) return;
+
+      setTimeFieldValue("timeStart", normalizedStartValue);
+
+      if (mode === "create") {
+        setTimeFieldValue(
+          "timeEnd",
+          addMinutes(normalizedStartValue, LOCKED_CREATE_DURATION_MINUTES)
+        );
         return;
       }
 
-      if (name !== "timeStart") return;
-
-      const startValue = value.timeStart;
-      if (!startValue) return;
-
-      const startMinutes = toMinutes(startValue);
-      if (startMinutes == null) return;
-
-      const endMinutes = toMinutes(value.timeEnd);
-      if (endMinutes == null || endMinutes <= startMinutes) {
-        const nextEndValue = addMinutes(startValue, 1);
-        if (value.timeEnd === nextEndValue) return;
-
-        syncingRef.current = "timeEnd";
-        form.setValue("timeEnd", nextEndValue, {
-          shouldDirty: true,
-        });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form]);
-
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (syncingRef.current === name) {
-        syncingRef.current = null;
+      const currentEndValue = normalizeTime(form.getValues("timeEnd"));
+      if (!currentEndValue) {
+        setTimeFieldValue(
+          "timeEnd",
+          addMinutes(normalizedStartValue, LOCKED_CREATE_DURATION_MINUTES)
+        );
         return;
       }
 
-      if (name !== "timeEnd") return;
-
-      const endValue = value.timeEnd;
-      if (!endValue) return;
-
-      const endMinutes = toMinutes(endValue);
-      if (endMinutes == null) return;
-
-      const startMinutes = toMinutes(value.timeStart);
-      if (startMinutes == null || startMinutes >= endMinutes) {
-        const nextStartValue = addMinutes(endValue, -1);
-        if (value.timeStart === nextStartValue) return;
-
-        syncingRef.current = "timeStart";
-        form.setValue("timeStart", nextStartValue, {
-          shouldDirty: true,
-        });
+      const startMinutes = toMinutes(normalizedStartValue);
+      const endMinutes = toMinutes(currentEndValue);
+      if (
+        startMinutes != null &&
+        endMinutes != null &&
+        endMinutes <= startMinutes
+      ) {
+        setTimeFieldValue(
+          "timeEnd",
+          addMinutes(normalizedStartValue, LOCKED_CREATE_DURATION_MINUTES)
+        );
       }
-    });
+    },
+    [form, mode, setTimeFieldValue]
+  );
 
-    return () => subscription.unsubscribe();
-  }, [form]);
+  const handleTimeEndChange = useCallback(
+    (nextValue: string) => {
+      const normalizedEndValue = normalizeTime(nextValue);
+      if (!normalizedEndValue) return;
+
+      setTimeFieldValue("timeEnd", normalizedEndValue);
+
+      if (mode === "create") {
+        setTimeFieldValue(
+          "timeStart",
+          addMinutes(normalizedEndValue, -LOCKED_CREATE_DURATION_MINUTES)
+        );
+        return;
+      }
+
+      const currentStartValue = normalizeTime(form.getValues("timeStart"));
+      if (!currentStartValue) {
+        setTimeFieldValue(
+          "timeStart",
+          addMinutes(normalizedEndValue, -LOCKED_CREATE_DURATION_MINUTES)
+        );
+        return;
+      }
+
+      const startMinutes = toMinutes(currentStartValue);
+      const endMinutes = toMinutes(normalizedEndValue);
+      if (
+        startMinutes != null &&
+        endMinutes != null &&
+        startMinutes >= endMinutes
+      ) {
+        setTimeFieldValue(
+          "timeStart",
+          addMinutes(normalizedEndValue, -LOCKED_CREATE_DURATION_MINUTES)
+        );
+      }
+    },
+    [form, mode, setTimeFieldValue]
+  );
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-1 no-scrollbar">
@@ -363,6 +436,9 @@ export default function EntryTemplateForm(props: Props) {
                   return;
                 }
 
+                const normalizedTimeStart = normalizeTime(values.timeStart);
+                const normalizedTimeEnd = normalizeTime(values.timeEnd);
+
                 const metrics = values.metrics
                   .filter((m) => m.metricTypeId && m.values.length > 0)
                   .map((m) => ({
@@ -379,12 +455,24 @@ export default function EntryTemplateForm(props: Props) {
                   }));
 
                 if (mode === "create") {
+                  const timeStart =
+                    normalizedTimeStart ||
+                    (normalizedTimeEnd
+                      ? addMinutes(
+                          normalizedTimeEnd,
+                          -LOCKED_CREATE_DURATION_MINUTES
+                        )
+                      : undefined);
+                  const timeEnd = timeStart
+                    ? addMinutes(timeStart, LOCKED_CREATE_DURATION_MINUTES)
+                    : normalizedTimeEnd || undefined;
+
                   return onSubmit({
                     name,
                     mood: values.mood,
                     description: values.description.trim() || undefined,
-                    timeStart: values.timeStart || undefined,
-                    timeEnd: values.timeEnd || undefined,
+                    timeStart,
+                    timeEnd,
                     metrics,
                   });
                 }
@@ -393,8 +481,8 @@ export default function EntryTemplateForm(props: Props) {
                   name,
                   mood: values.mood,
                   description: values.description.trim() || null,
-                  timeStart: values.timeStart || null,
-                  timeEnd: values.timeEnd || null,
+                  timeStart: normalizedTimeStart || null,
+                  timeEnd: normalizedTimeEnd || null,
                   metrics,
                 });
               })}
@@ -427,7 +515,10 @@ export default function EntryTemplateForm(props: Props) {
                     <FormItem>
                       <FormLabel>{t("templates.entryTimeStart")}</FormLabel>
                       <FormControl>
-                        <TimeSelectControl value={field.value || ""} onChange={field.onChange} />
+                        <TimeSelectControl
+                          value={field.value || ""}
+                          onChange={handleTimeStartChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -441,7 +532,10 @@ export default function EntryTemplateForm(props: Props) {
                     <FormItem>
                       <FormLabel>{t("templates.entryTimeEnd")}</FormLabel>
                       <FormControl>
-                        <TimeSelectControl value={field.value || ""} onChange={field.onChange} />
+                        <TimeSelectControl
+                          value={field.value || ""}
+                          onChange={handleTimeEndChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
