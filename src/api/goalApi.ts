@@ -2,6 +2,7 @@ import api from "@/api/http/axiosInstance";
 import type { ApiResponse } from "@/shared/types/api";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
 import type {
+  DayGoalDetail,
   DiaryEntryGoalDetail,
   DayGoalSummary,
   DayGoalView,
@@ -71,8 +72,11 @@ export const createDayGoal = async (
   return unwrapData<DayGoalView>(data);
 };
 
-export const confirmDayGoal = async (dayGoalId: number): Promise<void> => {
-  await api.post(`/goal/day/${dayGoalId}/confirm`);
+export const confirmDayGoal = async (dayGoalId: number): Promise<DayGoalDetail> => {
+  const { data } = await api.post<
+    ApiResponse<DayGoalDetail> | DayGoalDetail
+  >(`/goal/day/${dayGoalId}/confirm`);
+  return unwrapData<DayGoalDetail>(data);
 };
 
 export const createWeekGoal = async (

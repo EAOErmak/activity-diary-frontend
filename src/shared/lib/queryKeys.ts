@@ -54,3 +54,16 @@ export const analyticsKeys = {
       },
     ] as const,
 };
+
+export const goalKeys = {
+  all: ["goals"] as const,
+  daySummaries: () => [...goalKeys.all, "day-summaries"] as const,
+  daySummariesRange: (from: string, to: string) =>
+    [...goalKeys.daySummaries(), { from, to }] as const,
+  weekSummaries: () => [...goalKeys.all, "week-summaries"] as const,
+  weekSummariesRange: (from: string, to: string) =>
+    [...goalKeys.weekSummaries(), { from, to }] as const,
+  dailyEntries: () => [...goalKeys.all, "daily-entries"] as const,
+  dailyEntriesByDate: (date: string) =>
+    [...goalKeys.dailyEntries(), date] as const,
+};

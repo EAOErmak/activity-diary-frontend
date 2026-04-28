@@ -8,12 +8,12 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { useLongPressProgress } from "@/features/goals/hooks/useLongPressProgress";
+import { GOAL_LONG_PRESS_DURATION_MS } from "@/features/goals/lib/goalsConstants";
 import { Progress } from "@/shared/components/ui/progress";
 import { cn } from "@/shared/lib/utils";
 import type { WeekPreviewDay, WeekPreviewStats } from "@/features/goals/lib/goalsTypes";
 import { getCompletionColor, normalizeScore } from "@/features/goals/lib/goalsUtils";
 
-const LONG_PRESS_MS = 600;
 const TODAY_RING_TRACK = "hsl(24 28% 22%)";
 const TODAY_PROGRESS_TRACK = "linear-gradient(90deg, rgba(251,191,36,0.16) 0%, rgba(249,115,22,0.14) 52%, rgba(251,113,133,0.18) 100%)";
 const TODAY_PROGRESS_FILL = "linear-gradient(90deg, rgb(251 191 36) 0%, rgb(249 115 22) 58%, rgb(251 113 133) 100%)";
@@ -29,6 +29,7 @@ type Props = {
   draggingTemplate: boolean;
   creatingDate: string | null;
   isEraserOn: boolean;
+  isDayGoalPending: (dayGoalId: number | null | undefined) => boolean;
   onPrevWeek: () => void;
   onNextWeek: () => void;
   onHoverDate: (dateKey: string) => void;
@@ -48,6 +49,7 @@ export function WeekViewCard({
   draggingTemplate,
   creatingDate,
   isEraserOn,
+  isDayGoalPending,
   onPrevWeek,
   onNextWeek,
   onHoverDate,
@@ -57,7 +59,7 @@ export function WeekViewCard({
 }: Props) {
   const dayLongPressTriggeredRef = useRef(false);
   const pressedDayKeyRef = useRef<string | null>(null);
-  const dayLongPress = useLongPressProgress(LONG_PRESS_MS);
+  const dayLongPress = useLongPressProgress(GOAL_LONG_PRESS_DURATION_MS);
   const selectedDay = days.find((day) => day.dateKey === dailyDateKey) ?? null;
   const activeDaysLabel = selectedDay
     ? `${selectedDay.label} ${selectedDay.date.getDate()}`
@@ -137,6 +139,7 @@ export function WeekViewCard({
               const progressDeg = Math.round(progress * 3.6);
               const progressColor = getCompletionColor(progress);
               const isToday = day.dateKey === todayKey;
+              const isConfirmPending = isDayGoalPending(day.dayGoalId);
               const isDayConfirming = dayLongPress.activeId === day.dateKey;
               const displayedProgress = isDayConfirming
                 ? progress + ((100 - progress) * dayLongPress.progress) / 100
@@ -177,6 +180,7 @@ export function WeekViewCard({
                     onSelectDailyDate(day.date);
                   }}
                   onPointerDown={(event) => {
+                    dayLongPressTriggeredRef.current = false;
                     if (!day.isInYear) return;
                     if (event.pointerType !== "touch" && event.button === 0) {
                       pressedDayKeyRef.current = day.dateKey;
@@ -189,9 +193,8 @@ export function WeekViewCard({
                     }
                     if (isEraserOn) return;
                     const dayGoalId = day.dayGoalId;
-                    if (!dayGoalId) return;
+                    if (!dayGoalId || day.isConfirmed || isConfirmPending) return;
 
-                    dayLongPressTriggeredRef.current = false;
                     dayLongPress.start(day.dateKey, () => {
                       dayLongPressTriggeredRef.current = true;
                       onConfirmDayGoal(dayGoalId, day.dateKey);
@@ -305,7 +308,13 @@ export function WeekViewCard({
                       />
                     </div>
                     <div className={cn("text-xs text-muted-foreground", todayDarkMutedTextClass)}>
-                      {day.dayGoalId ? (day.isConfirmed ? "Confirmed" : "Hold to confirm") : "No goal"}
+                      {day.dayGoalId
+                        ? isConfirmPending
+                          ? "Confirming..."
+                          : day.isConfirmed
+                            ? "Confirmed"
+                            : "Hold to confirm"
+                        : "No goal"}
                     </div>
                   </div>
                 </div>

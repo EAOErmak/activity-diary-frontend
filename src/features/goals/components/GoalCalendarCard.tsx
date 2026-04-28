@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
+import { GoalCalendarDayCell } from "@/features/goals/components/GoalCalendarDayCell";
 import { Progress } from "@/shared/components/ui/progress";
 import { Separator } from "@/shared/components/ui/separator";
 import { cn } from "@/shared/lib/utils";
@@ -14,8 +15,6 @@ import type { GoalCalendarStats } from "@/features/goals/lib/goalsTypes";
 import {
   WEEKDAY_LABELS,
   addDays,
-  getDropIndicatorStyle,
-  getHeatCellStyle,
   getWeekCalendarBandColor,
   isDateInRange,
   toDisplayDate,
@@ -34,14 +33,18 @@ type Props = {
   yearStart: Date;
   yearEnd: Date;
   dayScores: Record<string, number>;
+  dayGoalIdsByDate: Record<string, number>;
+  dayGoalConfirmedByDate: Record<string, boolean>;
   weekScores: Record<string, number>;
   previewDateKeys: Set<string>;
   draggingTemplate: boolean;
   creatingDate: string | null;
   isEraserOn: boolean;
+  isDayGoalPending: (dayGoalId: number | null | undefined) => boolean;
   selectedDayKey: string;
   weekPreviewStartKey: string;
   onHoverDate: (dateKey: string) => void;
+  onConfirmDayGoal: (dayGoalId: number, dateKey: string) => void;
   onDeleteDayGoal: (dateKey: string) => void;
   onDeleteWeekGoal: (dateKey: string) => void;
   onSelectDay: (date: Date) => void;
@@ -60,14 +63,18 @@ export function GoalCalendarCard({
   yearStart,
   yearEnd,
   dayScores,
+  dayGoalIdsByDate,
+  dayGoalConfirmedByDate,
   weekScores,
   previewDateKeys,
   draggingTemplate,
   creatingDate,
   isEraserOn,
+  isDayGoalPending,
   selectedDayKey,
   weekPreviewStartKey,
   onHoverDate,
+  onConfirmDayGoal,
   onDeleteDayGoal,
   onDeleteWeekGoal,
   onSelectDay,
@@ -76,7 +83,6 @@ export function GoalCalendarCard({
   const weekLegendLevels = [0, 17, 33, 50, 67, 83, 100];
   const calendarGridTemplate = `1.25rem repeat(${weeks.length}, minmax(0, 1fr))`;
   const weekGridTemplate = `repeat(${weeks.length}, minmax(0, 1fr))`;
-  const pressedDayKeyRef = useRef<string | null>(null);
   const pressedWeekKeyRef = useRef<string | null>(null);
 
   const handleDayActivate = (date: Date, dateKey: string, isInCurrentYear: boolean) => {
@@ -193,66 +199,25 @@ export function GoalCalendarCard({
                   const isSelectedDay = selectedDayKey === dateKey;
 
                   return (
-                    <div
+                    <GoalCalendarDayCell
                       key={dateKey}
-                      data-goal-date={dateKey}
-                      onClick={() => {
-                        if (pressedDayKeyRef.current === dateKey) {
-                          pressedDayKeyRef.current = null;
-                          return;
-                        }
-                        handleDayActivate(date, dateKey, isInCurrentYear);
-                      }}
-                      onPointerDown={(event) => {
-                        if (event.pointerType === "touch" || event.button !== 0) return;
-                        pressedDayKeyRef.current = dateKey;
-                        handleDayActivate(date, dateKey, isInCurrentYear);
-                      }}
-                      onPointerEnter={() => {
-                        if (draggingTemplate) onHoverDate(dateKey);
-                      }}
-                      onPointerLeave={() => {
-                        if (pressedDayKeyRef.current === dateKey) {
-                          pressedDayKeyRef.current = null;
-                        }
-                      }}
-                      onPointerCancel={() => {
-                        if (pressedDayKeyRef.current === dateKey) {
-                          pressedDayKeyRef.current = null;
-                        }
-                      }}
-                      className={[
-                        "aspect-square w-full rounded-[4px] border",
-                        isEraserOn && isInCurrentYear ? "cursor-pointer" : "",
-                        isInCurrentYear ? "border-border/70" : "border-transparent bg-transparent",
-                        isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
-                        draggingTemplate && isPreviewTarget
-                          ? isInCurrentYear
-                            ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.45)]"
-                            : "border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.45)]"
-                          : "",
-                        isSelectedDay && isInCurrentYear
-                          ? "border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
-                          : "",
-                        isToday && isInCurrentYear
-                          ? "border-amber-300/80 shadow-[0_0_18px_rgba(251,146,60,0.24)]"
-                          : "",
-                        isCreating ? "animate-pulse" : "",
-                      ].join(" ")}
-                      style={{
-                        ...getHeatCellStyle(score, hasScore && isInCurrentYear),
-                        ...getDropIndicatorStyle(
-                          draggingTemplate,
-                          isPreviewTarget,
-                          isInCurrentYear
-                        ),
-                        ...(isToday && isInCurrentYear
-                          ? {
-                              outline: "2px solid rgba(251,191,36,0.85)",
-                              outlineOffset: "1px",
-                            }
-                          : {}),
-                      }}
+                      date={date}
+                      dateKey={dateKey}
+                      isInCurrentYear={isInCurrentYear}
+                      isToday={isToday}
+                      hasScore={hasScore}
+                      score={score}
+                      dayGoalId={dayGoalIdsByDate[dateKey] ?? null}
+                      isConfirmed={dayGoalConfirmedByDate[dateKey] ?? false}
+                      isConfirmPending={isDayGoalPending(dayGoalIdsByDate[dateKey] ?? null)}
+                      isPreviewTarget={isPreviewTarget}
+                      isCreating={isCreating}
+                      isSelectedDay={isSelectedDay}
+                      draggingTemplate={draggingTemplate}
+                      isEraserOn={isEraserOn}
+                      onHoverDate={onHoverDate}
+                      onConfirmDayGoal={onConfirmDayGoal}
+                      onActivate={handleDayActivate}
                     />
                   );
                 })}

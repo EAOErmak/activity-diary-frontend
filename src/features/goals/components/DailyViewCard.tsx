@@ -11,6 +11,7 @@ import { useLongPressProgress } from "@/features/goals/hooks/useLongPressProgres
 import { Separator } from "@/shared/components/ui/separator";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
+import { GOAL_LONG_PRESS_DURATION_MS } from "@/features/goals/lib/goalsConstants";
 import type { DiaryEntryGoalSummary } from "@/shared/types/goal";
 import {
   formatDailyTime,
@@ -20,14 +21,14 @@ import {
   normalizeScore,
 } from "@/features/goals/lib/goalsUtils";
 
-const LONG_PRESS_MS = 600;
-
 type Props = {
   className?: string;
   dailyDateLabel: string;
   dailyDateKey: string;
   isToday: boolean;
   currentDayGoalId: number | null;
+  isCurrentDayConfirmed: boolean;
+  isCurrentDayGoalPending: boolean;
   dailyEntries: DiaryEntryGoalSummary[];
   isLoadingDailyEntries: boolean;
   isDailyPreviewTarget: boolean;
@@ -52,6 +53,8 @@ export function DailyViewCard({
   dailyDateKey,
   isToday,
   currentDayGoalId,
+  isCurrentDayConfirmed,
+  isCurrentDayGoalPending,
   dailyEntries,
   isLoadingDailyEntries,
   isDailyPreviewTarget,
@@ -70,8 +73,8 @@ export function DailyViewCard({
   onConfirmEntryGoalSimple,
 }: Props) {
   const entryLongPressTriggeredRef = useRef(false);
-  const dayLongPress = useLongPressProgress(LONG_PRESS_MS);
-  const entryLongPress = useLongPressProgress(LONG_PRESS_MS);
+  const dayLongPress = useLongPressProgress(GOAL_LONG_PRESS_DURATION_MS);
+  const entryLongPress = useLongPressProgress(GOAL_LONG_PRESS_DURATION_MS);
 
   return (
     <Card className={cn("flex w-full min-w-0 flex-col", className)}>
@@ -128,6 +131,7 @@ export function DailyViewCard({
             event.stopPropagation();
             if (isEraserOn) return;
             if (!currentDayGoalId) return;
+            if (isCurrentDayConfirmed || isCurrentDayGoalPending) return;
 
             dayLongPress.start("daily-goal", () => {
               onConfirmDayGoal(currentDayGoalId);

@@ -19,6 +19,7 @@ import { GoalsDragPreview } from "@/features/goals/components/GoalsDragPreview";
 import { ReplaceGoalDialog } from "@/features/goals/components/ReplaceGoalDialog";
 import { TemplatesSidebarV2 as TemplatesSidebar } from "@/features/goals/components/TemplatesSidebarV2";
 import { WeekViewCard } from "@/features/goals/components/WeekViewCard";
+import { useConfirmDayGoalMutation } from "@/features/goals/hooks/useConfirmDayGoalMutation";
 import { useGoalCalendarGrid } from "@/features/goals/hooks/useGoalCalendarGrid";
 import { useGoalsSummaries } from "@/features/goals/hooks/useGoalsSummaries";
 import { useGoalsTemplates } from "@/features/goals/hooks/useGoalsTemplates";
@@ -307,6 +308,10 @@ export default function GoalsPage() {
     calendarTo,
     dailyDateKey,
   });
+  const {
+    mutateAsync: confirmDayGoalMutation,
+    isPendingDayGoal,
+  } = useConfirmDayGoalMutation();
 
   const beginGoalMutation = useCallback(() => {
     if (goalMutationLockRef.current) {
@@ -729,18 +734,49 @@ export default function GoalsPage() {
     [eraserMode, reloadAll]
   );
 
-  const handleConfirmDayGoal = useCallback(async (dayGoalId: number, dateKey: string) => {
-    if (eraserMode === "eraseOn") return;
+  const handleConfirmDayGoal = useCallback(
+    async (dayGoalId: number, dateKey: string) => {
+      if (eraserMode === "eraseOn") return;
+      if (!dayGoalId) return;
+      if (dayGoalIdsByDate[dateKey] !== dayGoalId) return;
+      if (dayGoalConfirmedByDate[dateKey]) return;
+      if (isPendingDayGoal(dayGoalId)) return;
 
-    setCreatingDate(dateKey);
-    try {
-      await goalApi.confirmDayGoal(dayGoalId);
-      toast.success(`Day goal confirmed on ${toDisplayDate(dateKey)}`);
-      await reloadAll();
-    } finally {
-      setCreatingDate(null);
-    }
-  }, [eraserMode, reloadAll]);
+      if (isDeletingGoal || isReplacingGoal || isSubmittingEntryConfirm) {
+        toast.warning(GOAL_MUTATION_IN_PROGRESS_MESSAGE);
+        return;
+      }
+
+      if (!beginGoalMutation()) {
+        toast.warning(GOAL_MUTATION_IN_PROGRESS_MESSAGE);
+        return;
+      }
+
+      setCreatingDate(dateKey);
+      try {
+        await confirmDayGoalMutation({ dayGoalId, dateKey });
+        toast.success(`Day goal confirmed on ${toDisplayDate(dateKey)}`);
+      } catch (error) {
+        reportGoalMutationError(error, "Failed to confirm the day goal");
+      } finally {
+        endGoalMutation();
+        setCreatingDate(null);
+      }
+    },
+    [
+      beginGoalMutation,
+      confirmDayGoalMutation,
+      dayGoalConfirmedByDate,
+      dayGoalIdsByDate,
+      endGoalMutation,
+      eraserMode,
+      isDeletingGoal,
+      isPendingDayGoal,
+      isReplacingGoal,
+      isSubmittingEntryConfirm,
+      reportGoalMutationError,
+    ]
+  );
 
   const handleConfirmEntryGoal = useCallback(
     (entry: DiaryEntryGoalSummary, entryName: string) => {
@@ -1162,14 +1198,20 @@ export default function GoalsPage() {
                   yearStart={yearStart}
                   yearEnd={yearEnd}
                   dayScores={dayScores}
+                  dayGoalIdsByDate={dayGoalIdsByDate}
+                  dayGoalConfirmedByDate={dayGoalConfirmedByDate}
                   weekScores={weekScores}
                   previewDateKeys={previewDateKeys}
                   draggingTemplate={Boolean(draggingTemplate)}
                   creatingDate={creatingDate}
                   isEraserOn={isEraserOn}
+                  isDayGoalPending={isPendingDayGoal}
                   selectedDayKey={dailyDateKey}
                   weekPreviewStartKey={weekPreviewStartKey}
                   onHoverDate={() => {}}
+                  onConfirmDayGoal={(dayGoalId, dateKey) => {
+                    void handleConfirmDayGoal(dayGoalId, dateKey);
+                  }}
                   onDeleteDayGoal={(dateKey) => {
                     void handleDeleteDayGoalOnDate(dateKey);
                   }}
@@ -1195,6 +1237,7 @@ export default function GoalsPage() {
                   draggingTemplate={Boolean(draggingTemplate)}
                   creatingDate={creatingDate}
                   isEraserOn={isEraserOn}
+                  isDayGoalPending={isPendingDayGoal}
                   onPrevWeek={() => shiftWeekPreview(-7)}
                   onNextWeek={() => shiftWeekPreview(7)}
                   onHoverDate={setHoverDate}
@@ -1217,6 +1260,10 @@ export default function GoalsPage() {
                   dailyDateKey={dailyDateKey}
                   isToday={dailyDateKey === todayKey}
                   currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
+                  isCurrentDayConfirmed={dayGoalConfirmedByDate[dailyDateKey] ?? false}
+                  isCurrentDayGoalPending={isPendingDayGoal(
+                    dayGoalIdsByDate[dailyDateKey] ?? null
+                  )}
                   dailyEntries={dailyEntries}
                   isLoadingDailyEntries={isLoadingDailyEntries}
                   isDailyPreviewTarget={isDailyPreviewTarget}

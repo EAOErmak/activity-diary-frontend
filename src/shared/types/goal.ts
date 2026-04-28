@@ -65,6 +65,19 @@ export type DayGoalView = {
   entries: DiaryEntryGoalView[];
 };
 
+export type DayGoalDetail = {
+  id: number;
+  dayIndex?: number | null;
+  targetDate: string;
+  whenStarted?: string | null;
+  whenEnded?: string | null;
+  completeness?: number | null;
+  confirmed?: boolean | null;
+  status?: string | null;
+  currentDayId?: number | null;
+  entries?: DiaryEntryGoalView[] | null;
+};
+
 export type WeekGoalView = {
   id: number;
   whenStarted: string;
@@ -77,6 +90,8 @@ export type DayGoalSummary = {
   id: number;
   targetDate: string;
   completeness?: number | null;
+  confirmed?: boolean | null;
+  status?: string | null;
 };
 
 export type WeekGoalSummary = {
