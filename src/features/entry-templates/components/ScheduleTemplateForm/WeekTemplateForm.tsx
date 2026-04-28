@@ -58,7 +58,6 @@ type Props = {
 };
 
 export default function WeekTemplateForm({
-  mode,
   title,
   submitLabel,
   namePlaceholder,
@@ -71,9 +70,6 @@ export default function WeekTemplateForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
-  const formMode =
-    mode ??
-    (initialName || initialSelectedItems.length > 0 ? "edit" : "create");
   const weekdayLabels = [
     t("templates.monday"),
     t("templates.tuesday"),
@@ -283,11 +279,7 @@ export default function WeekTemplateForm({
               <CardFooter className="justify-end px-0 pt-2">
                 <Button
                   type="submit"
-                  className={
-                    formMode === "create"
-                      ? "w-full"
-                      : "w-full sm:w-auto sm:min-w-[12rem]"
-                  }
+                  className="w-full"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? t("common.saving") : resolvedSubmitLabel}

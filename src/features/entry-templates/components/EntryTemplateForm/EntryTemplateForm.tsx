@@ -1,6 +1,6 @@
 ﻿import { useForm } from "react-hook-form";
 
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -53,6 +53,11 @@ const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 const TIME_WHEEL_STEP_HOURS = 1;
 const TIME_WHEEL_STEP_MINUTES = 1;
+const MAX_TIME_WHEEL_STEPS_PER_FRAME = 3;
+const TIME_WHEEL_EVENT_OPTIONS: AddEventListenerOptions = {
+  passive: false,
+  capture: true,
+};
 const LOCKED_CREATE_DURATION_MINUTES = 1;
 
 function getCurrentTimeHHmm() {
@@ -98,6 +103,12 @@ function addMinutes(value: string, minutes: number) {
   return `${hour}:${minute}`;
 }
 
+function clampWheelSteps(amount: number) {
+  if (amount > 0) return Math.min(amount, MAX_TIME_WHEEL_STEPS_PER_FRAME);
+  if (amount < 0) return Math.max(amount, -MAX_TIME_WHEEL_STEPS_PER_FRAME);
+  return 0;
+}
+
 type TimeSelectControlProps = {
   value: string;
   onChange: (next: string) => void;
@@ -109,14 +120,64 @@ const TimeSelectControl = memo(function TimeSelectControl({
 }: TimeSelectControlProps) {
   const hourRef = useRef<HTMLDivElement | null>(null);
   const minuteRef = useRef<HTMLDivElement | null>(null);
+  const hourContentRef = useRef<HTMLDivElement | null>(null);
+  const minuteContentRef = useRef<HTMLDivElement | null>(null);
+  const onChangeRef = useRef(onChange);
   const valueRef = useRef(value);
-  const { hour, minute } = splitTime(value);
+  const wheelFrameRef = useRef<number | null>(null);
+  const pendingWheelRef = useRef({
+    part: "minutes" as "hours" | "minutes",
+    amount: 0,
+  });
+  const [displayValue, setDisplayValue] = useState(value);
+  const { hour, minute } = splitTime(displayValue);
   const selectedHour = hour || "00";
   const selectedMinute = minute || "00";
 
   useEffect(() => {
     valueRef.current = value;
+    setDisplayValue(value);
   }, [value]);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    return () => {
+      if (wheelFrameRef.current != null) {
+        cancelAnimationFrame(wheelFrameRef.current);
+      }
+    };
+  }, []);
+
+  const commitValue = useCallback((nextValue: string) => {
+    valueRef.current = nextValue;
+    setDisplayValue(nextValue);
+    onChangeRef.current(nextValue);
+  }, []);
+
+  const flushWheelUpdate = useCallback(() => {
+    wheelFrameRef.current = null;
+
+    const { part, amount } = pendingWheelRef.current;
+    pendingWheelRef.current = {
+      part,
+      amount: 0,
+    };
+
+    const limitedAmount = clampWheelSteps(amount);
+    if (limitedAmount === 0) return;
+
+    const currentValue = valueRef.current || "00:00";
+    const stepMinutes =
+      part === "hours"
+        ? TIME_WHEEL_STEP_HOURS * 60
+        : TIME_WHEEL_STEP_MINUTES;
+    const nextValue = addMinutes(currentValue, limitedAmount * stepMinutes);
+
+    commitValue(nextValue);
+  }, [commitValue]);
 
   const updateValueByPart = useCallback(
     (event: WheelEvent, part: "hours" | "minutes") => {
@@ -126,19 +187,20 @@ const TimeSelectControl = memo(function TimeSelectControl({
       event.preventDefault();
       event.stopPropagation();
 
-      const currentValue = valueRef.current || "00:00";
-      const nextValue = addMinutes(
-        currentValue,
-        direction *
-          (part === "hours"
-            ? TIME_WHEEL_STEP_HOURS * 60
-            : TIME_WHEEL_STEP_MINUTES)
-      );
+      if (pendingWheelRef.current.part !== part) {
+        pendingWheelRef.current = {
+          part,
+          amount: direction,
+        };
+      } else {
+        pendingWheelRef.current.amount += direction;
+      }
 
-      valueRef.current = nextValue;
-      onChange(nextValue);
+      if (wheelFrameRef.current != null) return;
+
+      wheelFrameRef.current = requestAnimationFrame(flushWheelUpdate);
     },
-    [onChange]
+    [flushWheelUpdate]
   );
 
   const handleHourWheel = useCallback(
@@ -157,12 +219,18 @@ const TimeSelectControl = memo(function TimeSelectControl({
 
   const setHourWheelRef = useCallback(
     (node: HTMLDivElement | null) => {
-      hourRef.current?.removeEventListener("wheel", handleHourWheel);
+      hourRef.current?.removeEventListener(
+        "wheel",
+        handleHourWheel,
+        TIME_WHEEL_EVENT_OPTIONS
+      );
 
       if (node) {
-        node.addEventListener("wheel", handleHourWheel, {
-          passive: false,
-        });
+        node.addEventListener(
+          "wheel",
+          handleHourWheel,
+          TIME_WHEEL_EVENT_OPTIONS
+        );
       }
 
       hourRef.current = node;
@@ -170,17 +238,65 @@ const TimeSelectControl = memo(function TimeSelectControl({
     [handleHourWheel]
   );
 
-  const setMinuteWheelRef = useCallback(
+  const setHourContentWheelRef = useCallback(
     (node: HTMLDivElement | null) => {
-      minuteRef.current?.removeEventListener("wheel", handleMinuteWheel);
+      hourContentRef.current?.removeEventListener(
+        "wheel",
+        handleHourWheel,
+        TIME_WHEEL_EVENT_OPTIONS
+      );
 
       if (node) {
-        node.addEventListener("wheel", handleMinuteWheel, {
-          passive: false,
-        });
+        node.addEventListener(
+          "wheel",
+          handleHourWheel,
+          TIME_WHEEL_EVENT_OPTIONS
+        );
+      }
+
+      hourContentRef.current = node;
+    },
+    [handleHourWheel]
+  );
+
+  const setMinuteWheelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      minuteRef.current?.removeEventListener(
+        "wheel",
+        handleMinuteWheel,
+        TIME_WHEEL_EVENT_OPTIONS
+      );
+
+      if (node) {
+        node.addEventListener(
+          "wheel",
+          handleMinuteWheel,
+          TIME_WHEEL_EVENT_OPTIONS
+        );
       }
 
       minuteRef.current = node;
+    },
+    [handleMinuteWheel]
+  );
+
+  const setMinuteContentWheelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      minuteContentRef.current?.removeEventListener(
+        "wheel",
+        handleMinuteWheel,
+        TIME_WHEEL_EVENT_OPTIONS
+      );
+
+      if (node) {
+        node.addEventListener(
+          "wheel",
+          handleMinuteWheel,
+          TIME_WHEEL_EVENT_OPTIONS
+        );
+      }
+
+      minuteContentRef.current = node;
     },
     [handleMinuteWheel]
   );
@@ -191,8 +307,7 @@ const TimeSelectControl = memo(function TimeSelectControl({
         value={selectedHour}
         onValueChange={(nextHour) => {
           const nextValue = buildTime(nextHour, selectedMinute);
-          valueRef.current = nextValue;
-          onChange(nextValue);
+          commitValue(nextValue);
         }}
       >
         <div ref={setHourWheelRef} className="w-[5.5rem]">
@@ -200,7 +315,7 @@ const TimeSelectControl = memo(function TimeSelectControl({
             <SelectValue />
           </SelectTrigger>
         </div>
-        <SelectContent>
+        <SelectContent ref={setHourContentWheelRef}>
           {HOURS.map((item) => (
             <SelectItem key={item} value={item}>
               {item}
@@ -215,8 +330,7 @@ const TimeSelectControl = memo(function TimeSelectControl({
         value={selectedMinute}
         onValueChange={(nextMinute) => {
           const nextValue = buildTime(selectedHour, nextMinute);
-          valueRef.current = nextValue;
-          onChange(nextValue);
+          commitValue(nextValue);
         }}
       >
         <div ref={setMinuteWheelRef} className="w-[5.5rem]">
@@ -224,7 +338,7 @@ const TimeSelectControl = memo(function TimeSelectControl({
             <SelectValue />
           </SelectTrigger>
         </div>
-        <SelectContent>
+        <SelectContent ref={setMinuteContentWheelRef}>
           {MINUTES.map((item) => (
             <SelectItem key={item} value={item}>
               {item}
@@ -334,6 +448,7 @@ export default function EntryTemplateForm(props: Props) {
 
       form.setValue(fieldName, nextValue, {
         shouldDirty: true,
+        shouldValidate: false,
       });
     },
     [form]
@@ -556,11 +671,7 @@ export default function EntryTemplateForm(props: Props) {
               <CardFooter className="justify-end px-0 pt-2">
                 <Button
                   type="submit"
-                  className={
-                    mode === "create"
-                      ? "w-full"
-                      : "w-full sm:w-auto sm:min-w-[12rem]"
-                  }
+                  className="w-full"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? t("common.saving") : submitLabel}

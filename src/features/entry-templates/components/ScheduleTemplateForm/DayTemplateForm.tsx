@@ -57,7 +57,6 @@ type Props = {
 const EMPTY_SELECTED_ITEMS: ScheduleTemplateSelectedItem[] = [];
 
 export default function DayTemplateForm({
-  mode,
   title,
   submitLabel,
   namePlaceholder,
@@ -69,9 +68,6 @@ export default function DayTemplateForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
-  const formMode =
-    mode ??
-    (initialName || initialSelectedItems.length > 0 ? "edit" : "create");
   const resolvedSubmitLabel = submitLabel ?? t("common.save");
   const resolvedNamePlaceholder = namePlaceholder ?? t("templates.dayNamePlaceholder");
   const resolvedItemPlaceholder = itemPlaceholder ?? t("templates.dayItemPlaceholder");
@@ -282,11 +278,7 @@ export default function DayTemplateForm({
               <CardFooter className="justify-end px-0 pt-2">
                 <Button
                   type="submit"
-                  className={
-                    formMode === "create"
-                      ? "w-full"
-                      : "w-full sm:w-auto sm:min-w-[12rem]"
-                  }
+                  className="w-full"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? t("common.saving") : resolvedSubmitLabel}
