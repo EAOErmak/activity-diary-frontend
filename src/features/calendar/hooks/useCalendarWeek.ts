@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { diaryApi } from "@/api/diaryApi";
 import type { CalendarEvent } from "../lib/calendarTypes";
 import { getWeekDays, mapToCalendarEvents } from "../lib/calendarUtils";
@@ -7,12 +7,15 @@ import { startOfDay, endOfDay, addDays } from "date-fns";
 import { diaryKeys } from "@/shared/lib/queryKeys";
 import type { DiaryEntryView, Page } from "@/shared/types/diary";
 
+const CALENDAR_QUERY_STALE_TIME_MS = 30_000;
+
 export function useCalendarWeek(baseDate: Date, tags: string[]) {
   const days = useMemo(() => getWeekDays(baseDate), [baseDate]);
   const weekStart = useMemo(() => startOfDay(days[0]), [days]);
   const weekEnd = useMemo(() => endOfDay(days[6]), [days]);
   const fetchFrom = useMemo(() => addDays(weekStart, -1), [weekStart]);
   const fetchTo = useMemo(() => addDays(weekEnd, 1), [weekEnd]);
+  const requestNowRef = useRef(new Date().toISOString());
 
   const calendarEntriesQuery = useQuery<Page<DiaryEntryView>, Error>({
     queryKey: diaryKeys.calendarRange(
@@ -23,8 +26,10 @@ export function useCalendarWeek(baseDate: Date, tags: string[]) {
       diaryApi.getMyEntries(0, 100, {
         from: fetchFrom.toISOString(),
         to: fetchTo.toISOString(),
-        now: new Date().toISOString(),
+        now: requestNowRef.current,
       }),
+    staleTime: CALENDAR_QUERY_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
 

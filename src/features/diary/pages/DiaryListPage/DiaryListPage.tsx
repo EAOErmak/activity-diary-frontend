@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { diaryApi } from "@/api/diaryApi";
 import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import { DiaryListHeader } from "@/features/diary/pages/DiaryListPage/components/DiaryListHeader";
@@ -22,6 +22,7 @@ import type { DiaryEntryView, EntryStatus, Page } from "@/shared/types/diary";
 import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 8;
+const DIARY_LIST_STALE_TIME_MS = 30_000;
 
 function shiftCalendarDay(baseDate: Date | undefined, amount: number) {
   const nextDate = baseDate ? new Date(baseDate) : new Date();
@@ -104,11 +105,12 @@ export default function DiaryListPage() {
   const [status, setStatus] = useState<EntryStatus | "">("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagQuery, setTagQuery] = useState("");
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<Date | undefined>(() => new Date());
   const [createOpen, setCreateOpen] = useState(false);
   const [editEntryId, setEditEntryId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<number | null>(null);
+  const requestNowRef = useRef(new Date().toISOString());
   const normalizedTags = useMemo(
     () => [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))].sort(),
     [tags]
@@ -160,12 +162,14 @@ export default function DiaryListPage() {
 
       return diaryApi.getMyEntries(page, PAGE_SIZE, {
         status: status || undefined,
-        now: new Date().toISOString(),
+        now: requestNowRef.current,
         tags: tagsParam,
         from,
         to,
       });
     },
+    staleTime: DIARY_LIST_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
 
@@ -331,7 +335,7 @@ export default function DiaryListPage() {
             setStatus("");
             setTags([]);
             setTagQuery("");
-            setDate(undefined);
+            setDate(new Date());
           }}
         />
 

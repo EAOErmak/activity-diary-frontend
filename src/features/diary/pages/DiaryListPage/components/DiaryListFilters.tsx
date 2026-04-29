@@ -1,21 +1,20 @@
-﻿import { useEffect } from "react";
 import {
   DISPLAY_STATUSES,
   getStatusLabel,
 } from "@/features/diary/pages/DiaryListPage/statusConfig";
+import { Button } from "@/shared/components/ui/button";
+import { Badge } from "@/shared/components/ui/badge";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import { DatePicker } from "@/shared/components/ui/date-picker";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { Button } from "@/shared/components/ui/button";
-import { DatePicker } from "@/shared/components/ui/date-picker";
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/shared/components/ui/select";
-import { Badge } from "@/shared/components/ui/badge";
 import type { EntryStatus } from "@/shared/types/diary";
 import { useTranslation } from "react-i18next";
 
@@ -33,11 +32,6 @@ type Props = {
 
 export function DiaryListFilters(props: Props) {
   const { t } = useTranslation();
-  useEffect(() => {
-    if (!props.date) {
-      props.onDateChange(new Date());
-    }
-  }, [props.date, props.onDateChange]);
 
   const addTag = () => {
     const value = props.tagQuery.trim().toLowerCase();
@@ -51,20 +45,18 @@ export function DiaryListFilters(props: Props) {
   };
 
   const removeTag = (tag: string) => {
-    props.onTagsChange(props.tags.filter((t) => t !== tag));
+    props.onTagsChange(props.tags.filter((item) => item !== tag));
   };
 
   return (
     <Card className="mb-8 w-full">
-      <CardContent className="flex flex-col sm:flex-row gap-6 pt-2 pb-6">
-        
-        {/* STATUS */}
+      <CardContent className="flex flex-col gap-6 pb-6 pt-2 sm:flex-row">
         <div className="flex-1">
           <Label>{t("diary.statusLabel")}</Label>
           <Select
             value={props.status || "ALL"}
-            onValueChange={(v) =>
-              props.onStatusChange(v === "ALL" ? "" : (v as EntryStatus))
+            onValueChange={(value) =>
+              props.onStatusChange(value === "ALL" ? "" : (value as EntryStatus))
             }
           >
             <SelectTrigger>
@@ -81,16 +73,15 @@ export function DiaryListFilters(props: Props) {
           </Select>
         </div>
 
-        {/* TAG SEARCH */}
         <div className="flex-1">
           <Label>{t("diary.tagSearchLabel")}</Label>
           <Input
             placeholder={t("diary.tagPlaceholder")}
             value={props.tagQuery}
-            onChange={(e) => props.onTagQueryChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
+            onChange={(event) => props.onTagQueryChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
                 addTag();
               }
             }}
@@ -104,14 +95,13 @@ export function DiaryListFilters(props: Props) {
                   className="cursor-pointer"
                   onClick={() => removeTag(tag)}
                 >
-                  {tag} ✕
+                  {tag} x
                 </Badge>
               ))}
             </div>
           )}
         </div>
 
-        {/* DATE */}
         <div className="flex-1">
           <Label>{t("diary.dateLabel")}</Label>
           <DatePicker
@@ -121,7 +111,6 @@ export function DiaryListFilters(props: Props) {
           />
         </div>
 
-        {/* RESET */}
         <div className="flex items-end">
           <Button variant="primary" onClick={props.onReset}>
             {t("common.reset")}
