@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
-import { getCurrentUser } from "@/api/userApi";
+import { queryClient } from "@/providers/queryClient";
+import { getCurrentUserQueryOptions } from "@/shared/lib/queryOptions";
 import type { UserDto } from "@/shared/types/user";
 
 type CurrentUserStoreState = {
@@ -31,7 +32,7 @@ export const useCurrentUserStore = create<CurrentUserStoreState>((set) => ({
     });
 
     try {
-      const user = await getCurrentUser();
+      const user = await queryClient.fetchQuery(getCurrentUserQueryOptions());
       set({
         user,
         isLoading: false,

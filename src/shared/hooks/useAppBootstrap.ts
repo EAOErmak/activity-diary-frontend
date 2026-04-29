@@ -4,6 +4,7 @@ import axios from "axios";
 import { refreshAuthSessionOnStartup, getAccessToken } from "@/api/http/authSession";
 import { bootstrap, runtime } from "@/platform";
 import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
+import { syncAuthStateWithCurrentUser } from "@/shared/lib/syncAuthStateWithCurrentUser";
 import { useDictionaryRepository } from "@/shared/repository/dictionaryRepository";
 import { useDiaryRepository } from "@/shared/repository/diaryRepository";
 import { useTagRepository } from "@/shared/repository/tagRepository";
@@ -14,6 +15,7 @@ type AppBootstrapStatus = "loading" | "ready" | "error";
 
 export function useAppBootstrap() {
   const loadCurrentUser = useCurrentUserStore((state) => state.loadCurrentUser);
+  const currentUser = useCurrentUserStore((state) => state.user);
   const currentUserId = useCurrentUserStore((state) => state.user?.id ?? null);
   const isCurrentUserLoading = useCurrentUserStore((state) => state.isLoading);
   const currentUserError = useCurrentUserStore((state) => state.error);
@@ -26,7 +28,8 @@ export function useAppBootstrap() {
 
   const syncAuthorizedSession = useCallback(async () => {
     try {
-      await loadCurrentUser();
+      const user = await loadCurrentUser();
+      syncAuthStateWithCurrentUser(user);
     } catch (error) {
       if (
         axios.isAxiosError(error) &&
@@ -50,15 +53,7 @@ export function useAppBootstrap() {
 
   const syncTrustedDesktopSession = useCallback(async () => {
     const user = await loadCurrentUser();
-
-    useAuthStore.getState().setAuthData({
-      accessToken: null,
-      refreshToken: null,
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-      twoFactorRequired: false,
-    });
+    syncAuthStateWithCurrentUser(user);
 
     try {
       await refreshDictionaryCache();
@@ -170,11 +165,17 @@ export function useAppBootstrap() {
       return;
     }
 
+    if (currentUser && authUserId === null) {
+      syncAuthStateWithCurrentUser(currentUser);
+      return;
+    }
+
     void syncAuthorizedSession().catch((error) => {
       bootstrap.logStartupError(error);
     });
   }, [
     accessToken,
+    currentUser,
     authUserId,
     currentUserId,
     isAuthHydrated,
