@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { goalApi } from "@/api/goalApi";
 import {
@@ -103,15 +103,6 @@ export const useGoalsSummaries = ({
       ]),
     [dailyEntriesQuery, daySummariesQuery, weekSummariesQuery]
   );
-
-  useEffect(() => {
-    const onDiaryChanged = () => {
-      void dailyEntriesQuery.refetch();
-    };
-
-    window.addEventListener("diary:changed", onDiaryChanged);
-    return () => window.removeEventListener("diary:changed", onDiaryChanged);
-  }, [dailyEntriesQuery]);
 
   return {
     dayScores,
