@@ -4,9 +4,42 @@ function normalizeSearchQuery(query?: string) {
   return query?.trim() ?? "";
 }
 
+function normalizeStringList(values?: readonly string[]) {
+  return [...new Set((values ?? []).map((value) => value.trim()).filter(Boolean))].sort();
+}
+
 export function normalizeNumericIds(ids: readonly number[]) {
   return [...new Set(ids)].sort((left, right) => left - right);
 }
+
+export const diaryKeys = {
+  all: ["diary"] as const,
+  lists: () => [...diaryKeys.all, "list"] as const,
+  list: (params: {
+    page: number;
+    size: number;
+    status?: string | null;
+    tags?: readonly string[];
+    tagQuery?: string | null;
+    date?: string | null;
+  }) =>
+    [
+      ...diaryKeys.lists(),
+      {
+        page: params.page,
+        size: params.size,
+        status: params.status ?? null,
+        tags: normalizeStringList(params.tags),
+        tagQuery: normalizeSearchQuery(params.tagQuery ?? ""),
+        date: params.date ?? null,
+      },
+    ] as const,
+  details: () => [...diaryKeys.all, "detail"] as const,
+  detail: (id: NullableId) => [...diaryKeys.details(), id ?? null] as const,
+  calendar: () => [...diaryKeys.all, "calendar"] as const,
+  calendarRange: (from: string, to: string) =>
+    [...diaryKeys.calendar(), { from, to }] as const,
+};
 
 export const tagKeys = {
   all: ["tags"] as const,

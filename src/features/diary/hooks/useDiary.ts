@@ -1,5 +1,7 @@
 import { diaryApi } from "@/api/diaryApi";
+import { useQueryClient } from "@tanstack/react-query";
 import i18n from "@/shared/i18n/config";
+import { analyticsKeys, diaryKeys, goalKeys } from "@/shared/lib/queryKeys";
 import { useDiaryRepository } from "@/shared/repository/diaryRepository";
 import type {
   DiaryEntryCreate,
@@ -7,11 +9,38 @@ import type {
 } from "@/shared/types/diary";
 import { toast } from "sonner";
 
+type DeleteEntryOptions = {
+  invalidateDiaryLists?: boolean;
+};
+
+async function invalidateDiaryDependents(
+  queryClient: ReturnType<typeof useQueryClient>,
+  options: DeleteEntryOptions = {}
+) {
+  const { invalidateDiaryLists = true } = options;
+  const invalidations = [
+    queryClient.invalidateQueries({ queryKey: diaryKeys.calendar() }),
+    queryClient.invalidateQueries({ queryKey: goalKeys.daySummaries() }),
+    queryClient.invalidateQueries({ queryKey: goalKeys.weekSummaries() }),
+    queryClient.invalidateQueries({ queryKey: goalKeys.dailyEntries() }),
+    queryClient.invalidateQueries({ queryKey: analyticsKeys.all }),
+  ];
+
+  if (invalidateDiaryLists) {
+    invalidations.push(
+      queryClient.invalidateQueries({ queryKey: diaryKeys.lists() })
+    );
+  }
+
+  await Promise.all(invalidations);
+}
+
 export function useDiaryActions() {
-  const repo = useDiaryRepository.getState();
+  const queryClient = useQueryClient();
 
   async function createEntry(payload: DiaryEntryCreate) {
     const created = await diaryApi.createEntry(payload);
+    const repo = useDiaryRepository.getState();
 
     repo.setFull(created);
     repo.appendView({
@@ -21,7 +50,8 @@ export function useDiaryActions() {
       status: created.status,
       firstTag: created.firstTag ?? null,
     });
-    window.dispatchEvent(new Event("diary:changed"));
+    queryClient.setQueryData(diaryKeys.detail(created.id), created);
+    await invalidateDiaryDependents(queryClient);
     toast.success(i18n.t("diary.entryCreated"));
 
     return created;
@@ -29,6 +59,7 @@ export function useDiaryActions() {
 
   async function updateEntry(id: number, payload: DiaryEntryUpdate) {
     const updated = await diaryApi.updateEntry(id, payload);
+    const repo = useDiaryRepository.getState();
 
     repo.setFull(updated);
     repo.updateView({
@@ -38,14 +69,18 @@ export function useDiaryActions() {
       status: updated.status,
       firstTag: updated.firstTag ?? null,
     });
-    window.dispatchEvent(new Event("diary:changed"));
+    queryClient.setQueryData(diaryKeys.detail(updated.id), updated);
+    await invalidateDiaryDependents(queryClient);
 
     return updated;
   }
 
-  async function deleteEntry(id: number) {
+  async function deleteEntry(id: number, options?: DeleteEntryOptions) {
     await diaryApi.deleteEntry(id);
+    const repo = useDiaryRepository.getState();
     repo.remove(id);
+    queryClient.removeQueries({ queryKey: diaryKeys.detail(id) });
+    await invalidateDiaryDependents(queryClient, options);
   }
 
   return {
