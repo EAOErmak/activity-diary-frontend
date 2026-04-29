@@ -1,5 +1,7 @@
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { diaryApi } from "@/api/diaryApi";
+import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import { DiaryListHeader } from "@/features/diary/pages/DiaryListPage/components/DiaryListHeader";
 import { DiaryListFilters } from "@/features/diary/pages/DiaryListPage/components/DiaryListFilters";
 import { CreateEntryDialog } from "@/features/diary/components/CreateEntryDialog";
@@ -14,6 +16,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/shared/components/ui/pagination";
+import { diaryKeys } from "@/shared/lib/queryKeys";
 import { cn } from "@/shared/lib/utils";
 import type { DiaryEntryView, EntryStatus, Page } from "@/shared/types/diary";
 import { useTranslation } from "react-i18next";
@@ -94,10 +97,8 @@ function resolvePaginationMeta(result: Pick<Page<DiaryEntryView>, "content" | "t
 
 export default function DiaryListPage() {
   const { t } = useTranslation();
-  const [entries, setEntries] = useState<DiaryEntryView[]>([]);
+  const { deleteEntry } = useDiaryActions();
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [paginationMetaByContext, setPaginationMetaByContext] = useState<Record<string, PaginationMeta>>({});
 
   const [status, setStatus] = useState<EntryStatus | "">("");
@@ -108,92 +109,94 @@ export default function DiaryListPage() {
   const [editEntryId, setEditEntryId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<number | null>(null);
-  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
-  const latestLoadIdRef = useRef(0);
-  const filterContextKey = useMemo(() => JSON.stringify({
-    status: status || null,
-    tags: [...tags].sort(),
-    tagQuery: tagQuery.trim().toLowerCase(),
-    date: date ? new Date(date).toISOString().slice(0, 10) : null,
-  }), [date, status, tagQuery, tags]);
+  const normalizedTags = useMemo(
+    () => [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))].sort(),
+    [tags]
+  );
+  const normalizedTagQuery = useMemo(
+    () => tagQuery.trim().toLowerCase(),
+    [tagQuery]
+  );
+  const selectedDateKey = useMemo(
+    () => (date ? new Date(date).toISOString().slice(0, 10) : null),
+    [date]
+  );
+  const filterContextKey = useMemo(
+    () =>
+      JSON.stringify({
+        status: status || null,
+        tags: normalizedTags,
+        tagQuery: normalizedTagQuery,
+        date: selectedDateKey,
+      }),
+    [normalizedTagQuery, normalizedTags, selectedDateKey, status]
+  );
 
-  const load = useCallback(async () => {
-    const loadId = latestLoadIdRef.current + 1;
-    latestLoadIdRef.current = loadId;
-    setIsPageTransitioning(true);
+  const diaryListQuery = useQuery<Page<DiaryEntryView>, Error>({
+    queryKey: diaryKeys.list({
+      page,
+      size: PAGE_SIZE,
+      status: status || null,
+      tags: normalizedTags,
+      tagQuery: normalizedTagQuery,
+      date: selectedDateKey,
+    }),
+    queryFn: async () => {
+      const mergedTags = normalizedTagQuery
+        ? Array.from(new Set([normalizedTagQuery, ...normalizedTags]))
+        : normalizedTags;
+      const tagsParam = mergedTags.length ? mergedTags : undefined;
 
-    const nowIso = new Date().toISOString();
-    const query = tagQuery.trim().toLowerCase();
-    const mergedTags = query ? [query, ...tags] : tags;
-    const tagsParam = mergedTags.length ? mergedTags : undefined;
+      let from: string | undefined;
+      let to: string | undefined;
+      if (date) {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+        from = start.toISOString();
+        to = end.toISOString();
+      }
 
-    let from: string | undefined;
-    let to: string | undefined;
-    if (date) {
-      const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
-      from = start.toISOString();
-      to = end.toISOString();
-    }
-
-    try {
-      const result = await diaryApi.getMyEntries(page, PAGE_SIZE, {
+      return diaryApi.getMyEntries(page, PAGE_SIZE, {
         status: status || undefined,
-        now: nowIso,
+        now: new Date().toISOString(),
         tags: tagsParam,
         from,
         to,
       });
+    },
+    placeholderData: (previousData) => previousData,
+  });
 
-      if (latestLoadIdRef.current !== loadId) {
-        return;
-      }
+  const entries = diaryListQuery.data?.content ?? [];
 
-      const nextPaginationMeta = resolvePaginationMeta({
-        content: result.content ?? [],
-        totalPages: result.totalPages ?? 0,
-        totalElements: result.totalElements ?? 0,
-      }, page);
-
-      startTransition(() => {
-        setEntries(result.content ?? []);
-        setTotalPages(nextPaginationMeta.totalPages);
-        setTotalElements(nextPaginationMeta.totalElements);
-        setPaginationMetaByContext((current) => {
-          const previousMeta = current[filterContextKey];
-          if (
-            previousMeta?.totalPages === nextPaginationMeta.totalPages &&
-            previousMeta?.totalElements === nextPaginationMeta.totalElements
-          ) {
-            return current;
-          }
-
-          return {
-            ...current,
-            [filterContextKey]: nextPaginationMeta,
-          };
-        });
-        setIsPageTransitioning(false);
-      });
-    } catch (error) {
-      if (latestLoadIdRef.current === loadId) {
-        setIsPageTransitioning(false);
-      }
-      throw error;
+  useEffect(() => {
+    if (!diaryListQuery.data || diaryListQuery.isPlaceholderData) {
+      return;
     }
-  }, [date, filterContextKey, page, status, tagQuery, tags]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+    const nextPaginationMeta = resolvePaginationMeta({
+      content: diaryListQuery.data.content ?? [],
+      totalPages: diaryListQuery.data.totalPages ?? 0,
+      totalElements: diaryListQuery.data.totalElements ?? 0,
+    }, page);
 
-  useEffect(() => {
-    const onChanged = () => load();
-    window.addEventListener("diary:changed", onChanged);
-    return () => window.removeEventListener("diary:changed", onChanged);
-  }, [load]);
+    setPaginationMetaByContext((current) => {
+      const previousMeta = current[filterContextKey];
+      if (
+        previousMeta?.totalPages === nextPaginationMeta.totalPages &&
+        previousMeta?.totalElements === nextPaginationMeta.totalElements
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [filterContextKey]: nextPaginationMeta,
+      };
+    });
+  }, [diaryListQuery.data, diaryListQuery.isPlaceholderData, filterContextKey, page]);
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -217,6 +220,7 @@ export default function DiaryListPage() {
   const currentPaginationMeta = paginationMetaByContext[filterContextKey];
   const resolvedTotalPages = currentPaginationMeta?.totalPages ?? 0;
   const resolvedTotalElements = currentPaginationMeta?.totalElements ?? 0;
+  const isPageTransitioning = diaryListQuery.isFetching;
   const isPaginationMetaPending = isPageTransitioning && !currentPaginationMeta;
   const isPaginationInteractionLocked = isPageTransitioning;
 
@@ -233,17 +237,17 @@ export default function DiaryListPage() {
 
     setDeletingEntryId(entry.id);
     try {
-      await diaryApi.deleteEntry(entry.id);
-      if (entries.length === 1 && page > 0) {
+      const shouldShiftPage = entries.length === 1 && page > 0;
+      await deleteEntry(entry.id, {
+        invalidateDiaryLists: !shouldShiftPage,
+      });
+      if (shouldShiftPage) {
         setPage((prev) => prev - 1);
-      } else {
-        await load();
       }
-      window.dispatchEvent(new Event("diary:changed"));
     } finally {
       setDeletingEntryId(null);
     }
-  }, [entries.length, load, page]);
+  }, [deleteEntry, entries.length, page]);
 
   const handlePreviousNavigation = useCallback(() => {
     if (isPaginationInteractionLocked || isPaginationMetaPending) {

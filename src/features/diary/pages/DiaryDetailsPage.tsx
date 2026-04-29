@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { diaryApi } from "@/api/diaryApi";
-import { Button } from "@/shared/components/ui/button";
-import { motion } from "framer-motion";
-import { Edit3, Calendar, Activity, Trash2, X } from "lucide-react";
-
-import type { DiaryEntry } from "@/shared/types/diary";
-import { getEntryStatus, STATUS_STYLES } from "@/shared/lib/entryStatus";
-import { getIntlLocale } from "@/shared/i18n/locale";
 import { EditEntryDialog } from "@/features/diary/components/EditEntryDialog";
 import { EntryMetricValueCarousel } from "@/features/diary/components/EntryMetricValueCarousel";
+import { useDiaryActions } from "@/features/diary/hooks/useDiary";
 import { getStatusLabel } from "@/features/diary/pages/DiaryListPage/statusConfig";
+import { Button } from "@/shared/components/ui/button";
+import { getIntlLocale } from "@/shared/i18n/locale";
+import { getEntryStatus, STATUS_STYLES } from "@/shared/lib/entryStatus";
+import { diaryKeys } from "@/shared/lib/queryKeys";
+import type { DiaryEntry } from "@/shared/types/diary";
+import { motion } from "framer-motion";
+import { Activity, Calendar, Edit3, Trash2, X } from "lucide-react";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
@@ -40,45 +42,30 @@ export default function DiaryDetailsPage() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const [entry, setEntry] = useState<DiaryEntry | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { deleteEntry } = useDiaryActions();
   const [editOpen, setEditOpen] = useState(false);
 
-  /* ================================
-     LOAD ENTRY
-  ================================ */
+  const entryId = Number(id);
+  const diaryEntryQuery = useQuery<DiaryEntry, Error>({
+    queryKey: diaryKeys.detail(entryId),
+    queryFn: () => diaryApi.getEntry(entryId),
+    enabled: Number.isFinite(entryId) && entryId > 0,
+  });
 
-  useEffect(() => {
-    async function fetchEntry() {
-      try {
-        const data = await diaryApi.getEntry(Number(id));
-        setEntry(data);
-      } catch (error) {
-        setError(getErrorMessage(error));
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (id) fetchEntry();
-  }, [id]);
+  const entry = diaryEntryQuery.data ?? null;
+  const errorMessage = diaryEntryQuery.error
+    ? getErrorMessage(diaryEntryQuery.error)
+    : null;
 
   async function handleDelete() {
     if (!entry) return;
     const ok = confirm(t("diary.deleteConfirm"));
     if (!ok) return;
-    await diaryApi.deleteEntry(entry.id);
-    window.dispatchEvent(new Event("diary:changed"));
+    await deleteEntry(entry.id);
     navigate(-1);
   }
 
-  /* ================================
-     STATES
-  ================================ */
-
-  if (loading) {
+  if (diaryEntryQuery.isPending) {
     return (
       <p className="text-center text-foreground mt-20">
         {t("common.loading")}
@@ -86,10 +73,10 @@ export default function DiaryDetailsPage() {
     );
   }
 
-  if (error) {
+  if (errorMessage) {
     return (
       <p className="text-center text-destructive mt-20">
-        {`${t("common.error")}: ${error}`}
+        {`${t("common.error")}: ${errorMessage}`}
       </p>
     );
   }
@@ -112,13 +99,8 @@ export default function DiaryDetailsPage() {
   const canEdit = entry.status !== "DELETED";
   const title = entry.firstTag ?? t("diary.entryTitleFallback");
 
-  /* ================================
-     RENDER
-  ================================ */
-
   return (
     <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-      {/* CONTENT */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -127,21 +109,19 @@ export default function DiaryDetailsPage() {
       >
         <Button
           variant="ghost"
-          size="icon" 
+          size="icon"
           onClick={() => navigate(-1)}
           className="absolute top-4 right-4"
         >
           <X className="w-5 h-5" />
         </Button>
 
-        {/* TITLE */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-primary mb-1">
             {title}
           </h1>
         </div>
 
-        {/* META */}
         <div className="flex flex-wrap gap-6 text-foreground mb-8">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary" />
@@ -164,7 +144,6 @@ export default function DiaryDetailsPage() {
           </div>
         </div>
 
-        {/* COMMENT */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-primary mb-2">
             {t("diary.comment")}
@@ -180,7 +159,6 @@ export default function DiaryDetailsPage() {
           )}
         </div>
 
-        {/* METRICS */}
         <div>
           <h3 className="text-lg font-semibold text-primary mb-3">
             {t("diary.activities")}
@@ -221,14 +199,12 @@ export default function DiaryDetailsPage() {
           )}
         </div>
       </motion.div>
-      {entry && (
-        <EditEntryDialog
-          entryId={entry.id}
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          onUpdated={setEntry}
-        />
-      )}
+
+      <EditEntryDialog
+        entryId={entry.id}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </div>
   );
 }
