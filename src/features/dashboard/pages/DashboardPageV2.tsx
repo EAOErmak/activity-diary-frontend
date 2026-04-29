@@ -1,7 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAnalyticsChart, getAnalyticsChartTypes } from "@/api/analyticsApi";
-import { getAllTags } from "@/api/tagApi";
 import ActivityBarChart from "@/features/dashboard/components/ActivityBarChart";
 import AnalyticsFiltersV2 from "@/features/dashboard/components/AnalyticsFiltersV2";
 import {
@@ -15,7 +14,11 @@ import {
   type ChartResponse,
   type ChartType,
 } from "@/shared/types/analytics";
-import { analyticsKeys, tagKeys } from "@/shared/lib/queryKeys";
+import { analyticsKeys } from "@/shared/lib/queryKeys";
+import { getTagListQueryOptions } from "@/shared/lib/queryOptions";
+
+const ANALYTICS_QUERY_STALE_TIME_MS = 30_000;
+const ANALYTICS_DICTIONARY_STALE_TIME_MS = 5 * 60 * 1000;
 
 const buildDateWithDayOffset = (offsetDays: number) => {
   const date = new Date();
@@ -64,10 +67,7 @@ export default function DashboardPageV2() {
     data: tags = [],
     isLoading: isLoadingTags,
     isError: isTagsError,
-  } = useQuery({
-    queryKey: tagKeys.list(deferredTagQuery),
-    queryFn: () => getAllTags(deferredTagQuery),
-  });
+  } = useQuery(getTagListQueryOptions(deferredTagQuery));
 
   useEffect(() => {
     if (!tags.length) {
@@ -95,6 +95,8 @@ export default function DashboardPageV2() {
     queryKey: analyticsKeys.chartTypesByTag(selectedTagId),
     queryFn: () => getAnalyticsChartTypes(selectedTagId!),
     enabled: selectedTagId !== null,
+    staleTime: ANALYTICS_DICTIONARY_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
   });
 
   const isDateRangeInvalid = Boolean(
@@ -134,6 +136,8 @@ export default function DashboardPageV2() {
         ...(toDate ? { dateTo: toDate.toISOString() } : {}),
       }),
     enabled: selectedTagId !== null && chartType !== null && !isDateRangeInvalid,
+    staleTime: ANALYTICS_QUERY_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
   });
 
   return (

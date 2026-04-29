@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { getAllTags } from "@/api/tagApi";
-import { tagKeys } from "@/shared/lib/queryKeys";
+import { getTagListQueryOptions } from "@/shared/lib/queryOptions";
 import { tagRepository, useTagRepository } from "@/shared/repository/tagRepository";
 
 export function useTags() {
@@ -12,11 +11,7 @@ export function useTags() {
 export function useTagsQuery() {
   const cachedTags = useTagRepository((state) => state.data);
 
-  const query = useQuery({
-    queryKey: tagKeys.list(),
-    queryFn: () => getAllTags(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const query = useQuery(getTagListQueryOptions());
 
   useEffect(() => {
     if (!query.data) {

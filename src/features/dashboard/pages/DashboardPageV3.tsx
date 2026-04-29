@@ -2,7 +2,6 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getAnalyticsChart, getAnalyticsChartTypes } from "@/api/analyticsApi";
-import { getAllTags } from "@/api/tagApi";
 import AnalyticsLineChart from "@/features/dashboard/components/AnalyticsLineChart";
 import ActivityBarChart from "@/features/dashboard/components/ActivityBarChart";
 import AnalyticsFiltersV3 from "@/features/dashboard/components/AnalyticsFiltersV3";
@@ -29,7 +28,11 @@ import {
   type ChartResponse,
   type ChartType,
 } from "@/shared/types/analytics";
-import { analyticsKeys, tagKeys } from "@/shared/lib/queryKeys";
+import { analyticsKeys } from "@/shared/lib/queryKeys";
+import { getTagListQueryOptions } from "@/shared/lib/queryOptions";
+
+const ANALYTICS_QUERY_STALE_TIME_MS = 30_000;
+const ANALYTICS_DICTIONARY_STALE_TIME_MS = 5 * 60 * 1000;
 
 type AnalyticsAlertState = {
   key: string;
@@ -102,10 +105,7 @@ export default function DashboardPageV3() {
     data: tags = [],
     isLoading: isLoadingTags,
     isError: isTagsError,
-  } = useQuery({
-    queryKey: tagKeys.list(deferredTagQuery),
-    queryFn: () => getAllTags(deferredTagQuery),
-  });
+  } = useQuery(getTagListQueryOptions(deferredTagQuery));
 
   const selectedTag = useMemo(
     () => tags.find((tag) => tag.id === selectedTagId) ?? null,
@@ -122,6 +122,8 @@ export default function DashboardPageV3() {
     queryKey: analyticsKeys.chartTypesByTag(selectedTagId),
     queryFn: () => getAnalyticsChartTypes(selectedTagId!),
     enabled: selectedTagId !== null,
+    staleTime: ANALYTICS_DICTIONARY_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 
@@ -169,6 +171,8 @@ export default function DashboardPageV3() {
       selectedTagId !== null &&
       chartType !== null &&
       !isDateRangeInvalid,
+    staleTime: ANALYTICS_QUERY_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 
