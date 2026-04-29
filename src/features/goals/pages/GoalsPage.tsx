@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useCallback,
   useEffect,
@@ -50,9 +51,14 @@ import {
   toDisplayDate,
   toIsoDate,
 } from "@/features/goals/lib/goalsUtils";
+import { goalKeys } from "@/shared/lib/queryKeys";
 import { cn } from "@/shared/lib/utils";
 import type { DiaryEntryCreate } from "@/shared/types/diary";
-import type { DayGoalView, DiaryEntryGoalSummary, WeekGoalView } from "@/shared/types/goal";
+import type {
+  DiaryEntryGoalSummary,
+  DiaryEntryGoalView,
+  WeekGoalView,
+} from "@/shared/types/goal";
 import { useCurrentUserStore } from "@/shared/store/currentUserStore";
 
 type PointerPosition = {
@@ -101,7 +107,34 @@ const buildPreviewDateKeys = (
   return weekKeys;
 };
 
+function sortDailyEntries(entries: DiaryEntryGoalSummary[]) {
+  return [...entries].sort((left, right) => {
+    const leftTime = left.whenStarted
+      ? new Date(left.whenStarted).getTime()
+      : Number.MAX_SAFE_INTEGER;
+    const rightTime = right.whenStarted
+      ? new Date(right.whenStarted).getTime()
+      : Number.MAX_SAFE_INTEGER;
+
+    return leftTime - rightTime;
+  });
+}
+
+function toDailyEntrySummary(entry: DiaryEntryGoalView): DiaryEntryGoalSummary {
+  return {
+    id: entry.id,
+    name: entry.name,
+    whenStarted: entry.whenStarted,
+    whenEnded: entry.whenEnded,
+    mood: entry.mood,
+    description: entry.description,
+    completeness: entry.completeness,
+    currentEntryId: entry.currentEntryId,
+  };
+}
+
 export default function GoalsPage() {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterKind, setFilterKind] = useState<TemplateFilterKind>("all");
   const [filterName, setFilterName] = useState("");
@@ -331,73 +364,57 @@ export default function GoalsPage() {
     toast.error(getErrorMessage(error, fallbackMessage));
   }, []);
 
-  const verifyEntryGoalCreated = useCallback(async (dateKey: string, goalId: number) => {
-    const entries = await goalApi.listEntrySummariesByDate(dateKey);
-    return entries.some((entry) => entry.id === goalId);
-  }, []);
-
-  const verifyDayGoalCreated = useCallback(async (dateKey: string, goalId: number) => {
-    const summaries = await goalApi.listDaySummaries(dateKey, dateKey);
-    return summaries.some((summary) => summary.targetDate === dateKey && summary.id === goalId);
-  }, []);
-
-  const verifyWeekGoalCreated = useCallback(async (weekGoal: WeekGoalView) => {
-    const firstDay = weekGoal.days[0];
-    if (!firstDay?.targetDate) {
-      return false;
-    }
-
-    const weekStart = startOfWeekMonday(fromIsoDate(firstDay.targetDate));
-    const weekStartKey = toIsoDate(weekStart);
-    const weekEndKey = toIsoDate(addDays(weekStart, 6));
-    const summaries = await goalApi.listDaySummaries(weekStartKey, weekEndKey);
-    const existingDates = new Set(summaries.map((summary) => summary.targetDate));
-
-    return weekGoal.days.every((day) => existingDates.has(day.targetDate));
-  }, []);
-
-  const assertEntryGoalPersisted = useCallback(
-    async (dateKey: string, goalId: number) => {
-      const exists = await verifyEntryGoalCreated(dateKey, goalId);
-      if (exists) return;
-
-      throw new Error(
-        `Server returned success, but the entry goal was not found on ${toDisplayDate(dateKey)} after refresh.`
-      );
-    },
-    [verifyEntryGoalCreated]
+  const invalidateGoalOverviewQueries = useCallback(
+    async () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: goalKeys.daySummaries() }),
+        queryClient.invalidateQueries({ queryKey: goalKeys.weekSummaries() }),
+      ]),
+    [queryClient]
   );
 
-  const assertDayGoalPersisted = useCallback(
-    async (dayGoal: DayGoalView) => {
-      const exists = await verifyDayGoalCreated(dayGoal.targetDate, dayGoal.id);
-      if (exists) return;
-
-      throw new Error(
-        `Server returned success, but the day goal was not found on ${toDisplayDate(dayGoal.targetDate)} after refresh.`
-      );
-    },
-    [verifyDayGoalCreated]
-  );
-
-  const assertWeekGoalPersisted = useCallback(
-    async (weekGoal: WeekGoalView) => {
-      const exists = await verifyWeekGoalCreated(weekGoal);
-      if (exists) return;
-
-      const firstDay = weekGoal.days[0];
-      if (!firstDay?.targetDate) {
-        throw new Error(
-          "Server returned success, but the week goal response did not contain any target dates."
-        );
+  const syncSelectedDailyEntries = useCallback(
+    (dateKey: string, entries: DiaryEntryGoalView[]) => {
+      if (dateKey !== dailyDateKey) {
+        return;
       }
 
-      const weekStartKey = toIsoDate(startOfWeekMonday(fromIsoDate(firstDay.targetDate)));
-      throw new Error(
-        `Server returned success, but the week goal was not found from ${toDisplayDate(weekStartKey)} after refresh.`
+      queryClient.setQueryData<DiaryEntryGoalSummary[]>(
+        goalKeys.dailyEntriesByDate(dateKey),
+        sortDailyEntries(entries.map(toDailyEntrySummary))
       );
     },
-    [verifyWeekGoalCreated]
+    [dailyDateKey, queryClient]
+  );
+
+  const appendSelectedDailyEntry = useCallback(
+    (dateKey: string, entry: DiaryEntryGoalView) => {
+      if (dateKey !== dailyDateKey) {
+        return;
+      }
+
+      queryClient.setQueryData<DiaryEntryGoalSummary[]>(
+        goalKeys.dailyEntriesByDate(dateKey),
+        (current) =>
+          sortDailyEntries([
+            ...(current ?? []).filter((existingEntry) => existingEntry.id !== entry.id),
+            toDailyEntrySummary(entry),
+          ])
+      );
+    },
+    [dailyDateKey, queryClient]
+  );
+
+  const syncSelectedWeekGoalEntries = useCallback(
+    (weekGoal: WeekGoalView) => {
+      const selectedDay = weekGoal.days.find((day) => day.targetDate === dailyDateKey);
+      if (!selectedDay) {
+        return;
+      }
+
+      syncSelectedDailyEntries(selectedDay.targetDate, selectedDay.entries);
+    },
+    [dailyDateKey, syncSelectedDailyEntries]
   );
 
   useEffect(() => {
@@ -630,8 +647,8 @@ export default function GoalsPage() {
           templateId: template.id,
           targetDate: dateKey,
         });
-        await reloadAll();
-        await assertDayGoalPersisted(created);
+        syncSelectedDailyEntries(created.targetDate, created.entries);
+        await invalidateGoalOverviewQueries();
         toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
       } else {
         const created = await goalApi.replaceWeekGoal({
@@ -640,8 +657,8 @@ export default function GoalsPage() {
         });
         const weekStartKey =
           replaceDialog.weekStartKey ?? toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)));
-        await reloadAll();
-        await assertWeekGoalPersisted(created);
+        syncSelectedWeekGoalEntries(created);
+        await invalidateGoalOverviewQueries();
         toast.success(`Week goal confirmed from ${toDisplayDate(weekStartKey)}`);
       }
     } catch (error) {
@@ -653,13 +670,13 @@ export default function GoalsPage() {
       setCreatingDate(null);
     }
   }, [
-    assertDayGoalPersisted,
-    assertWeekGoalPersisted,
     beginGoalMutation,
     endGoalMutation,
-    reloadAll,
+    invalidateGoalOverviewQueries,
     replaceDialog,
     reportGoalMutationError,
+    syncSelectedDailyEntries,
+    syncSelectedWeekGoalEntries,
   ]);
 
   const handleDeleteDayGoalOnDate = useCallback(
@@ -852,8 +869,8 @@ export default function GoalsPage() {
             templateId: template.id,
             targetDate: dateKey,
           });
-          await reloadAll();
-          await assertEntryGoalPersisted(dateKey, created.id);
+          appendSelectedDailyEntry(dateKey, created);
+          await invalidateGoalOverviewQueries();
           toast.success(`Entry goal created on ${toDisplayDate(dateKey)}`);
           return;
         }
@@ -880,8 +897,8 @@ export default function GoalsPage() {
             templateId: template.id,
             targetDate: dateKey,
           });
-          await reloadAll();
-          await assertDayGoalPersisted(created);
+          syncSelectedDailyEntries(created.targetDate, created.entries);
+          await invalidateGoalOverviewQueries();
           toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
           return;
         }
@@ -910,8 +927,8 @@ export default function GoalsPage() {
           templateId: template.id,
           targetDate: dateKey,
         });
-        await reloadAll();
-        await assertWeekGoalPersisted(created);
+        syncSelectedWeekGoalEntries(created);
+        await invalidateGoalOverviewQueries();
         toast.success(
           `Week goal confirmed from ${toDisplayDate(
             toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)))
@@ -927,15 +944,15 @@ export default function GoalsPage() {
       }
     },
     [
-      assertDayGoalPersisted,
-      assertEntryGoalPersisted,
-      assertWeekGoalPersisted,
+      appendSelectedDailyEntry,
       beginGoalMutation,
       dayScores,
       endGoalMutation,
       eraserMode,
-      reloadAll,
+      invalidateGoalOverviewQueries,
       reportGoalMutationError,
+      syncSelectedDailyEntries,
+      syncSelectedWeekGoalEntries,
     ]
   );
 
