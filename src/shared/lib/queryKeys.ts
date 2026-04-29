@@ -12,6 +12,11 @@ export function normalizeNumericIds(ids: readonly number[]) {
   return [...new Set(ids)].sort((left, right) => left - right);
 }
 
+export const userKeys = {
+  all: ["user"] as const,
+  me: ["user", "me"] as const,
+};
+
 export const diaryKeys = {
   all: ["diary"] as const,
   lists: () => [...diaryKeys.all, "list"] as const,
