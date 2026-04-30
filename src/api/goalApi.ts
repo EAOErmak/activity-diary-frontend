@@ -9,7 +9,6 @@ import type {
   DiaryEntryGoalSummary,
   DiaryEntryGoalView,
   GoalDropCreate,
-  WeekGoalSummary,
   WeekGoalView,
 } from "@/shared/types/goal";
 
@@ -118,7 +117,7 @@ export const deleteEntryGoal = async (entryGoalId: number): Promise<void> => {
   await api.delete("/goal/entry", { params: { entryGoalId } });
 };
 
-export const listDaySummaries = async (
+export const listSummary = async (
   from: string,
   to: string
 ): Promise<DayGoalSummary[]> => {
@@ -143,19 +142,6 @@ export const listEntrySummariesByDate = async (
   return [];
 };
 
-export const listWeekSummaries = async (
-  from: string,
-  to: string
-): Promise<WeekGoalSummary[]> => {
-  const { data } = await api.get<
-    ApiResponse<WeekGoalSummary[]> | WeekGoalSummary[]
-  >("/goal/week/summary", { params: { from, to } });
-
-  const payload = unwrapData<WeekGoalSummary[] | unknown>(data);
-  if (Array.isArray(payload)) return payload;
-  return [];
-};
-
 export const goalApi = {
   createEntryGoal,
   confirmEntryGoal,
@@ -169,7 +155,6 @@ export const goalApi = {
   deleteWeekGoal,
   deleteDayGoal,
   deleteEntryGoal,
-  listDaySummaries,
+  listSummary,
   listEntrySummariesByDate,
-  listWeekSummaries,
 };

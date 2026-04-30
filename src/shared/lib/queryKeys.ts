@@ -105,13 +105,9 @@ export const templateKeys = {
 
 export const goalKeys = {
   all: ["goals"] as const,
-  daySummaries: () => [...goalKeys.all, "day-summaries"] as const,
-  daySummariesRange: (from: string, to: string) =>
-    [...goalKeys.daySummaries(), { from, to }] as const,
-  weekSummaries: () => [...goalKeys.all, "week-summaries"] as const,
-  weekSummariesRange: (from: string, to: string) =>
-    [...goalKeys.weekSummaries(), { from, to }] as const,
-  dailyEntries: () => [...goalKeys.all, "daily-entries"] as const,
-  dailyEntriesByDate: (date: string) =>
-    [...goalKeys.dailyEntries(), date] as const,
+  summaries: () => [...goalKeys.all, "summary"] as const,
+  summary: (from: string, to: string) =>
+    [...goalKeys.summaries(), from, to] as const,
+  byDates: () => [...goalKeys.all, "by-date"] as const,
+  byDate: (date: string) => [...goalKeys.byDates(), date] as const,
 };

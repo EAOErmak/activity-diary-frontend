@@ -1,4 +1,4 @@
-import type { DayGoalSummary, GoalKind, WeekGoalSummary, WeekGoalView } from "@/shared/types/goal";
+import type { DayGoalSummary, GoalKind, WeekGoalView } from "@/shared/types/goal";
 
 const CONFIRMED_DAY_STATUSES = new Set(["CONFIRMED", "COMPLETED", "DONE", "FINISHED"]);
 
@@ -190,22 +190,25 @@ export const mapDaySummariesToScores = (
 
   for (const summary of summaries) {
     if (!summary?.targetDate) continue;
-
-    const directScore = summary.completeness;
-    let rawScore: number | null | undefined = directScore;
-
-    if (typeof rawScore !== "number") {
-      const fallback = Object.entries(summary as Record<string, unknown>).find(
-        ([key, value]) => key.toLowerCase().startsWith("complet") && typeof value === "number"
-      );
-      rawScore = (fallback?.[1] as number | undefined) ?? null;
-    }
-
-    const normalized = normalizeScore(rawScore);
+    const normalized = resolveSummaryScore(summary);
     scores[summary.targetDate] = Math.max(scores[summary.targetDate] ?? 0, normalized);
   }
 
   return scores;
+};
+
+const resolveSummaryScore = (summary: DayGoalSummary): number => {
+  const directScore = summary.completeness;
+  let rawScore: number | null | undefined = directScore;
+
+  if (typeof rawScore !== "number") {
+    const fallback = Object.entries(summary as Record<string, unknown>).find(
+      ([key, value]) => key.toLowerCase().startsWith("complet") && typeof value === "number"
+    );
+    rawScore = (fallback?.[1] as number | undefined) ?? null;
+  }
+
+  return normalizeScore(rawScore);
 };
 
 const isDayGoalConfirmed = (summary: DayGoalSummary): boolean => {
@@ -246,62 +249,29 @@ export const mapDaySummariesToConfirmedByDate = (
   return confirmedByDate;
 };
 
-const toIsoDateFromTemporal = (value: string | null | undefined): string | null => {
-  if (!value) return null;
-
-  const datePartMatch = value.match(/\d{4}-\d{2}-\d{2}/);
-  if (datePartMatch?.[0]) return datePartMatch[0];
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return toIsoDate(parsed);
-};
-
-const getWeekReferenceDate = (
-  startedIso: string | null,
-  endedIso: string | null
-): Date | null => {
-  if (startedIso && endedIso) {
-    const started = fromIsoDate(startedIso);
-    const ended = fromIsoDate(endedIso);
-    if (ended >= started) {
-      const dayDiff = Math.floor((ended.getTime() - started.getTime()) / (24 * 60 * 60 * 1000));
-      return addDays(started, Math.floor(dayDiff / 2));
-    }
-  }
-
-  if (startedIso) return fromIsoDate(startedIso);
-  if (endedIso) return fromIsoDate(endedIso);
-  return null;
-};
-
-export const mapWeekSummariesToScores = (
-  summaries: WeekGoalSummary[]
+export const mapDaySummariesToWeekScores = (
+  summaries: DayGoalSummary[]
 ): Record<string, number> => {
-  const scores: Record<string, number> = {};
+  const weeklyTotals: Record<string, { total: number; count: number }> = {};
 
   for (const summary of summaries) {
-    const startedIso = toIsoDateFromTemporal(summary?.whenStarted);
-    const endedIso = toIsoDateFromTemporal(summary?.whenEnded);
-    const referenceDate = getWeekReferenceDate(startedIso, endedIso);
-    if (!referenceDate) continue;
+    if (!summary?.targetDate) continue;
 
-    const weekKey = toIsoDate(startOfWeekMonday(referenceDate));
-    const directScore = summary.completeness;
-    let rawScore: number | null | undefined = directScore;
+    const weekKey = toIsoDate(startOfWeekMonday(fromIsoDate(summary.targetDate)));
+    const normalized = resolveSummaryScore(summary);
+    const current = weeklyTotals[weekKey] ?? { total: 0, count: 0 };
 
-    if (typeof rawScore !== "number") {
-      const fallback = Object.entries(summary as Record<string, unknown>).find(
-        ([key, value]) => key.toLowerCase().startsWith("complet") && typeof value === "number"
-      );
-      rawScore = (fallback?.[1] as number | undefined) ?? null;
-    }
-
-    const normalized = normalizeScore(rawScore);
-    scores[weekKey] = Math.max(scores[weekKey] ?? 0, normalized);
+    current.total += normalized;
+    current.count += 1;
+    weeklyTotals[weekKey] = current;
   }
 
-  return scores;
+  return Object.fromEntries(
+    Object.entries(weeklyTotals).map(([weekKey, { total, count }]) => [
+      weekKey,
+      count > 0 ? Math.round(total / count) : 0,
+    ])
+  );
 };
 
 export const getDateKeyAtPoint = (x: number, y: number): string | null => {

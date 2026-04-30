@@ -20,9 +20,8 @@ async function invalidateDiaryDependents(
   const { invalidateDiaryLists = true } = options;
   const invalidations = [
     queryClient.invalidateQueries({ queryKey: diaryKeys.calendar() }),
-    queryClient.invalidateQueries({ queryKey: goalKeys.daySummaries() }),
-    queryClient.invalidateQueries({ queryKey: goalKeys.weekSummaries() }),
-    queryClient.invalidateQueries({ queryKey: goalKeys.dailyEntries() }),
+    queryClient.invalidateQueries({ queryKey: goalKeys.summaries() }),
+    queryClient.invalidateQueries({ queryKey: goalKeys.byDates() }),
     queryClient.invalidateQueries({ queryKey: analyticsKeys.all }),
   ];
 

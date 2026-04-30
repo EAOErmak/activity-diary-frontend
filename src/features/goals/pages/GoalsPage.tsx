@@ -45,7 +45,6 @@ import {
   formatWeekMonth,
   fromIsoDate,
   getDateKeyAtPoint,
-  getGoalKindLabel,
   isDateInRange,
   startOfWeekMonday,
   toDisplayDate,
@@ -366,10 +365,7 @@ export default function GoalsPage() {
 
   const invalidateGoalOverviewQueries = useCallback(
     async () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: goalKeys.daySummaries() }),
-        queryClient.invalidateQueries({ queryKey: goalKeys.weekSummaries() }),
-      ]),
+      queryClient.invalidateQueries({ queryKey: goalKeys.summaries() }),
     [queryClient]
   );
 
@@ -380,7 +376,7 @@ export default function GoalsPage() {
       }
 
       queryClient.setQueryData<DiaryEntryGoalSummary[]>(
-        goalKeys.dailyEntriesByDate(dateKey),
+        goalKeys.byDate(dateKey),
         sortDailyEntries(entries.map(toDailyEntrySummary))
       );
     },
@@ -394,7 +390,7 @@ export default function GoalsPage() {
       }
 
       queryClient.setQueryData<DiaryEntryGoalSummary[]>(
-        goalKeys.dailyEntriesByDate(dateKey),
+        goalKeys.byDate(dateKey),
         (current) =>
           sortDailyEntries([
             ...(current ?? []).filter((existingEntry) => existingEntry.id !== entry.id),

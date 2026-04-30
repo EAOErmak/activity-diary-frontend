@@ -1,17 +1,18 @@
 import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { goalApi } from "@/api/goalApi";
 import {
+  mapDaySummariesToWeekScores,
   mapDaySummariesToConfirmedByDate,
   mapDaySummariesToScores,
-  mapWeekSummariesToScores,
 } from "@/features/goals/lib/goalsUtils";
-import { goalKeys } from "@/shared/lib/queryKeys";
-import type {
-  DayGoalSummary,
-  DiaryEntryGoalSummary,
-  WeekGoalSummary,
-} from "@/shared/types/goal";
+import {
+  getGoalByDateQueryOptions,
+  getGoalSummaryQueryOptions,
+} from "@/shared/lib/queryOptions";
+import type { DayGoalSummary, DiaryEntryGoalSummary } from "@/shared/types/goal";
+
+const EMPTY_DAY_SUMMARIES: DayGoalSummary[] = [];
+const EMPTY_DAILY_ENTRIES: DiaryEntryGoalSummary[] = [];
 
 type Params = {
   calendarFrom: string;
@@ -37,27 +38,25 @@ export const useGoalsSummaries = ({
   calendarTo,
   dailyDateKey,
 }: Params) => {
-  const daySummariesQuery = useQuery<DayGoalSummary[], Error>({
-    queryKey: goalKeys.daySummariesRange(calendarFrom, calendarTo),
-    queryFn: () => goalApi.listDaySummaries(calendarFrom, calendarTo),
+  const summaryQuery = useQuery({
+    ...getGoalSummaryQueryOptions(calendarFrom, calendarTo),
     placeholderData: (previousData) => previousData,
   });
 
-  const weekSummariesQuery = useQuery<WeekGoalSummary[], Error>({
-    queryKey: goalKeys.weekSummariesRange(calendarFrom, calendarTo),
-    queryFn: () => goalApi.listWeekSummaries(calendarFrom, calendarTo),
+  const dailyEntriesQuery = useQuery({
+    ...getGoalByDateQueryOptions(dailyDateKey),
+    select: sortDailyEntries,
     placeholderData: (previousData) => previousData,
   });
 
-  const dailyEntriesQuery = useQuery<DiaryEntryGoalSummary[], Error>({
-    queryKey: goalKeys.dailyEntriesByDate(dailyDateKey),
-    queryFn: async () => sortDailyEntries(await goalApi.listEntrySummariesByDate(dailyDateKey)),
-    placeholderData: (previousData) => previousData,
-  });
-
-  const daySummaries = daySummariesQuery.data ?? [];
-  const weekSummaries = weekSummariesQuery.data ?? [];
-  const dailyEntries = dailyEntriesQuery.data ?? [];
+  const daySummaries = useMemo(
+    () => summaryQuery.data ?? EMPTY_DAY_SUMMARIES,
+    [summaryQuery.data]
+  );
+  const dailyEntries = useMemo(
+    () => dailyEntriesQuery.data ?? EMPTY_DAILY_ENTRIES,
+    [dailyEntriesQuery.data]
+  );
 
   const dayScores = useMemo(
     () => mapDaySummariesToScores(daySummaries),
@@ -78,17 +77,13 @@ export const useGoalsSummaries = ({
     [daySummaries]
   );
   const weekScores = useMemo(
-    () => mapWeekSummariesToScores(weekSummaries),
-    [weekSummaries]
+    () => mapDaySummariesToWeekScores(daySummaries),
+    [daySummaries]
   );
 
-  const loadDaySummaries = useCallback(
-    async () => daySummariesQuery.refetch(),
-    [daySummariesQuery]
-  );
-  const loadWeekSummaries = useCallback(
-    async () => weekSummariesQuery.refetch(),
-    [weekSummariesQuery]
+  const loadSummary = useCallback(
+    async () => summaryQuery.refetch(),
+    [summaryQuery]
   );
   const loadDailyEntries = useCallback(
     async () => dailyEntriesQuery.refetch(),
@@ -97,11 +92,10 @@ export const useGoalsSummaries = ({
   const reloadAll = useCallback(
     async () =>
       Promise.all([
-        daySummariesQuery.refetch(),
-        weekSummariesQuery.refetch(),
+        summaryQuery.refetch(),
         dailyEntriesQuery.refetch(),
       ]),
-    [dailyEntriesQuery, daySummariesQuery, weekSummariesQuery]
+    [dailyEntriesQuery, summaryQuery]
   );
 
   return {
@@ -111,8 +105,7 @@ export const useGoalsSummaries = ({
     weekScores,
     dailyEntries,
     isLoadingDailyEntries: dailyEntriesQuery.isFetching,
-    loadDaySummaries,
-    loadWeekSummaries,
+    loadSummary,
     loadDailyEntries,
     reloadAll,
   };

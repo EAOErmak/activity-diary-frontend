@@ -50,7 +50,7 @@ export function useConfirmDayGoalMutation() {
     },
     onSuccess: async (confirmedDayGoal, variables) => {
       queryClient.setQueriesData<DayGoalSummary[]>(
-        { queryKey: goalKeys.daySummaries() },
+        { queryKey: goalKeys.summaries() },
         (current) => {
           if (!Array.isArray(current)) {
             return current;
@@ -63,10 +63,9 @@ export function useConfirmDayGoalMutation() {
       );
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: goalKeys.daySummaries() }),
-        queryClient.invalidateQueries({ queryKey: goalKeys.weekSummaries() }),
+        queryClient.invalidateQueries({ queryKey: goalKeys.summaries() }),
         queryClient.invalidateQueries({
-          queryKey: goalKeys.dailyEntriesByDate(variables.dateKey),
+          queryKey: goalKeys.byDate(variables.dateKey),
         }),
       ]);
     },

@@ -1,10 +1,12 @@
 import { entryTemplateApi } from "@/api/entryTemplateApi";
+import { goalApi } from "@/api/goalApi";
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
 import { dictionaryApi } from "@/api/dictionaryApi";
 import { getAllTags } from "@/api/tagApi";
 import { getCurrentUser } from "@/api/userApi";
 import {
   dictionaryKeys,
+  goalKeys,
   tagKeys,
   templateKeys,
   userKeys,
@@ -70,6 +72,26 @@ export function getWeekTemplatesQueryOptions(page = 0, size = 20) {
   return {
     queryKey: templateKeys.weekTemplates(page, size),
     queryFn: () => scheduleTemplateApi.listWeekTemplates(page, size),
+    staleTime: FIVE_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getGoalSummaryQueryOptions(from: string, to: string) {
+  return {
+    queryKey: goalKeys.summary(from, to),
+    queryFn: () => goalApi.listSummary(from, to),
+    staleTime: FIVE_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getGoalByDateQueryOptions(date: string) {
+  return {
+    queryKey: goalKeys.byDate(date),
+    queryFn: () => goalApi.listEntrySummariesByDate(date),
     staleTime: FIVE_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,
