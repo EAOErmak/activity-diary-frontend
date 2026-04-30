@@ -22,7 +22,6 @@ const HOLD_CANCEL_DISTANCE_PX = 8;
 type HoldTransitionTiming = "ease-out" | "ease-in-out";
 
 type Props = {
-  date: Date;
   dateKey: string;
   isInCurrentYear: boolean;
   isToday: boolean;
@@ -38,11 +37,10 @@ type Props = {
   isEraserOn: boolean;
   onHoverDate: (dateKey: string) => void;
   onConfirmDayGoal: (dayGoalId: number, dateKey: string) => void;
-  onActivate: (date: Date, dateKey: string, isInCurrentYear: boolean) => void;
+  onActivate: (dateKey: string, isInCurrentYear: boolean) => void;
 };
 
 export const GoalCalendarDayCell = memo(function GoalCalendarDayCell({
-  date,
   dateKey,
   isInCurrentYear,
   isToday,
@@ -242,14 +240,14 @@ export const GoalCalendarDayCell = memo(function GoalCalendarDayCell({
           return;
         }
 
-        onActivate(date, dateKey, isInCurrentYear);
+        onActivate(dateKey, isInCurrentYear);
       }}
       onPointerDown={(event) => {
         if (event.pointerType !== "touch" && event.button !== 0) return;
 
         if (event.pointerType !== "touch" && event.button === 0) {
           pressedByMouseRef.current = true;
-          onActivate(date, dateKey, isInCurrentYear);
+          onActivate(dateKey, isInCurrentYear);
         }
 
         handlePointerDown(event.clientX, event.clientY);

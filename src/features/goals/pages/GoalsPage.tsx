@@ -153,7 +153,10 @@ export default function GoalsPage() {
   const activeView: GoalsWorkspaceView = isGoalsWorkspaceView(viewParam)
     ? viewParam
     : "calendar";
+  const isCalendarViewActive = activeView === "calendar";
+  const isWeekViewActive = activeView === "week";
   const isEraserOn = eraserMode === "eraseOn";
+  const isDailyViewActive = activeView === "daily";
 
   const hoverDateRef = useRef<string | null>(null);
   const dragPointerRef = useRef<PointerPosition | null>(null);
@@ -334,11 +337,11 @@ export default function GoalsPage() {
     weekScores,
     dailyEntries,
     isLoadingDailyEntries,
-    reloadAll,
   } = useGoalsSummaries({
     calendarFrom,
     calendarTo,
     dailyDateKey,
+    isDailyEntriesEnabled: isDailyViewActive,
   });
   const {
     mutateAsync: confirmDayGoalMutation,
@@ -367,6 +370,35 @@ export default function GoalsPage() {
     async () =>
       queryClient.invalidateQueries({ queryKey: goalKeys.summaries() }),
     [queryClient]
+  );
+
+  const invalidateGoalByDate = useCallback(
+    async (dateKey: string) =>
+      queryClient.invalidateQueries({
+        queryKey: goalKeys.byDate(dateKey),
+        exact: true,
+        refetchType:
+          isDailyViewActive && dateKey === dailyDateKey ? "active" : "none",
+      }),
+    [dailyDateKey, isDailyViewActive, queryClient]
+  );
+
+  const invalidateGoalByDates = useCallback(
+    async (dateKeys: readonly string[]) => {
+      const uniqueDateKeys = [...new Set(dateKeys)];
+
+      await Promise.all(
+        uniqueDateKeys.map((dateKey) =>
+          queryClient.invalidateQueries({
+            queryKey: goalKeys.byDate(dateKey),
+            exact: true,
+            refetchType:
+              isDailyViewActive && dateKey === dailyDateKey ? "active" : "none",
+          })
+        )
+      );
+    },
+    [dailyDateKey, isDailyViewActive, queryClient]
   );
 
   const syncSelectedDailyEntries = useCallback(
@@ -434,7 +466,9 @@ export default function GoalsPage() {
     (nextView: GoalsWorkspaceView) => {
       const nextParams = new URLSearchParams(searchParams);
       nextParams.set("view", nextView);
-      setSearchParams(nextParams, { replace: true });
+      startTransition(() => {
+        setSearchParams(nextParams, { replace: true });
+      });
     },
     [searchParams, setSearchParams]
   );
@@ -483,9 +517,15 @@ export default function GoalsPage() {
   const setDailyDateWithSync = useCallback((nextDate: Date) => {
     const normalized = new Date(nextDate);
     normalized.setHours(0, 0, 0, 0);
-    setDailyDate(normalized);
-    setWeekPreviewStart(startOfWeekMonday(normalized));
+    const nextDateKey = toIsoDate(normalized);
+    const nextWeekStart = startOfWeekMonday(normalized);
+    const nextWeekStartKey = toIsoDate(nextWeekStart);
     const nextYear = normalized.getFullYear();
+
+    setDailyDate((current) => (toIsoDate(current) === nextDateKey ? current : normalized));
+    setWeekPreviewStart((current) =>
+      toIsoDate(current) === nextWeekStartKey ? current : nextWeekStart
+    );
     setCalendarYear((year) => (year === nextYear ? year : nextYear));
   }, []);
 
@@ -644,7 +684,10 @@ export default function GoalsPage() {
           targetDate: dateKey,
         });
         syncSelectedDailyEntries(created.targetDate, created.entries);
-        await invalidateGoalOverviewQueries();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDate(created.targetDate),
+        ]);
         toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
       } else {
         const created = await goalApi.replaceWeekGoal({
@@ -654,7 +697,10 @@ export default function GoalsPage() {
         const weekStartKey =
           replaceDialog.weekStartKey ?? toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)));
         syncSelectedWeekGoalEntries(created);
-        await invalidateGoalOverviewQueries();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDates(created.days.map((day) => day.targetDate)),
+        ]);
         toast.success(`Week goal confirmed from ${toDisplayDate(weekStartKey)}`);
       }
     } catch (error) {
@@ -668,6 +714,8 @@ export default function GoalsPage() {
   }, [
     beginGoalMutation,
     endGoalMutation,
+    invalidateGoalByDate,
+    invalidateGoalByDates,
     invalidateGoalOverviewQueries,
     replaceDialog,
     reportGoalMutationError,
@@ -691,13 +739,22 @@ export default function GoalsPage() {
       try {
         await goalApi.deleteDayGoal(dateKey);
         toast.success(`Day goal deleted on ${toDisplayDate(dateKey)}`);
-        await reloadAll();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDate(dateKey),
+        ]);
       } finally {
         setIsDeletingGoal(false);
         setCreatingDate(null);
       }
     },
-    [dayScores, draggingTemplate, eraserMode, reloadAll]
+    [
+      dayScores,
+      draggingTemplate,
+      eraserMode,
+      invalidateGoalByDate,
+      invalidateGoalOverviewQueries,
+    ]
   );
 
   const handleDeleteWeekGoalOnDate = useCallback(
@@ -722,13 +779,26 @@ export default function GoalsPage() {
       try {
         await goalApi.deleteWeekGoal(weekStartKey);
         toast.success(`Week goal deleted from ${toDisplayDate(weekStartKey)}`);
-        await reloadAll();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDates(
+            Array.from({ length: 7 }, (_, dayOffset) =>
+              toIsoDate(addDays(weekStart, dayOffset))
+            )
+          ),
+        ]);
       } finally {
         setIsDeletingGoal(false);
         setCreatingDate(null);
       }
     },
-    [dayScores, draggingTemplate, eraserMode, reloadAll]
+    [
+      dayScores,
+      draggingTemplate,
+      eraserMode,
+      invalidateGoalByDates,
+      invalidateGoalOverviewQueries,
+    ]
   );
 
   const handleDeleteEntryGoal = useCallback(
@@ -739,12 +809,15 @@ export default function GoalsPage() {
       try {
         await goalApi.deleteEntryGoal(entryGoalId);
         toast.success(`Entry goal "${entryName ?? entryGoalId}" deleted`);
-        await reloadAll();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDate(dailyDateKey),
+        ]);
       } finally {
         setIsDeletingGoal(false);
       }
     },
-    [eraserMode, reloadAll]
+    [dailyDateKey, eraserMode, invalidateGoalByDate, invalidateGoalOverviewQueries]
   );
 
   const handleConfirmDayGoal = useCallback(
@@ -816,12 +889,21 @@ export default function GoalsPage() {
       try {
         await goalApi.confirmEntryGoalSimple(entry.id, currentUserId);
         toast.success(`Entry goal "${entryName}" confirmed`);
-        await reloadAll();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDate(dailyDateKey),
+        ]);
       } finally {
         setCreatingDate(null);
       }
     },
-    [currentUserId, dailyDateKey, eraserMode, reloadAll]
+    [
+      currentUserId,
+      dailyDateKey,
+      eraserMode,
+      invalidateGoalByDate,
+      invalidateGoalOverviewQueries,
+    ]
   );
 
   const handleSubmitEntryGoalConfirm = useCallback(
@@ -837,14 +919,109 @@ export default function GoalsPage() {
         await goalApi.confirmEntryGoal(goalId, currentUserId, payload);
         const entryLabel = entryConfirmDialog?.entryName ?? String(goalId);
         toast.success(`Entry goal "${entryLabel}" confirmed`);
-        await reloadAll();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDate(dailyDateKey),
+        ]);
         setEntryConfirmDialog(null);
       } finally {
         setIsSubmittingEntryConfirm(false);
         setCreatingDate(null);
       }
     },
-    [currentUserId, dailyDateKey, entryConfirmDialog?.entryName, reloadAll]
+    [
+      currentUserId,
+      dailyDateKey,
+      entryConfirmDialog?.entryName,
+      invalidateGoalByDate,
+      invalidateGoalOverviewQueries,
+    ]
+  );
+
+  const noopCalendarHoverDate = useCallback((_dateKey: string) => {}, []);
+  const handlePrevCalendarYear = useCallback(() => {
+    shiftCalendarYear(-1);
+  }, [shiftCalendarYear]);
+  const handleNextCalendarYear = useCallback(() => {
+    shiftCalendarYear(1);
+  }, [shiftCalendarYear]);
+  const handlePrevWeek = useCallback(() => {
+    shiftWeekPreview(-7);
+  }, [shiftWeekPreview]);
+  const handleNextWeek = useCallback(() => {
+    shiftWeekPreview(7);
+  }, [shiftWeekPreview]);
+  const handlePrevDay = useCallback(() => {
+    shiftDailyDate(-1);
+  }, [shiftDailyDate]);
+  const handleNextDay = useCallback(() => {
+    shiftDailyDate(1);
+  }, [shiftDailyDate]);
+  const handleCalendarConfirmDayGoal = useCallback(
+    (dayGoalId: number, dateKey: string) => {
+      void handleConfirmDayGoal(dayGoalId, dateKey);
+    },
+    [handleConfirmDayGoal]
+  );
+  const handleCalendarDeleteDayGoal = useCallback(
+    (dateKey: string) => {
+      void handleDeleteDayGoalOnDate(dateKey);
+    },
+    [handleDeleteDayGoalOnDate]
+  );
+  const handleCalendarDeleteWeekGoal = useCallback(
+    (dateKey: string) => {
+      void handleDeleteWeekGoalOnDate(dateKey);
+    },
+    [handleDeleteWeekGoalOnDate]
+  );
+  const handleWeekHoverDate = useCallback((dateKey: string) => {
+    setHoverDate(dateKey);
+  }, []);
+  const handleWeekConfirmDayGoal = useCallback(
+    (dayGoalId: number, dateKey: string) => {
+      void handleConfirmDayGoal(dayGoalId, dateKey);
+    },
+    [handleConfirmDayGoal]
+  );
+  const handleWeekDeleteDayGoal = useCallback(
+    (dateKey: string) => {
+      void handleDeleteDayGoalOnDate(dateKey);
+    },
+    [handleDeleteDayGoalOnDate]
+  );
+  const handleDailyHoverDate = useCallback((dateKey: string) => {
+    setHoverDate(dateKey);
+  }, []);
+  const handleDailyDeleteDayGoal = useCallback(
+    (dateKey: string) => {
+      void handleDeleteDayGoalOnDate(dateKey);
+    },
+    [handleDeleteDayGoalOnDate]
+  );
+  const handleDailyDeleteEntryGoal = useCallback(
+    (entryGoalId: number, entryName?: string | null) => {
+      void handleDeleteEntryGoal(entryGoalId, entryName);
+    },
+    [handleDeleteEntryGoal]
+  );
+  const handleDailyConfirmDayGoal = useCallback(
+    (dayGoalId: number) => {
+      void handleConfirmDayGoal(dayGoalId, dailyDateKey);
+    },
+    [dailyDateKey, handleConfirmDayGoal]
+  );
+  const handleDailyConfirmEntryGoal = useCallback(
+    (entry: DiaryEntryGoalSummary, entryName: string) => {
+      void handleConfirmEntryGoal(entry, entryName);
+    },
+    [handleConfirmEntryGoal]
+  );
+  const handleDailyConfirmEntryGoalSimple = useCallback(
+    (entry: DiaryEntryGoalSummary, entryName: string) => {
+      void handleConfirmEntryGoalSimple(entry, entryName);
+    },
+    [handleConfirmEntryGoalSimple]
   );
 
   const applyGoalToDate = useCallback(
@@ -866,7 +1043,10 @@ export default function GoalsPage() {
             targetDate: dateKey,
           });
           appendSelectedDailyEntry(dateKey, created);
-          await invalidateGoalOverviewQueries();
+          await Promise.all([
+            invalidateGoalOverviewQueries(),
+            invalidateGoalByDate(dateKey),
+          ]);
           toast.success(`Entry goal created on ${toDisplayDate(dateKey)}`);
           return;
         }
@@ -894,7 +1074,10 @@ export default function GoalsPage() {
             targetDate: dateKey,
           });
           syncSelectedDailyEntries(created.targetDate, created.entries);
-          await invalidateGoalOverviewQueries();
+          await Promise.all([
+            invalidateGoalOverviewQueries(),
+            invalidateGoalByDate(created.targetDate),
+          ]);
           toast.success(`Day goal confirmed on ${toDisplayDate(created.targetDate)}`);
           return;
         }
@@ -924,7 +1107,10 @@ export default function GoalsPage() {
           targetDate: dateKey,
         });
         syncSelectedWeekGoalEntries(created);
-        await invalidateGoalOverviewQueries();
+        await Promise.all([
+          invalidateGoalOverviewQueries(),
+          invalidateGoalByDates(created.days.map((day) => day.targetDate)),
+        ]);
         toast.success(
           `Week goal confirmed from ${toDisplayDate(
             toIsoDate(startOfWeekMonday(fromIsoDate(dateKey)))
@@ -945,6 +1131,8 @@ export default function GoalsPage() {
       dayScores,
       endGoalMutation,
       eraserMode,
+      invalidateGoalByDate,
+      invalidateGoalByDates,
       invalidateGoalOverviewQueries,
       reportGoalMutationError,
       syncSelectedDailyEntries,
@@ -1197,47 +1385,46 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
 
-            {activeView === "calendar" ? (
-              <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
-                <GoalCalendarCard
-                  className={cn(isFixedDesktopWorkspace && "xl:h-full")}
-                  calendarYear={calendarYear}
-                  todayKey={todayKey}
-                  onPrevYear={() => shiftCalendarYear(-1)}
-                  onNextYear={() => shiftCalendarYear(1)}
-                  stats={stats}
-                  weeks={weeks}
-                  monthLabels={monthLabels}
-                  yearStart={yearStart}
-                  yearEnd={yearEnd}
-                  dayScores={dayScores}
-                  dayGoalIdsByDate={dayGoalIdsByDate}
-                  dayGoalConfirmedByDate={dayGoalConfirmedByDate}
-                  weekScores={weekScores}
-                  previewDateKeys={previewDateKeys}
-                  draggingTemplate={Boolean(draggingTemplate)}
-                  creatingDate={creatingDate}
-                  isEraserOn={isEraserOn}
-                  isDayGoalPending={isPendingDayGoal}
-                  selectedDayKey={dailyDateKey}
-                  weekPreviewStartKey={weekPreviewStartKey}
-                  onHoverDate={() => {}}
-                  onConfirmDayGoal={(dayGoalId, dateKey) => {
-                    void handleConfirmDayGoal(dayGoalId, dateKey);
-                  }}
-                  onDeleteDayGoal={(dateKey) => {
-                    void handleDeleteDayGoalOnDate(dateKey);
-                  }}
-                  onDeleteWeekGoal={(dateKey) => {
-                    void handleDeleteWeekGoalOnDate(dateKey);
-                  }}
-                  onSelectDay={setDailyDateWithSync}
-                  onSelectWeek={setWeekPreviewWithSync}
-                />
-              </div>
-            ) : null}
+            <div
+              hidden={!isCalendarViewActive}
+              aria-hidden={!isCalendarViewActive}
+              className={cn(
+                !isCalendarViewActive && "hidden",
+                isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden"
+              )}
+            >
+              <GoalCalendarCard
+                className={cn(isFixedDesktopWorkspace && "xl:h-full")}
+                calendarYear={calendarYear}
+                todayKey={todayKey}
+                onPrevYear={handlePrevCalendarYear}
+                onNextYear={handleNextCalendarYear}
+                stats={stats}
+                weeks={weeks}
+                monthLabels={monthLabels}
+                yearStart={yearStart}
+                yearEnd={yearEnd}
+                dayScores={dayScores}
+                dayGoalIdsByDate={dayGoalIdsByDate}
+                dayGoalConfirmedByDate={dayGoalConfirmedByDate}
+                weekScores={weekScores}
+                previewDateKeys={previewDateKeys}
+                draggingTemplate={Boolean(draggingTemplate)}
+                creatingDate={creatingDate}
+                isEraserOn={isEraserOn}
+                isDayGoalPending={isPendingDayGoal}
+                selectedDayKey={dailyDateKey}
+                weekPreviewStartKey={weekPreviewStartKey}
+                onHoverDate={noopCalendarHoverDate}
+                onConfirmDayGoal={handleCalendarConfirmDayGoal}
+                onDeleteDayGoal={handleCalendarDeleteDayGoal}
+                onDeleteWeekGoal={handleCalendarDeleteWeekGoal}
+                onSelectDay={setDailyDateWithSync}
+                onSelectWeek={setWeekPreviewWithSync}
+              />
+            </div>
 
-            {activeView === "week" ? (
+            {isWeekViewActive ? (
               <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
                 <WeekViewCard
                   className={cn(isFixedDesktopWorkspace && "xl:h-full")}
@@ -1251,21 +1438,17 @@ export default function GoalsPage() {
                   creatingDate={creatingDate}
                   isEraserOn={isEraserOn}
                   isDayGoalPending={isPendingDayGoal}
-                  onPrevWeek={() => shiftWeekPreview(-7)}
-                  onNextWeek={() => shiftWeekPreview(7)}
-                  onHoverDate={setHoverDate}
+                  onPrevWeek={handlePrevWeek}
+                  onNextWeek={handleNextWeek}
+                  onHoverDate={handleWeekHoverDate}
                   onSelectDailyDate={setDailyDateWithSync}
-                  onConfirmDayGoal={(dayGoalId, dateKey) => {
-                    void handleConfirmDayGoal(dayGoalId, dateKey);
-                  }}
-                  onDeleteDayGoal={(dateKey) => {
-                    void handleDeleteDayGoalOnDate(dateKey);
-                  }}
+                  onConfirmDayGoal={handleWeekConfirmDayGoal}
+                  onDeleteDayGoal={handleWeekDeleteDayGoal}
                 />
               </div>
             ) : null}
 
-            {activeView === "daily" ? (
+            {isDailyViewActive ? (
               <div className={cn(isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden")}>
                 <DailyViewCard
                   className={cn(isFixedDesktopWorkspace && "xl:max-h-full")}
@@ -1274,9 +1457,7 @@ export default function GoalsPage() {
                   isToday={dailyDateKey === todayKey}
                   currentDayGoalId={dayGoalIdsByDate[dailyDateKey] ?? null}
                   isCurrentDayConfirmed={dayGoalConfirmedByDate[dailyDateKey] ?? false}
-                  isCurrentDayGoalPending={isPendingDayGoal(
-                    dayGoalIdsByDate[dailyDateKey] ?? null
-                  )}
+                  isCurrentDayGoalPending={isPendingDayGoal(dayGoalIdsByDate[dailyDateKey] ?? null)}
                   dailyEntries={dailyEntries}
                   isLoadingDailyEntries={isLoadingDailyEntries}
                   isDailyPreviewTarget={isDailyPreviewTarget}
@@ -1285,24 +1466,14 @@ export default function GoalsPage() {
                   creatingDate={creatingDate}
                   isEraserOn={isEraserOn}
                   shouldIgnorePostDropInteraction={shouldIgnorePostDropInteraction}
-                  onPrevDay={() => shiftDailyDate(-1)}
-                  onNextDay={() => shiftDailyDate(1)}
-                  onHoverDate={setHoverDate}
-                  onDeleteDayGoal={(dateKey) => {
-                    void handleDeleteDayGoalOnDate(dateKey);
-                  }}
-                  onDeleteEntryGoal={(entryGoalId, entryName) => {
-                    void handleDeleteEntryGoal(entryGoalId, entryName);
-                  }}
-                  onConfirmDayGoal={(dayGoalId) => {
-                    void handleConfirmDayGoal(dayGoalId, dailyDateKey);
-                  }}
-                  onConfirmEntryGoal={(entry, entryName) => {
-                    void handleConfirmEntryGoal(entry, entryName);
-                  }}
-                  onConfirmEntryGoalSimple={(entry, entryName) => {
-                    void handleConfirmEntryGoalSimple(entry, entryName);
-                  }}
+                  onPrevDay={handlePrevDay}
+                  onNextDay={handleNextDay}
+                  onHoverDate={handleDailyHoverDate}
+                  onDeleteDayGoal={handleDailyDeleteDayGoal}
+                  onDeleteEntryGoal={handleDailyDeleteEntryGoal}
+                  onConfirmDayGoal={handleDailyConfirmDayGoal}
+                  onConfirmEntryGoal={handleDailyConfirmEntryGoal}
+                  onConfirmEntryGoalSimple={handleDailyConfirmEntryGoalSimple}
                 />
               </div>
             ) : null}

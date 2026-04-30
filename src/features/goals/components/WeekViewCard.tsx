@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -38,7 +38,7 @@ type Props = {
   onDeleteDayGoal: (dateKey: string) => void;
 };
 
-export function WeekViewCard({
+export const WeekViewCard = memo(function WeekViewCard({
   className,
   monthLabel,
   stats,
@@ -325,4 +325,4 @@ export function WeekViewCard({
       </CardContent>
     </Card>
   );
-}
+});

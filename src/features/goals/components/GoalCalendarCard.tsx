@@ -1,4 +1,4 @@
-import { Fragment, useRef } from "react";
+import { Fragment, memo, useCallback, useMemo, useRef } from "react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -15,11 +15,14 @@ import type { GoalCalendarStats } from "@/features/goals/lib/goalsTypes";
 import {
   WEEKDAY_LABELS,
   addDays,
+  fromIsoDate,
   getWeekCalendarBandColor,
   isDateInRange,
   toDisplayDate,
   toIsoDate,
 } from "@/features/goals/lib/goalsUtils";
+
+const WEEK_LEGEND_LEVELS = [0, 17, 33, 50, 67, 83, 100];
 
 type Props = {
   className?: string;
@@ -51,7 +54,23 @@ type Props = {
   onSelectWeek: (weekStart: Date) => void;
 };
 
-export function GoalCalendarCard({
+type CalendarDayMeta = {
+  dateKey: string;
+  isInCurrentYear: boolean;
+};
+
+type CalendarRow = {
+  weekdayLabel: string;
+  days: CalendarDayMeta[];
+};
+
+type CalendarWeekMeta = {
+  weekKey: string;
+  weekEndKey: string;
+  isInCurrentYear: boolean;
+};
+
+export const GoalCalendarCard = memo(function GoalCalendarCard({
   className,
   calendarYear,
   todayKey,
@@ -80,30 +99,73 @@ export function GoalCalendarCard({
   onSelectDay,
   onSelectWeek,
 }: Props) {
-  const weekLegendLevels = [0, 17, 33, 50, 67, 83, 100];
-  const calendarGridTemplate = `1.25rem repeat(${weeks.length}, minmax(0, 1fr))`;
-  const weekGridTemplate = `repeat(${weeks.length}, minmax(0, 1fr))`;
   const pressedWeekKeyRef = useRef<string | null>(null);
 
-  const handleDayActivate = (date: Date, dateKey: string, isInCurrentYear: boolean) => {
-    if (!isInCurrentYear) return;
-    if (draggingTemplate) return;
-    if (isEraserOn) {
-      onDeleteDayGoal(dateKey);
-      return;
-    }
-    onSelectDay(date);
-  };
+  const calendarGridTemplate = useMemo(
+    () => `1.25rem repeat(${weeks.length}, minmax(0, 1fr))`,
+    [weeks.length]
+  );
+  const weekGridTemplate = useMemo(
+    () => `repeat(${weeks.length}, minmax(0, 1fr))`,
+    [weeks.length]
+  );
 
-  const handleWeekActivate = (weekStart: Date, weekKey: string, isInCurrentYear: boolean) => {
-    if (!isInCurrentYear) return;
-    if (draggingTemplate) return;
-    if (isEraserOn) {
-      onDeleteWeekGoal(weekKey);
-      return;
-    }
-    onSelectWeek(new Date(weekStart));
-  };
+  const calendarRows = useMemo<CalendarRow[]>(
+    () =>
+      WEEKDAY_LABELS.map((weekdayLabel, rowIndex) => ({
+        weekdayLabel,
+        days: weeks.map((weekStart) => {
+          const date = addDays(weekStart, rowIndex);
+          return {
+            dateKey: toIsoDate(date),
+            isInCurrentYear: isDateInRange(date, yearStart, yearEnd),
+          };
+        }),
+      })),
+    [weeks, yearEnd, yearStart]
+  );
+
+  const calendarWeeks = useMemo<CalendarWeekMeta[]>(
+    () =>
+      weeks.map((weekStart) => {
+        const weekKey = toIsoDate(weekStart);
+        const weekEndKey = toIsoDate(addDays(weekStart, 6));
+        const weekAnchorDate = addDays(weekStart, 3);
+
+        return {
+          weekKey,
+          weekEndKey,
+          isInCurrentYear: isDateInRange(weekAnchorDate, yearStart, yearEnd),
+        };
+      }),
+    [weeks, yearEnd, yearStart]
+  );
+
+  const handleDayActivate = useCallback(
+    (dateKey: string, isInCurrentYear: boolean) => {
+      if (!isInCurrentYear) return;
+      if (draggingTemplate) return;
+      if (isEraserOn) {
+        onDeleteDayGoal(dateKey);
+        return;
+      }
+      onSelectDay(fromIsoDate(dateKey));
+    },
+    [draggingTemplate, isEraserOn, onDeleteDayGoal, onSelectDay]
+  );
+
+  const handleWeekActivate = useCallback(
+    (weekKey: string, isInCurrentYear: boolean) => {
+      if (!isInCurrentYear) return;
+      if (draggingTemplate) return;
+      if (isEraserOn) {
+        onDeleteWeekGoal(weekKey);
+        return;
+      }
+      onSelectWeek(fromIsoDate(weekKey));
+    },
+    [draggingTemplate, isEraserOn, onDeleteWeekGoal, onSelectWeek]
+  );
 
   return (
     <Card className={cn("w-full min-w-0 flex flex-col", className)}>
@@ -181,38 +243,30 @@ export function GoalCalendarCard({
           </div>
 
           <div className="grid gap-1" style={{ gridTemplateColumns: calendarGridTemplate }}>
-            {WEEKDAY_LABELS.map((weekdayLabel, rowIndex) => (
+            {calendarRows.map(({ weekdayLabel, days }, rowIndex) => (
               <Fragment key={`${weekdayLabel}-${rowIndex}`}>
                 <div className="flex aspect-square items-center justify-center text-[10px] font-medium text-muted-foreground">
                   {weekdayLabel}
                 </div>
 
-                {weeks.map((weekStart) => {
-                  const date = addDays(weekStart, rowIndex);
-                  const dateKey = toIsoDate(date);
-                  const isInCurrentYear = isDateInRange(date, yearStart, yearEnd);
-                  const isToday = dateKey === todayKey;
+                {days.map(({ dateKey, isInCurrentYear }) => {
+                  const dayGoalId = dayGoalIdsByDate[dateKey] ?? null;
                   const hasScore = dateKey in dayScores;
-                  const score = hasScore ? dayScores[dateKey] ?? 0 : 0;
-                  const isPreviewTarget = previewDateKeys.has(dateKey);
-                  const isCreating = creatingDate === dateKey;
-                  const isSelectedDay = selectedDayKey === dateKey;
 
                   return (
                     <GoalCalendarDayCell
                       key={dateKey}
-                      date={date}
                       dateKey={dateKey}
                       isInCurrentYear={isInCurrentYear}
-                      isToday={isToday}
+                      isToday={dateKey === todayKey}
                       hasScore={hasScore}
-                      score={score}
-                      dayGoalId={dayGoalIdsByDate[dateKey] ?? null}
+                      score={hasScore ? dayScores[dateKey] ?? 0 : 0}
+                      dayGoalId={dayGoalId}
                       isConfirmed={dayGoalConfirmedByDate[dateKey] ?? false}
-                      isConfirmPending={isDayGoalPending(dayGoalIdsByDate[dateKey] ?? null)}
-                      isPreviewTarget={isPreviewTarget}
-                      isCreating={isCreating}
-                      isSelectedDay={isSelectedDay}
+                      isConfirmPending={isDayGoalPending(dayGoalId)}
+                      isPreviewTarget={previewDateKeys.has(dateKey)}
+                      isCreating={creatingDate === dateKey}
+                      isSelectedDay={selectedDayKey === dateKey}
                       draggingTemplate={draggingTemplate}
                       isEraserOn={isEraserOn}
                       onHoverDate={onHoverDate}
@@ -247,11 +301,7 @@ export function GoalCalendarCard({
           </div>
 
           <div className="grid gap-1" style={{ gridTemplateColumns: weekGridTemplate }}>
-            {weeks.map((weekStart) => {
-              const weekKey = toIsoDate(weekStart);
-              const weekEndKey = toIsoDate(addDays(weekStart, 6));
-              const weekAnchorDate = addDays(weekStart, 3);
-              const isInCurrentYear = isDateInRange(weekAnchorDate, yearStart, yearEnd);
+            {calendarWeeks.map(({ weekKey, weekEndKey, isInCurrentYear }) => {
               const hasScore = weekKey in weekScores;
               const score = hasScore ? weekScores[weekKey] ?? 0 : 0;
               const isSelectedWeek = weekPreviewStartKey === weekKey;
@@ -265,12 +315,12 @@ export function GoalCalendarCard({
                       pressedWeekKeyRef.current = null;
                       return;
                     }
-                    handleWeekActivate(weekStart, weekKey, isInCurrentYear);
+                    handleWeekActivate(weekKey, isInCurrentYear);
                   }}
                   onPointerDown={(event) => {
                     if (event.pointerType === "touch" || event.button !== 0) return;
                     pressedWeekKeyRef.current = weekKey;
-                    handleWeekActivate(weekStart, weekKey, isInCurrentYear);
+                    handleWeekActivate(weekKey, isInCurrentYear);
                   }}
                   onPointerLeave={() => {
                     if (pressedWeekKeyRef.current === weekKey) {
@@ -311,7 +361,7 @@ export function GoalCalendarCard({
           </Badge>
           <span className="h-4 w-4 rounded-md border border-border/70 bg-surfaceMuted" />
           <div className="flex items-center gap-1">
-            {weekLegendLevels.map((level) => (
+            {WEEK_LEGEND_LEVELS.map((level) => (
               <span
                 key={`legend-${level}`}
                 className="h-4 w-4 rounded-md border border-border/40"
@@ -323,4 +373,4 @@ export function GoalCalendarCard({
       </CardContent>
     </Card>
   );
-}
+});

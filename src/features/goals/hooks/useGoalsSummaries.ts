@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   mapDaySummariesToWeekScores,
@@ -18,6 +18,7 @@ type Params = {
   calendarFrom: string;
   calendarTo: string;
   dailyDateKey: string;
+  isDailyEntriesEnabled: boolean;
 };
 
 function sortDailyEntries(entries: DiaryEntryGoalSummary[]) {
@@ -37,6 +38,7 @@ export const useGoalsSummaries = ({
   calendarFrom,
   calendarTo,
   dailyDateKey,
+  isDailyEntriesEnabled,
 }: Params) => {
   const summaryQuery = useQuery({
     ...getGoalSummaryQueryOptions(calendarFrom, calendarTo),
@@ -45,8 +47,8 @@ export const useGoalsSummaries = ({
 
   const dailyEntriesQuery = useQuery({
     ...getGoalByDateQueryOptions(dailyDateKey),
+    enabled: isDailyEntriesEnabled,
     select: sortDailyEntries,
-    placeholderData: (previousData) => previousData,
   });
 
   const daySummaries = useMemo(
@@ -81,23 +83,6 @@ export const useGoalsSummaries = ({
     [daySummaries]
   );
 
-  const loadSummary = useCallback(
-    async () => summaryQuery.refetch(),
-    [summaryQuery]
-  );
-  const loadDailyEntries = useCallback(
-    async () => dailyEntriesQuery.refetch(),
-    [dailyEntriesQuery]
-  );
-  const reloadAll = useCallback(
-    async () =>
-      Promise.all([
-        summaryQuery.refetch(),
-        dailyEntriesQuery.refetch(),
-      ]),
-    [dailyEntriesQuery, summaryQuery]
-  );
-
   return {
     dayScores,
     dayGoalIdsByDate,
@@ -105,8 +90,5 @@ export const useGoalsSummaries = ({
     weekScores,
     dailyEntries,
     isLoadingDailyEntries: dailyEntriesQuery.isFetching,
-    loadSummary,
-    loadDailyEntries,
-    reloadAll,
   };
 };

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -47,7 +47,7 @@ type Props = {
   onConfirmEntryGoalSimple: (entry: DiaryEntryGoalSummary, entryName: string) => void;
 };
 
-export function DailyViewCard({
+export const DailyViewCard = memo(function DailyViewCard({
   className,
   dailyDateLabel,
   dailyDateKey,
@@ -315,4 +315,4 @@ export function DailyViewCard({
       </CardContent>
     </Card>
   );
-}
+});
