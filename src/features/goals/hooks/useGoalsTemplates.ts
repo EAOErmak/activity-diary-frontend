@@ -1,36 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { entryTemplateApi } from "@/api/entryTemplateApi";
-import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
+import { useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { TemplateItem } from "@/features/goals/lib/goalsTypes";
-import type { DiaryEntryTemplateView } from "@/shared/types/entryTemplate";
-import type { DayTemplateView, WeekTemplateView } from "@/shared/types/scheduleTemplate";
+import {
+  getDayTemplatesQueryOptions,
+  getEntryTemplatesQueryOptions,
+  getWeekTemplatesQueryOptions,
+} from "@/shared/lib/queryOptions";
+
+const TEMPLATE_PAGE = 0;
+const TEMPLATE_PAGE_SIZE = 100;
 
 export const useGoalsTemplates = () => {
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
-  const [entryTemplates, setEntryTemplates] = useState<DiaryEntryTemplateView[]>([]);
-  const [dayTemplates, setDayTemplates] = useState<DayTemplateView[]>([]);
-  const [weekTemplates, setWeekTemplates] = useState<WeekTemplateView[]>([]);
+  const {
+    data: entryTemplates = [],
+    isFetching: isEntryTemplatesFetching,
+    refetch: refetchEntryTemplates,
+  } = useQuery(getEntryTemplatesQueryOptions(TEMPLATE_PAGE, TEMPLATE_PAGE_SIZE));
+  const {
+    data: dayTemplates = [],
+    isFetching: isDayTemplatesFetching,
+    refetch: refetchDayTemplates,
+  } = useQuery(getDayTemplatesQueryOptions(TEMPLATE_PAGE, TEMPLATE_PAGE_SIZE));
+  const {
+    data: weekTemplates = [],
+    isFetching: isWeekTemplatesFetching,
+    refetch: refetchWeekTemplates,
+  } = useQuery(getWeekTemplatesQueryOptions(TEMPLATE_PAGE, TEMPLATE_PAGE_SIZE));
 
   const loadTemplates = useCallback(async () => {
-    setIsLoadingTemplates(true);
-    try {
-      const [entryList, dayList, weekList] = await Promise.all([
-        entryTemplateApi.listEntryTemplates(0, 100),
-        scheduleTemplateApi.listDayTemplates(0, 100),
-        scheduleTemplateApi.listWeekTemplates(0, 100),
-      ]);
+    await Promise.all([
+      refetchEntryTemplates(),
+      refetchDayTemplates(),
+      refetchWeekTemplates(),
+    ]);
+  }, [refetchDayTemplates, refetchEntryTemplates, refetchWeekTemplates]);
 
-      setEntryTemplates(entryList ?? []);
-      setDayTemplates(dayList ?? []);
-      setWeekTemplates(weekList ?? []);
-    } finally {
-      setIsLoadingTemplates(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadTemplates();
-  }, [loadTemplates]);
+  const isLoadingTemplates =
+    isEntryTemplatesFetching || isDayTemplatesFetching || isWeekTemplatesFetching;
 
   const templateItems = useMemo<TemplateItem[]>(() => {
     return [

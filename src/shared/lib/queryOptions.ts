@@ -1,7 +1,14 @@
+import { entryTemplateApi } from "@/api/entryTemplateApi";
+import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
 import { dictionaryApi } from "@/api/dictionaryApi";
 import { getAllTags } from "@/api/tagApi";
 import { getCurrentUser } from "@/api/userApi";
-import { dictionaryKeys, tagKeys, userKeys } from "@/shared/lib/queryKeys";
+import {
+  dictionaryKeys,
+  tagKeys,
+  templateKeys,
+  userKeys,
+} from "@/shared/lib/queryKeys";
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 const THIRTY_MINUTES_MS = 30 * 60 * 1000;
@@ -33,6 +40,36 @@ export function getTagListQueryOptions(query = "") {
   return {
     queryKey: tagKeys.list(normalizedQuery),
     queryFn: () => getAllTags(normalizedQuery),
+    staleTime: FIVE_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getEntryTemplatesQueryOptions(page = 0, size = 20) {
+  return {
+    queryKey: templateKeys.entryTemplates(page, size),
+    queryFn: () => entryTemplateApi.listEntryTemplates(page, size),
+    staleTime: FIVE_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getDayTemplatesQueryOptions(page = 0, size = 20) {
+  return {
+    queryKey: templateKeys.dayTemplates(page, size),
+    queryFn: () => scheduleTemplateApi.listDayTemplates(page, size),
+    staleTime: FIVE_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getWeekTemplatesQueryOptions(page = 0, size = 20) {
+  return {
+    queryKey: templateKeys.weekTemplates(page, size),
+    queryFn: () => scheduleTemplateApi.listWeekTemplates(page, size),
     staleTime: FIVE_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,

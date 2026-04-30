@@ -93,6 +93,16 @@ export const analyticsKeys = {
     ] as const,
 };
 
+export const templateKeys = {
+  all: ["templates"] as const,
+  entryTemplates: (page: number, size: number) =>
+    [...templateKeys.all, "entry-templates", { page, size }] as const,
+  dayTemplates: (page: number, size: number) =>
+    [...templateKeys.all, "day-templates", { page, size }] as const,
+  weekTemplates: (page: number, size: number) =>
+    [...templateKeys.all, "week-templates", { page, size }] as const,
+};
+
 export const goalKeys = {
   all: ["goals"] as const,
   daySummaries: () => [...goalKeys.all, "day-summaries"] as const,
