@@ -277,7 +277,7 @@ export const GoalCalendarDayCell = memo(function GoalCalendarDayCell({
         }
       }}
       className={[
-        "relative aspect-square w-full overflow-hidden rounded-[4px] border transition-[border-color,box-shadow,outline-color,opacity,filter] duration-300 ease-out",
+        "relative aspect-square w-full overflow-hidden rounded-[4px] border",
         isInCurrentYear
           ? "cursor-pointer border-border/70"
           : "cursor-default border-transparent bg-transparent",

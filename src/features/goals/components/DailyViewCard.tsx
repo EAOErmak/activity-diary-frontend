@@ -156,7 +156,7 @@ export const DailyViewCard = memo(function DailyViewCard({
             if (draggingTemplate) onHoverDate(dailyDateKey);
           }}
           className={[
-            "relative flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl border bg-surface p-3 transition-all",
+            "relative flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl border bg-surface p-3",
             isDailyPreviewTarget
               ? canDropOnDailyDate
                 ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"

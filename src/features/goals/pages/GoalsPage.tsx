@@ -5,7 +5,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  startTransition,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -150,9 +149,13 @@ export default function GoalsPage() {
   const [isSubmittingEntryConfirm, setIsSubmittingEntryConfirm] = useState(false);
   const currentUserId = useCurrentUserStore((state) => state.user?.id ?? null);
   const viewParam = searchParams.get("view");
-  const activeView: GoalsWorkspaceView = isGoalsWorkspaceView(viewParam)
+  const resolvedViewParam: GoalsWorkspaceView = isGoalsWorkspaceView(viewParam)
     ? viewParam
     : "calendar";
+  const [optimisticView, setOptimisticView] = useState<GoalsWorkspaceView | null>(
+    null
+  );
+  const activeView = optimisticView ?? resolvedViewParam;
   const isCalendarViewActive = activeView === "calendar";
   const isWeekViewActive = activeView === "week";
   const isEraserOn = eraserMode === "eraseOn";
@@ -164,6 +167,16 @@ export default function GoalsPage() {
   const calendarPreviewKeysRef = useRef<Set<string>>(new Set());
   const suppressPostDropInteractionUntilRef = useRef(0);
   const goalMutationLockRef = useRef(false);
+  useEffect(() => {
+    if (optimisticView == null) {
+      return;
+    }
+
+    if (resolvedViewParam === optimisticView) {
+      setOptimisticView(null);
+    }
+  }, [optimisticView, resolvedViewParam]);
+
   useEffect(() => {
     hoverDateRef.current = hoverDate;
   }, [hoverDate]);
@@ -297,9 +310,7 @@ export default function GoalsPage() {
         clearCalendarPreview();
         if (hoverDateRef.current !== nextHoverDate) {
           hoverDateRef.current = nextHoverDate;
-          startTransition(() => {
-            setHoverDate(nextHoverDate);
-          });
+          setHoverDate(nextHoverDate);
         }
       });
     },
@@ -464,13 +475,16 @@ export default function GoalsPage() {
 
   const handleViewChange = useCallback(
     (nextView: GoalsWorkspaceView) => {
+      if (nextView === activeView) {
+        return;
+      }
+
+      setOptimisticView(nextView);
       const nextParams = new URLSearchParams(searchParams);
       nextParams.set("view", nextView);
-      startTransition(() => {
-        setSearchParams(nextParams, { replace: true });
-      });
+      setSearchParams(nextParams, { replace: true });
     },
-    [searchParams, setSearchParams]
+    [activeView, searchParams, setSearchParams]
   );
 
   const previewDateKeys = useMemo(() => {
@@ -1232,6 +1246,77 @@ export default function GoalsPage() {
     () => toIsoDate(startOfWeekMonday(weekPreviewStart)),
     [weekPreviewStart]
   );
+  const liveCalendarCardProps = useMemo(
+    () => ({
+      className: cn(isFixedDesktopWorkspace && "xl:h-full"),
+      calendarYear,
+      todayKey,
+      onPrevYear: handlePrevCalendarYear,
+      onNextYear: handleNextCalendarYear,
+      stats,
+      weeks,
+      monthLabels,
+      yearStart,
+      yearEnd,
+      dayScores,
+      dayGoalIdsByDate,
+      dayGoalConfirmedByDate,
+      weekScores,
+      previewDateKeys,
+      draggingTemplate: Boolean(draggingTemplate),
+      creatingDate,
+      isEraserOn,
+      isDayGoalPending: isPendingDayGoal,
+      selectedDayKey: dailyDateKey,
+      weekPreviewStartKey,
+      onHoverDate: noopCalendarHoverDate,
+      onConfirmDayGoal: handleCalendarConfirmDayGoal,
+      onDeleteDayGoal: handleCalendarDeleteDayGoal,
+      onDeleteWeekGoal: handleCalendarDeleteWeekGoal,
+      onSelectDay: setDailyDateWithSync,
+      onSelectWeek: setWeekPreviewWithSync,
+    }),
+    [
+      calendarYear,
+      creatingDate,
+      dailyDateKey,
+      dayGoalConfirmedByDate,
+      dayGoalIdsByDate,
+      dayScores,
+      draggingTemplate,
+      handleCalendarConfirmDayGoal,
+      handleCalendarDeleteDayGoal,
+      handleCalendarDeleteWeekGoal,
+      handleNextCalendarYear,
+      handlePrevCalendarYear,
+      isEraserOn,
+      isFixedDesktopWorkspace,
+      isPendingDayGoal,
+      monthLabels,
+      noopCalendarHoverDate,
+      previewDateKeys,
+      setDailyDateWithSync,
+      setWeekPreviewWithSync,
+      stats,
+      todayKey,
+      weekPreviewStartKey,
+      weekScores,
+      weeks,
+      yearEnd,
+      yearStart,
+    ]
+  );
+  const frozenCalendarCardPropsRef = useRef(liveCalendarCardProps);
+
+  useEffect(() => {
+    if (isCalendarViewActive) {
+      frozenCalendarCardPropsRef.current = liveCalendarCardProps;
+    }
+  }, [isCalendarViewActive, liveCalendarCardProps]);
+
+  const calendarCardProps = isCalendarViewActive
+    ? liveCalendarCardProps
+    : frozenCalendarCardPropsRef.current;
 
   const replaceDialogDescription = useMemo(() => {
     if (!replaceDialog) return "";
@@ -1328,13 +1413,13 @@ export default function GoalsPage() {
                         key={option.id}
                         value={option.id}
                         className={cn(
-                          "group relative h-auto min-h-[112px] items-start overflow-hidden rounded-[24px] border border-border/70 bg-background p-4 text-left shadow-sm hover:border-border hover:bg-surface/60",
+                          "group relative h-auto min-h-[112px] items-start overflow-hidden rounded-[24px] border border-border/70 bg-background p-4 text-left shadow-sm transition-none hover:border-border hover:bg-surface/60",
                           "data-[state=active]:border-foreground/10 data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
                         )}
                       >
                         <div
                           className={cn(
-                            "absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity group-data-[state=active]:opacity-100",
+                            "absolute inset-0 bg-gradient-to-br opacity-0 transition-none group-data-[state=active]:opacity-100",
                             option.accentClass
                           )}
                         />
@@ -1393,35 +1478,7 @@ export default function GoalsPage() {
                 isFixedDesktopWorkspace && "xl:min-h-0 xl:flex-1 xl:overflow-hidden"
               )}
             >
-              <GoalCalendarCard
-                className={cn(isFixedDesktopWorkspace && "xl:h-full")}
-                calendarYear={calendarYear}
-                todayKey={todayKey}
-                onPrevYear={handlePrevCalendarYear}
-                onNextYear={handleNextCalendarYear}
-                stats={stats}
-                weeks={weeks}
-                monthLabels={monthLabels}
-                yearStart={yearStart}
-                yearEnd={yearEnd}
-                dayScores={dayScores}
-                dayGoalIdsByDate={dayGoalIdsByDate}
-                dayGoalConfirmedByDate={dayGoalConfirmedByDate}
-                weekScores={weekScores}
-                previewDateKeys={previewDateKeys}
-                draggingTemplate={Boolean(draggingTemplate)}
-                creatingDate={creatingDate}
-                isEraserOn={isEraserOn}
-                isDayGoalPending={isPendingDayGoal}
-                selectedDayKey={dailyDateKey}
-                weekPreviewStartKey={weekPreviewStartKey}
-                onHoverDate={noopCalendarHoverDate}
-                onConfirmDayGoal={handleCalendarConfirmDayGoal}
-                onDeleteDayGoal={handleCalendarDeleteDayGoal}
-                onDeleteWeekGoal={handleCalendarDeleteWeekGoal}
-                onSelectDay={setDailyDateWithSync}
-                onSelectWeek={setWeekPreviewWithSync}
-              />
+              <GoalCalendarCard {...calendarCardProps} />
             </div>
 
             {isWeekViewActive ? (
