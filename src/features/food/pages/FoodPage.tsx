@@ -1,5 +1,5 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Database, Plus, Search, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -7,8 +7,6 @@ import { toast } from "sonner";
 import {
   createUserFood,
   deleteUserFood,
-  getGeneralFoods,
-  getUserFoods,
   updateUserFood,
 } from "@/api/foodApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
@@ -33,7 +31,11 @@ import {
 } from "@/shared/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { getIntlLocale } from "@/shared/i18n/locale";
-import { generalFoodKeys } from "@/shared/lib/queryKeys";
+import { foodKeys } from "@/shared/lib/queryKeys";
+import {
+  getGeneralFoodsQueryOptions,
+  getUserFoodsQueryOptions,
+} from "@/shared/lib/queryOptions";
 import type {
   FoodDictionaryOption,
   FoodUpsertDto,
@@ -73,13 +75,11 @@ function buildUserFoodOptions(
 
 export default function FoodPage() {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [activeTab, setActiveTab] = useState("general");
   const [generalQuery, setGeneralQuery] = useState("");
   const [userQuery, setUserQuery] = useState("");
-  const [userFoods, setUserFoods] = useState<UserFoodResponseDto[]>([]);
-  const [isLoadingUserFoods, setIsLoadingUserFoods] = useState(false);
-  const [userFoodsError, setUserFoodsError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<UserFoodResponseDto | null>(null);
   const [pendingDelete, setPendingDelete] = useState<UserFoodResponseDto | null>(null);
@@ -91,43 +91,27 @@ export default function FoodPage() {
     data: generalFoods = [],
     isPending: isGeneralFoodsPending,
     error: generalFoodsError,
-  } = useQuery<GeneralFoodResponseDto[], Error>({
-    queryKey: generalFoodKeys.list(deferredGeneralQuery),
-    queryFn: () => getGeneralFoods(deferredGeneralQuery),
-    placeholderData: (previousData) => previousData,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const loadUserFoods = useCallback(async (query = deferredUserQuery) => {
-    try {
-      setIsLoadingUserFoods(true);
-      setUserFoodsError(null);
-      const data = await getUserFoods(query);
-      setUserFoods(data);
-    } catch (error) {
-      setUserFoods([]);
-      setUserFoodsError(
-        error instanceof Error
-          ? error.message
-          : t("errors.userFoodsLoad")
-      );
-    } finally {
-      setIsLoadingUserFoods(false);
-    }
-  }, [deferredUserQuery, t]);
-
-  useEffect(() => {
-    void loadUserFoods(deferredUserQuery);
-  }, [deferredUserQuery, loadUserFoods]);
+  } = useQuery<GeneralFoodResponseDto[], Error>(
+    getGeneralFoodsQueryOptions(deferredGeneralQuery)
+  );
+  const {
+    data: userFoods = [],
+    isPending: isLoadingUserFoods,
+    error: userFoodsError,
+  } = useQuery<UserFoodResponseDto[], Error>(
+    getUserFoodsQueryOptions(deferredUserQuery)
+  );
 
   const loadUserFoodOptions = useCallback(async (query: string) => {
+    const trimmedQuery = query.trim();
+
     const [general, user] = await Promise.all([
-      getGeneralFoods(query),
-      getUserFoods(query),
+      queryClient.fetchQuery(getGeneralFoodsQueryOptions(trimmedQuery)),
+      queryClient.fetchQuery(getUserFoodsQueryOptions(trimmedQuery)),
     ]);
 
     return buildUserFoodOptions(general, user, locale);
-  }, [locale]);
+  }, [locale, queryClient]);
 
   const generalResultLabel = useMemo(
     () =>
@@ -147,9 +131,9 @@ export default function FoodPage() {
 
   async function handleCreateUserFood(payload: FoodUpsertDto) {
     await createUserFood(payload);
+    await queryClient.invalidateQueries({ queryKey: foodKeys.userFoods() });
     toast.success(t("food.productCreated"));
     setCreateDialogOpen(false);
-    await loadUserFoods(userQuery);
   }
 
   async function handleUpdateUserFood(payload: FoodUpsertDto) {
@@ -158,9 +142,9 @@ export default function FoodPage() {
     }
 
     await updateUserFood(editingFood.id, payload);
+    await queryClient.invalidateQueries({ queryKey: foodKeys.userFoods() });
     toast.success(t("food.productUpdated"));
     setEditingFood(null);
-    await loadUserFoods(userQuery);
   }
 
   async function handleDeleteUserFood() {
@@ -171,15 +155,16 @@ export default function FoodPage() {
     try {
       setIsDeleting(true);
       await deleteUserFood(pendingDelete.id);
+      await queryClient.invalidateQueries({ queryKey: foodKeys.userFoods() });
       toast.success(t("food.productDeleted", { label: pendingDelete.dictionaryItemLabel }));
       setPendingDelete(null);
-      await loadUserFoods(userQuery);
     } finally {
       setIsDeleting(false);
     }
   }
 
   const generalFoodsErrorMessage = generalFoodsError?.message ?? null;
+  const userFoodsErrorMessage = userFoodsError?.message ?? null;
   const showInitialGeneralFoodsLoading =
     isGeneralFoodsPending && generalFoods.length === 0;
 
@@ -349,10 +334,10 @@ export default function FoodPage() {
                           {t("common.loading")}
                         </TableCell>
                       </TableRow>
-                    ) : userFoodsError ? (
+                    ) : userFoodsErrorMessage ? (
                       <TableRow>
                         <TableCell colSpan={6} className="py-8 text-center text-destructive">
-                          {userFoodsError}
+                          {userFoodsErrorMessage}
                         </TableCell>
                       </TableRow>
                     ) : userFoods.length === 0 ? (

@@ -1,17 +1,30 @@
+import { getAdminDatabaseTableTypes } from "@/api/admin/adminDatabaseApi";
+import { adminMetricLinksApi } from "@/api/admin/adminMetricLinksApi";
+import { adminTagChartTypesApi } from "@/api/admin/adminTagChartTypesApi";
+import { adminTagMetricLinksApi } from "@/api/admin/adminTagMetricLinksApi";
+import { getAdminTags } from "@/api/admin/adminTagsApi";
+import { getAllUsers } from "@/api/admin/adminUsersApi";
+import { getDictionaryByTypeAdmin } from "@/api/admin/dictionaryAdminApi";
 import { entryTemplateApi } from "@/api/entryTemplateApi";
+import { getGeneralFoods, getUserFoods } from "@/api/foodApi";
 import { goalApi } from "@/api/goalApi";
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
 import { dictionaryApi } from "@/api/dictionaryApi";
 import { getAllTags } from "@/api/tagApi";
 import { getCurrentUser } from "@/api/userApi";
 import {
+  adminKeys,
   dictionaryKeys,
+  foodKeys,
+  generalFoodKeys,
   goalKeys,
   tagKeys,
   templateKeys,
   userKeys,
 } from "@/shared/lib/queryKeys";
+import type { DictionaryType } from "@/shared/types/dictionary";
 
+const ONE_MINUTE_MS = 60 * 1000;
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 const THIRTY_MINUTES_MS = 30 * 60 * 1000;
 
@@ -43,6 +56,129 @@ export function getTagListQueryOptions(query = "") {
     queryKey: tagKeys.list(normalizedQuery),
     queryFn: () => getAllTags(normalizedQuery),
     staleTime: FIVE_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminUsersQueryOptions() {
+  return {
+    queryKey: adminKeys.users(),
+    queryFn: getAllUsers,
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminDictionaryByTypeQueryOptions(type: DictionaryType) {
+  return {
+    queryKey: adminKeys.dictionaryByType(type),
+    queryFn: () => getDictionaryByTypeAdmin(type),
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminTagsQueryOptions(
+  page = 0,
+  size = 20,
+  query = ""
+) {
+  const normalizedQuery = query.trim();
+
+  return {
+    queryKey: adminKeys.tagsList(page, size, normalizedQuery),
+    queryFn: () => getAdminTags(page, size, normalizedQuery || undefined),
+    placeholderData: (previousData: Awaited<ReturnType<typeof getAdminTags>> | undefined) =>
+      previousData,
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminMetricLinksQueryOptions(metricNameId: number) {
+  return {
+    queryKey: adminKeys.metricLinksByMetricName(metricNameId),
+    queryFn: () => adminMetricLinksApi.getUnitsByMetricNameAdmin(metricNameId),
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminTagMetricsQueryOptions(tagId: number) {
+  return {
+    queryKey: adminKeys.tagMetricsByTag(tagId),
+    queryFn: () => adminTagMetricLinksApi.getTagMetricsByTagAdmin(tagId),
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminTagChartTypesQueryOptions(tagId: number) {
+  return {
+    queryKey: adminKeys.tagChartTypesByTag(tagId),
+    queryFn: () => adminTagChartTypesApi.getTagChartTypesByTagAdmin(tagId),
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminDatabaseTableTypesQueryOptions() {
+  return {
+    queryKey: adminKeys.databaseTableTypes(),
+    queryFn: getAdminDatabaseTableTypes,
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getGeneralFoodsQueryOptions(query = "") {
+  const normalizedQuery = query.trim();
+
+  return {
+    queryKey: foodKeys.generalFoodsList(normalizedQuery),
+    queryFn: () => getGeneralFoods(normalizedQuery),
+    placeholderData: (
+      previousData: Awaited<ReturnType<typeof getGeneralFoods>> | undefined
+    ) => previousData,
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getAdminGeneralFoodsQueryOptions(query = "") {
+  const normalizedQuery = query.trim();
+
+  return {
+    queryKey: generalFoodKeys.list(normalizedQuery),
+    queryFn: () => getGeneralFoods(normalizedQuery),
+    placeholderData: (
+      previousData: Awaited<ReturnType<typeof getGeneralFoods>> | undefined
+    ) => previousData,
+    staleTime: ONE_MINUTE_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  } as const;
+}
+
+export function getUserFoodsQueryOptions(query = "") {
+  const normalizedQuery = query.trim();
+
+  return {
+    queryKey: foodKeys.userFoodsList(normalizedQuery),
+    queryFn: () => getUserFoods(normalizedQuery),
+    placeholderData: (
+      previousData: Awaited<ReturnType<typeof getUserFoods>> | undefined
+    ) => previousData,
+    staleTime: ONE_MINUTE_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,
   } as const;

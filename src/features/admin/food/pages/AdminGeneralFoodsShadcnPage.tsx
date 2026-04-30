@@ -10,7 +10,6 @@ import {
   updateGeneralFood,
 } from "@/api/admin/adminGeneralFoodsApi";
 import { searchDictionaryAdmin } from "@/api/admin/dictionaryAdminApi";
-import { getGeneralFoods } from "@/api/foodApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
 import { FoodFormDialog } from "@/features/food/components/FoodFormDialog";
 import { Badge } from "@/shared/components/ui/badge";
@@ -33,7 +32,7 @@ import {
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { syncGeneralFoodCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
-import { generalFoodKeys } from "@/shared/lib/queryKeys";
+import { getAdminGeneralFoodsQueryOptions } from "@/shared/lib/queryOptions";
 import type {
   FoodDictionaryOption,
   FoodUpsertDto,
@@ -81,12 +80,9 @@ export default function AdminGeneralFoodsShadcnPage() {
     data: foods = [],
     isPending,
     error,
-  } = useQuery<GeneralFoodResponseDto[], Error>({
-    queryKey: generalFoodKeys.list(deferredQuery),
-    queryFn: () => getGeneralFoods(deferredQuery),
-    placeholderData: (previousData) => previousData,
-    staleTime: 5 * 60 * 1000,
-  });
+  } = useQuery<GeneralFoodResponseDto[], Error>(
+    getAdminGeneralFoodsQueryOptions(deferredQuery)
+  );
 
   const loadAdminDictionaryOptions = useCallback(async (search: string) => {
     const trimmedSearch = search.trim();

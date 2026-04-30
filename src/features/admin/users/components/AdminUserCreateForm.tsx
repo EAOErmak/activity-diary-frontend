@@ -1,5 +1,6 @@
-﻿import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { adminUsersApi } from "@/api/admin/adminUsersApi";
 import {
@@ -19,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { adminKeys } from "@/shared/lib/queryKeys";
 
 type FormValues = {
   username: string;
@@ -30,6 +32,7 @@ type FormValues = {
 
 export function AdminUserCreateForm() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const form = useForm<FormValues>({
     defaultValues: {
       username: "",
@@ -53,6 +56,7 @@ export function AdminUserCreateForm() {
         className="space-y-4"
         onSubmit={handleSubmit(async (data) => {
           await adminUsersApi.createUserByAdmin(data);
+          await queryClient.invalidateQueries({ queryKey: adminKeys.users() });
           reset();
         })}
       >

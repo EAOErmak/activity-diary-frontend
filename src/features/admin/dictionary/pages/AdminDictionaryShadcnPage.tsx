@@ -1,12 +1,11 @@
-﻿import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 import {
   createDictionaryItem,
-  getDictionaryByTypeAdmin,
   updateDictionaryItem,
 } from "@/api/admin/dictionaryAdminApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
@@ -37,7 +36,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { syncDictionaryCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
-import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
+import { getAdminDictionaryByTypeQueryOptions } from "@/shared/lib/queryOptions";
 import type {
   DictionaryCreate,
   DictionaryResponse,
@@ -59,33 +58,16 @@ export default function AdminDictionaryShadcnPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("METRIC_NAME");
-  const [items, setItems] = useState<DictionaryResponse[]>([]);
   const [label, setLabel] = useState("");
   const [allowedRole, setAllowedRole] = useState<string | null>(null);
-  const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
-
-  useEffect(() => {
-    void load();
-  }, [tab]);
-
-  async function load(refreshSharedCache = true) {
-    try {
-      setIsLoadingItems(true);
-      const data = await getDictionaryByTypeAdmin(tab);
-      setItems(data);
-      if (refreshSharedCache) {
-        await refreshDictionaryCache();
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(t("admin.dictionaryPage.loadError"));
-    } finally {
-      setIsLoadingItems(false);
-    }
-  }
+  const { data: items = [], isPending: isLoadingItems, error } = useQuery<
+    DictionaryResponse[],
+    Error
+  >(getAdminDictionaryByTypeQueryOptions(tab));
+  const itemsErrorMessage = error?.message ?? null;
 
   function getRoleLabel(role: string | null) {
     if (role === "ADMIN") return t("admin.roles.admin");
@@ -109,10 +91,9 @@ export default function AdminDictionaryShadcnPage() {
     try {
       setIsCreating(true);
       await createDictionaryItem(payload);
-      await syncDictionaryCachesAfterAdminMutation(queryClient);
+      await syncDictionaryCachesAfterAdminMutation(queryClient, tab);
       setLabel("");
       setAllowedRole(null);
-      await load(false);
     } finally {
       setIsCreating(false);
     }
@@ -135,8 +116,7 @@ export default function AdminDictionaryShadcnPage() {
         };
 
         await updateDictionaryItem(item.id, payload);
-        await syncDictionaryCachesAfterAdminMutation(queryClient);
-        await load(false);
+        await syncDictionaryCachesAfterAdminMutation(queryClient, tab);
       },
     });
   }
@@ -154,8 +134,7 @@ export default function AdminDictionaryShadcnPage() {
         };
 
         await updateDictionaryItem(item.id, payload);
-        await syncDictionaryCachesAfterAdminMutation(queryClient);
-        await load(false);
+        await syncDictionaryCachesAfterAdminMutation(queryClient, tab);
       },
     });
   }
@@ -288,6 +267,12 @@ export default function AdminDictionaryShadcnPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                     {t("admin.dictionaryPage.loading")}
+                  </TableCell>
+                </TableRow>
+              ) : itemsErrorMessage ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="py-8 text-center text-destructive">
+                    {itemsErrorMessage}
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (

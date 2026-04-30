@@ -1,3 +1,5 @@
+import type { DictionaryType } from "@/shared/types/dictionary";
+
 type NullableId = number | null | undefined;
 
 function normalizeSearchQuery(query?: string) {
@@ -57,17 +59,56 @@ export const tagKeys = {
 };
 
 export const dictionaryKeys = {
-  all: ["dictionary"] as const,
-  metricUnits: () => [...dictionaryKeys.all, "metric-name-units"] as const,
+  root: ["dictionary"] as const,
+  all: ["dictionary", "all"] as const,
+  metricUnits: () => [...dictionaryKeys.root, "metric-units"] as const,
   metricUnitsByName: (metricNameId: NullableId) =>
     [...dictionaryKeys.metricUnits(), metricNameId ?? null] as const,
 };
 
 export const generalFoodKeys = {
-  all: ["general-foods"] as const,
+  all: ["admin", "general-foods"] as const,
   lists: () => [...generalFoodKeys.all, "list"] as const,
   list: (query = "") =>
     [...generalFoodKeys.lists(), normalizeSearchQuery(query)] as const,
+};
+
+export const foodKeys = {
+  all: ["foods"] as const,
+  generalFoods: () => [...foodKeys.all, "general-foods"] as const,
+  generalFoodsList: (query = "") =>
+    [...foodKeys.generalFoods(), normalizeSearchQuery(query)] as const,
+  userFoods: () => [...foodKeys.all, "user-foods"] as const,
+  userFoodsList: (query = "") =>
+    [...foodKeys.userFoods(), normalizeSearchQuery(query)] as const,
+};
+
+export const adminKeys = {
+  all: ["admin"] as const,
+  users: () => [...adminKeys.all, "users"] as const,
+  dictionary: () => [...adminKeys.all, "dictionary"] as const,
+  dictionaryByType: (type: DictionaryType) =>
+    [...adminKeys.dictionary(), type] as const,
+  tags: () => [...adminKeys.all, "tags"] as const,
+  tagsList: (page: number, size: number, query = "") =>
+    [
+      ...adminKeys.tags(),
+      "list",
+      page,
+      size,
+      normalizeSearchQuery(query),
+    ] as const,
+  metricLinks: () => [...adminKeys.all, "metric-links"] as const,
+  metricLinksByMetricName: (metricNameId: NullableId) =>
+    [...adminKeys.metricLinks(), metricNameId ?? null] as const,
+  tagMetrics: () => [...adminKeys.all, "tag-metrics"] as const,
+  tagMetricsByTag: (tagId: NullableId) =>
+    [...adminKeys.tagMetrics(), tagId ?? null] as const,
+  tagChartTypes: () => [...adminKeys.all, "tag-chart-types"] as const,
+  tagChartTypesByTag: (tagId: NullableId) =>
+    [...adminKeys.tagChartTypes(), tagId ?? null] as const,
+  database: () => [...adminKeys.all, "database"] as const,
+  databaseTableTypes: () => [...adminKeys.database(), "table-types"] as const,
 };
 
 export const analyticsKeys = {

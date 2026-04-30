@@ -1,12 +1,11 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, Link2, Plus, Search, Tags, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { adminTagChartTypesApi } from "@/api/admin/adminTagChartTypesApi";
-import { getAllTags } from "@/api/tagApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -36,6 +35,11 @@ import {
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { syncTagChartTypeCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
+import { adminKeys } from "@/shared/lib/queryKeys";
+import {
+  getAdminTagChartTypesQueryOptions,
+  getTagListQueryOptions,
+} from "@/shared/lib/queryOptions";
 import type { ApiResponse } from "@/shared/types/api";
 import {
   ALL_CHART_TYPES,
@@ -67,29 +71,26 @@ function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
 
 type AdminTagChartTypesManagerProps = {
   updatedTag?: Tag | null;
-  reloadToken?: number;
 };
 
 export function AdminTagChartTypesManager({
   updatedTag = null,
-  reloadToken = 0,
 }: AdminTagChartTypesManagerProps) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [selectedTagName, setSelectedTagName] = useState<string | null>(null);
-  const [links, setLinks] = useState<AdminTagChartTypeLink[]>([]);
   const [selectedChartType, setSelectedChartType] = useState<ChartType | null>(null);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
-  const [isLoadingLinks, setIsLoadingLinks] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [tagsErrorMessage, setTagsErrorMessage] = useState<string | null>(null);
-  const [linksErrorMessage, setLinksErrorMessage] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<AdminTagChartTypeLink | null>(null);
+  const [mutationErrorMessage, setMutationErrorMessage] = useState<string | null>(
+    null
+  );
+  const [pendingDelete, setPendingDelete] = useState<AdminTagChartTypeLink | null>(
+    null
+  );
   const debouncedTagQuery = useDebouncedValue(tagQuery.trim(), 180);
 
   function sortTags(tags: Tag[]) {
@@ -118,65 +119,43 @@ export function AdminTagChartTypesManager({
     });
   }
 
-  useEffect(() => {
-    let isActive = true;
+  const tagsQuery = useQuery<Tag[], Error>(getTagListQueryOptions(debouncedTagQuery));
+  const linksQuery = useQuery<AdminTagChartTypeLink[], Error>({
+    ...getAdminTagChartTypesQueryOptions(selectedTagId ?? 0),
+    enabled: selectedTagId != null,
+  });
 
-    async function loadTags() {
-      try {
-        setIsLoadingTags(true);
-        setTagsErrorMessage(null);
+  const availableTags = useMemo(() => {
+    const tags = sortTags(tagsQuery.data ?? []);
 
-        const data = await getAllTags(debouncedTagQuery);
-        if (!isActive) {
-          return;
-        }
-
-        setAvailableTags(sortTags(data));
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setAvailableTags([]);
-        setTagsErrorMessage(
-          extractApiErrorMessage(error, t("admin.tagChartTypes.tagsLoadError"))
-        );
-      } finally {
-        if (isActive) {
-          setIsLoadingTags(false);
-        }
-      }
+    if (updatedTag == null || !tags.some((tag) => tag.id === updatedTag.id)) {
+      return tags;
     }
 
-    void loadTags();
+    return sortTags(
+      tags.map((tag) => (tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag))
+    );
+  }, [locale, tagsQuery.data, updatedTag]);
 
-    return () => {
-      isActive = false;
-    };
-  }, [debouncedTagQuery, locale, reloadToken, t]);
+  const links = useMemo(
+    () => sortTagChartTypeLinks(linksQuery.data ?? []),
+    [linksQuery.data, locale]
+  );
+  const isLoadingTags = tagsQuery.isPending;
+  const isLoadingLinks = selectedTagId != null && linksQuery.isPending;
+  const tagsErrorMessage = tagsQuery.error?.message ?? null;
+  const linksErrorMessage = mutationErrorMessage ?? linksQuery.error?.message ?? null;
 
   useEffect(() => {
     if (updatedTag == null) {
       return;
     }
 
-    setAvailableTags((current) => {
-      if (!current.some((tag) => tag.id === updatedTag.id)) {
-        return current;
-      }
-
-      return sortTags(
-        current.map((tag) =>
-          tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
-        )
-      );
-    });
-
     if (selectedTagId === updatedTag.id) {
       setSelectedTagName(updatedTag.name);
       setTagQuery(updatedTag.name);
     }
-  }, [locale, selectedTagId, updatedTag]);
+  }, [selectedTagId, updatedTag]);
 
   useEffect(() => {
     if (selectedTagId == null) {
@@ -190,57 +169,16 @@ export function AdminTagChartTypesManager({
     setSelectedTagId(null);
     setSelectedTagName(null);
     setTagQuery("");
-    setLinks([]);
     setSelectedChartType(null);
-    setLinksErrorMessage(null);
+    setMutationErrorMessage(null);
   }, [availableTags, selectedTagId]);
 
   useEffect(() => {
     if (selectedTagId == null) {
-      setLinks([]);
-      setLinksErrorMessage(null);
-      return;
+      setSelectedChartType(null);
+      setMutationErrorMessage(null);
     }
-
-    const currentTagId = selectedTagId;
-    let isActive = true;
-
-    async function loadLinks() {
-      try {
-        setIsLoadingLinks(true);
-        setLinksErrorMessage(null);
-
-        const data = await adminTagChartTypesApi.getTagChartTypesByTagAdmin(
-          currentTagId
-        );
-
-        if (!isActive) {
-          return;
-        }
-
-        setLinks(sortTagChartTypeLinks(data));
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setLinks([]);
-        setLinksErrorMessage(
-          extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
-        );
-      } finally {
-        if (isActive) {
-          setIsLoadingLinks(false);
-        }
-      }
-    }
-
-    void loadLinks();
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedTagId, locale, t]);
+  }, [selectedTagId]);
 
   const linkedChartTypes = useMemo(
     () => new Set(links.map((link) => link.chartType)),
@@ -265,22 +203,6 @@ export function AdminTagChartTypesManager({
     });
   }, [availableChartTypes]);
 
-  async function reloadLinks(tagId: number) {
-    try {
-      setIsLoadingLinks(true);
-      setLinksErrorMessage(null);
-      const data = await adminTagChartTypesApi.getTagChartTypesByTagAdmin(tagId);
-      setLinks(sortTagChartTypeLinks(data));
-    } catch (error) {
-      setLinks([]);
-      setLinksErrorMessage(
-        extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
-      );
-    } finally {
-      setIsLoadingLinks(false);
-    }
-  }
-
   function handleTagQueryChange(value: string) {
     setTagQuery(value);
 
@@ -288,18 +210,16 @@ export function AdminTagChartTypesManager({
     if (!normalized) {
       setSelectedTagId(null);
       setSelectedTagName(null);
-      setLinks([]);
       setSelectedChartType(null);
-      setLinksErrorMessage(null);
+      setMutationErrorMessage(null);
       return;
     }
 
     if (selectedTagName && selectedTagName.toLowerCase() !== normalized) {
       setSelectedTagId(null);
       setSelectedTagName(null);
-      setLinks([]);
       setSelectedChartType(null);
-      setLinksErrorMessage(null);
+      setMutationErrorMessage(null);
     }
   }
 
@@ -310,6 +230,7 @@ export function AdminTagChartTypesManager({
     setSelectedTagId(nextTagId);
     setSelectedTagName(nextTag?.name ?? null);
     setSelectedChartType(null);
+    setMutationErrorMessage(null);
 
     if (nextTag) {
       setTagQuery(nextTag.name);
@@ -329,13 +250,19 @@ export function AdminTagChartTypesManager({
 
     try {
       setIsCreating(true);
-      await adminTagChartTypesApi.createTagChartTypeLink({
+      setMutationErrorMessage(null);
+
+      const createdLink = await adminTagChartTypesApi.createTagChartTypeLink({
         tagId: selectedTagId,
         chartType: selectedChartType,
       });
-      await syncTagChartTypeCachesAfterAdminMutation(queryClient);
+
+      queryClient.setQueryData<AdminTagChartTypeLink[]>(
+        adminKeys.tagChartTypesByTag(selectedTagId),
+        (current = []) => sortTagChartTypeLinks([...current, createdLink])
+      );
+      await syncTagChartTypeCachesAfterAdminMutation(queryClient, selectedTagId);
       setSelectedChartType(null);
-      await reloadLinks(selectedTagId);
       toast.success(
         t("admin.tagChartTypes.linkCreated", {
           chartType: getChartTypeLabel(selectedChartType),
@@ -343,7 +270,7 @@ export function AdminTagChartTypesManager({
         })
       );
     } catch (error) {
-      setLinksErrorMessage(
+      setMutationErrorMessage(
         extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
       );
     } finally {
@@ -358,21 +285,26 @@ export function AdminTagChartTypesManager({
 
     try {
       setIsDeleting(true);
+      setMutationErrorMessage(null);
       await adminTagChartTypesApi.deleteTagChartTypeLink(
         selectedTagId,
         pendingDelete.chartType
       );
-      await syncTagChartTypeCachesAfterAdminMutation(queryClient);
+      queryClient.setQueryData<AdminTagChartTypeLink[]>(
+        adminKeys.tagChartTypesByTag(selectedTagId),
+        (current = []) =>
+          current.filter((link) => link.chartType !== pendingDelete.chartType)
+      );
+      await syncTagChartTypeCachesAfterAdminMutation(queryClient, selectedTagId);
       const deletedChartType = pendingDelete.chartType;
       setPendingDelete(null);
-      await reloadLinks(selectedTagId);
       toast.success(
         t("admin.tagChartTypes.linkDeleted", {
           chartType: getChartTypeLabel(deletedChartType),
         })
       );
     } catch (error) {
-      setLinksErrorMessage(
+      setMutationErrorMessage(
         extractApiErrorMessage(error, t("admin.tagChartTypes.linksLoadError"))
       );
     } finally {

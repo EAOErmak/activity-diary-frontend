@@ -3,12 +3,15 @@ import type { QueryClient } from "@tanstack/react-query";
 import { getAllTags } from "@/api/tagApi";
 import { refreshDictionaryCache } from "@/shared/lib/refreshDictionaryCache";
 import {
+  adminKeys,
   analyticsKeys,
   dictionaryKeys,
+  foodKeys,
   generalFoodKeys,
   tagKeys,
 } from "@/shared/lib/queryKeys";
 import { tagRepository } from "@/shared/repository/tagRepository";
+import type { DictionaryType } from "@/shared/types/dictionary";
 
 function logCacheSyncError(scope: string, error: unknown) {
   console.error(`Failed to synchronize ${scope}.`, error);
@@ -46,6 +49,7 @@ export async function syncTagCachesAfterAdminMutation(
   queryClient: QueryClient
 ) {
   await Promise.all([
+    queryClient.invalidateQueries({ queryKey: adminKeys.tags() }),
     queryClient.invalidateQueries({ queryKey: tagKeys.all }),
     queryClient.invalidateQueries({ queryKey: analyticsKeys.all }),
   ]);
@@ -54,25 +58,45 @@ export async function syncTagCachesAfterAdminMutation(
 }
 
 export async function syncDictionaryCachesAfterAdminMutation(
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  type: DictionaryType
 ) {
-  await Promise.all([
+  const invalidations = [
+    queryClient.invalidateQueries({ queryKey: adminKeys.dictionaryByType(type) }),
     queryClient.invalidateQueries({ queryKey: dictionaryKeys.all }),
-    queryClient.invalidateQueries({ queryKey: tagKeys.metrics() }),
-    queryClient.invalidateQueries({ queryKey: analyticsKeys.all }),
-  ]);
+  ];
+
+  if (type === "METRIC_NAME") {
+    invalidations.push(
+      queryClient.invalidateQueries({ queryKey: tagKeys.metrics() }),
+      queryClient.invalidateQueries({ queryKey: analyticsKeys.all })
+    );
+  }
+
+  if (type === "METRIC_UNIT") {
+    invalidations.push(
+      queryClient.invalidateQueries({ queryKey: adminKeys.metricLinks() }),
+      queryClient.invalidateQueries({ queryKey: dictionaryKeys.metricUnits() })
+    );
+  }
+
+  await Promise.all(invalidations);
 
   await refreshDictionaryRepositoryCache();
 }
 
 export async function syncMetricUnitLinkCachesAfterAdminMutation(
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  metricNameId: number
 ) {
-  await queryClient.invalidateQueries({ queryKey: dictionaryKeys.all });
+  await queryClient.invalidateQueries({
+    queryKey: dictionaryKeys.metricUnitsByName(metricNameId),
+  });
 }
 
 export async function syncTagMetricCachesAfterAdminMutation(
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  _tagId: number
 ) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: tagKeys.metrics() }),
@@ -81,7 +105,8 @@ export async function syncTagMetricCachesAfterAdminMutation(
 }
 
 export async function syncTagChartTypeCachesAfterAdminMutation(
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  _tagId: number
 ) {
   await queryClient.invalidateQueries({ queryKey: analyticsKeys.all });
 }
@@ -89,14 +114,27 @@ export async function syncTagChartTypeCachesAfterAdminMutation(
 export async function syncGeneralFoodCachesAfterAdminMutation(
   queryClient: QueryClient
 ) {
-  await queryClient.invalidateQueries({ queryKey: generalFoodKeys.all });
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: generalFoodKeys.all }),
+    queryClient.invalidateQueries({ queryKey: foodKeys.generalFoods() }),
+  ]);
 }
 
 export async function syncAllAdminManagedCaches(queryClient: QueryClient) {
   await Promise.all([
+    queryClient.invalidateQueries({ queryKey: adminKeys.users() }),
+    queryClient.invalidateQueries({ queryKey: adminKeys.dictionary() }),
+    queryClient.invalidateQueries({ queryKey: adminKeys.tags() }),
+    queryClient.invalidateQueries({ queryKey: adminKeys.metricLinks() }),
+    queryClient.invalidateQueries({ queryKey: adminKeys.tagMetrics() }),
+    queryClient.invalidateQueries({ queryKey: adminKeys.tagChartTypes() }),
+    queryClient.invalidateQueries({ queryKey: adminKeys.databaseTableTypes() }),
     queryClient.invalidateQueries({ queryKey: tagKeys.all }),
+    queryClient.invalidateQueries({ queryKey: tagKeys.metrics() }),
     queryClient.invalidateQueries({ queryKey: dictionaryKeys.all }),
+    queryClient.invalidateQueries({ queryKey: dictionaryKeys.metricUnits() }),
     queryClient.invalidateQueries({ queryKey: generalFoodKeys.all }),
+    queryClient.invalidateQueries({ queryKey: foodKeys.generalFoods() }),
     queryClient.invalidateQueries({ queryKey: analyticsKeys.all }),
   ]);
 

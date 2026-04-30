@@ -1,11 +1,11 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Lock, Search, ShieldCheck, Unlock, UserPlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
-  getAllUsers,
   toggleUserEnabled,
   toggleUserLocked,
   updateUserRole,
@@ -37,6 +37,8 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import { adminKeys } from "@/shared/lib/queryKeys";
+import { getAdminUsersQueryOptions } from "@/shared/lib/queryOptions";
 import { useCurrentUserStore } from "@/shared/store/currentUserStore";
 import type { AdminUserDto } from "@/shared/types/adminUser";
 
@@ -67,9 +69,8 @@ const ROLE_BADGE_CLASS: Record<AdminUserDto["role"], string> = {
 
 export default function AdminUsersShadcnPage() {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
-  const [users, setUsers] = useState<AdminUserDto[]>([]);
-  const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isMutating, setIsMutating] = useState(false);
 
@@ -78,20 +79,11 @@ export default function AdminUsersShadcnPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const currentUserId = useCurrentUserStore((state) => state.user?.id ?? null);
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  async function load() {
-    try {
-      setLoading(true);
-      const data = await getAllUsers();
-      setUsers(data);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data: users = [], isPending: loading, error } = useQuery<
+    AdminUserDto[],
+    Error
+  >(getAdminUsersQueryOptions());
+  const usersErrorMessage = error?.message ?? null;
 
   function getRoleLabel(role: AdminUserDto["role"]) {
     if (role === "ADMIN") return t("admin.roles.admin");
@@ -125,7 +117,7 @@ export default function AdminUsersShadcnPage() {
       confirmLabel: t("admin.usersPage.roleChangeConfirm"),
       run: async () => {
         await updateUserRole(user.id, { role: nextRole });
-        await load();
+        await queryClient.invalidateQueries({ queryKey: adminKeys.users() });
       },
     });
   }
@@ -153,7 +145,7 @@ export default function AdminUsersShadcnPage() {
       tone: enabling ? "primary" : "danger",
       run: async () => {
         await toggleUserEnabled(user.id, !user.enabled);
-        await load();
+        await queryClient.invalidateQueries({ queryKey: adminKeys.users() });
       },
     });
   }
@@ -181,7 +173,7 @@ export default function AdminUsersShadcnPage() {
       tone: unlocking ? "primary" : "danger",
       run: async () => {
         await toggleUserLocked(user.id, !user.accountLocked);
-        await load();
+        await queryClient.invalidateQueries({ queryKey: adminKeys.users() });
       },
     });
   }
@@ -334,6 +326,12 @@ export default function AdminUsersShadcnPage() {
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                     {t("admin.usersPage.loading")}
+                  </TableCell>
+                </TableRow>
+              ) : usersErrorMessage ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-destructive">
+                    {usersErrorMessage}
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (

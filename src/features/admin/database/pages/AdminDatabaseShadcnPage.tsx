@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, Database, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   clearAdminDatabase,
   clearAdminDatabaseTable,
-  getAdminDatabaseTableTypes,
 } from "@/api/admin/adminDatabaseApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
 import { Badge } from "@/shared/components/ui/badge";
@@ -30,6 +29,7 @@ import {
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { syncAllAdminManagedCaches } from "@/shared/lib/adminCacheSync";
+import { getAdminDatabaseTableTypesQueryOptions } from "@/shared/lib/queryOptions";
 import type { AdminDatabaseTableType } from "@/shared/types/adminDatabase";
 
 type PendingAction =
@@ -45,12 +45,18 @@ export default function AdminDatabaseShadcnPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
-  const [tableTypes, setTableTypes] = useState<AdminDatabaseTableType[]>([]);
-  const [isLoadingTableTypes, setIsLoadingTableTypes] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [clearingTarget, setClearingTarget] = useState<string | "database" | null>(
     null
   );
+  const {
+    data: tableTypes = [],
+    isPending: isLoadingTableTypes,
+    error,
+  } = useQuery<AdminDatabaseTableType[], Error>(
+    getAdminDatabaseTableTypesQueryOptions()
+  );
+  const tableTypesErrorMessage = error?.message ?? null;
 
   const sortedTableTypes = useMemo(
     () =>
@@ -62,22 +68,6 @@ export default function AdminDatabaseShadcnPage() {
       ),
     [locale, tableTypes]
   );
-
-  useEffect(() => {
-    void loadTableTypes();
-  }, []);
-
-  async function loadTableTypes() {
-    try {
-      setIsLoadingTableTypes(true);
-      setTableTypes(await getAdminDatabaseTableTypes());
-    } catch {
-      setTableTypes([]);
-      toast.error(t("admin.databasePage.tableTypesLoadError"));
-    } finally {
-      setIsLoadingTableTypes(false);
-    }
-  }
 
   async function handleConfirmAction() {
     if (pendingAction == null) {
@@ -160,6 +150,15 @@ export default function AdminDatabaseShadcnPage() {
                     className="py-8 text-center text-muted-foreground"
                   >
                     {t("admin.databasePage.loadingTableTypes")}
+                  </TableCell>
+                </TableRow>
+              ) : tableTypesErrorMessage ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={3}
+                    className="py-8 text-center text-destructive"
+                  >
+                    {tableTypesErrorMessage}
                   </TableCell>
                 </TableRow>
               ) : sortedTableTypes.length === 0 ? (

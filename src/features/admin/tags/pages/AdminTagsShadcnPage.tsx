@@ -1,5 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useMemo, useState } from "react";
 import { Plus, Search, Tags } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -9,7 +9,6 @@ import {
   createAdminTag,
   deleteTag,
   deprecateTag,
-  getAdminTags,
   rejectTag,
   updateTag,
 } from "@/api/admin/adminTagsApi";
@@ -45,6 +44,7 @@ import {
 } from "@/shared/components/ui/table";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { syncTagCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
+import { getAdminTagsQueryOptions } from "@/shared/lib/queryOptions";
 import type { Tag } from "@/shared/types/tag";
 
 type Slice<T> = {
@@ -68,6 +68,7 @@ type PendingAction =
   | null;
 
 const TAG_STATUSES = ["PROPOSED", "APPROVED", "REJECTED", "DEPRECATED"] as const;
+const ADMIN_TAGS_PAGE_SIZE = 20;
 
 type TagStatus = (typeof TAG_STATUSES)[number];
 
@@ -87,8 +88,6 @@ export default function AdminTagsShadcnPage() {
   const [queryInput, setQueryInput] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [page, setPage] = useState(0);
-  const [data, setData] = useState<Slice<Tag> | null>(null);
-  const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -96,9 +95,11 @@ export default function AdminTagsShadcnPage() {
   const [renameValue, setRenameValue] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
   const [lastUpdatedTag, setLastUpdatedTag] = useState<Tag | null>(null);
-  const [tagReloadToken, setTagReloadToken] = useState(0);
   const debouncedQuery = useDebouncedValue(queryInput, 180);
-  const latestLoadRequestIdRef = useRef(0);
+  const { data = null, isPending: loading, error } = useQuery<Slice<Tag>, Error>(
+    getAdminTagsQueryOptions(page, ADMIN_TAGS_PAGE_SIZE, debouncedQuery)
+  );
+  const tagsErrorMessage = error?.message ?? null;
 
   const statusMeta = useMemo(
     () => ({
@@ -122,35 +123,6 @@ export default function AdminTagsShadcnPage() {
     [t]
   );
 
-  useEffect(() => {
-    void load();
-  }, [debouncedQuery, page]);
-
-  async function load(nextPage = page, nextQuery = debouncedQuery) {
-    const requestId = ++latestLoadRequestIdRef.current;
-
-    try {
-      setLoading(true);
-      const result = await getAdminTags(
-        nextPage,
-        20,
-        nextQuery.trim() || undefined
-      );
-
-      if (requestId !== latestLoadRequestIdRef.current) {
-        return;
-      }
-
-      setData(result);
-    } catch {
-      // The axios interceptor already shows the backend error message.
-    } finally {
-      if (requestId === latestLoadRequestIdRef.current) {
-        setLoading(false);
-      }
-    }
-  }
-
   async function handleCreateTag(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -167,7 +139,6 @@ export default function AdminTagsShadcnPage() {
       setQueryInput("");
       setPage(0);
       toast.success(t("admin.tagsPage.tagCreated", { name: createdTag.name }));
-      await load(0, "");
       await syncSharedTagCaches();
     } finally {
       setIsCreating(false);
@@ -176,7 +147,6 @@ export default function AdminTagsShadcnPage() {
 
   async function syncSharedTagCaches() {
     await syncTagCachesAfterAdminMutation(queryClient);
-    setTagReloadToken((current) => current + 1);
   }
 
   function resetRenameDialog() {
@@ -210,22 +180,10 @@ export default function AdminTagsShadcnPage() {
       setIsRenaming(true);
 
       const updatedTag = await updateTag(tagBeingRenamed.id, { name });
-
-      setData((current) =>
-        current
-          ? {
-              ...current,
-              content: current.content.map((tag) =>
-                tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
-              ),
-            }
-          : current
-      );
       setLastUpdatedTag(updatedTag);
       await syncSharedTagCaches();
       resetRenameDialog();
       toast.success(t("admin.tagsPage.tagRenamed", { name: updatedTag.name }));
-      await load();
     } finally {
       setIsRenaming(false);
     }
@@ -238,7 +196,6 @@ export default function AdminTagsShadcnPage() {
       confirmLabel: t("admin.tagsPage.approveConfirm"),
       run: async () => {
         await approveTag(tag.id);
-        await load();
         await syncSharedTagCaches();
       },
     });
@@ -252,7 +209,6 @@ export default function AdminTagsShadcnPage() {
       tone: "danger",
       run: async () => {
         await rejectTag(tag.id);
-        await load();
         await syncSharedTagCaches();
       },
     });
@@ -265,7 +221,6 @@ export default function AdminTagsShadcnPage() {
       confirmLabel: t("admin.tagsPage.deprecateConfirm"),
       run: async () => {
         await deprecateTag(tag.id);
-        await load();
         await syncSharedTagCaches();
       },
     });
@@ -279,7 +234,6 @@ export default function AdminTagsShadcnPage() {
       tone: "danger",
       run: async () => {
         await deleteTag(tag.id);
-        await load();
         await syncSharedTagCaches();
       },
     });
@@ -415,6 +369,15 @@ export default function AdminTagsShadcnPage() {
                     {t("admin.tagsPage.loading")}
                   </TableCell>
                 </TableRow>
+              ) : tagsErrorMessage ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="py-8 text-center text-destructive"
+                  >
+                    {tagsErrorMessage}
+                  </TableCell>
+                </TableRow>
               ) : tags.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -534,11 +497,9 @@ export default function AdminTagsShadcnPage() {
 
       <AdminTagChartTypesManager
         updatedTag={lastUpdatedTag}
-        reloadToken={tagReloadToken}
       />
       <AdminTagMetricNamesManager
         updatedTag={lastUpdatedTag}
-        reloadToken={tagReloadToken}
       />
 
       <Dialog

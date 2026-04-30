@@ -1,13 +1,11 @@
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Link2, Plus, Save, Search, Tags, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { adminTagMetricLinksApi } from "@/api/admin/adminTagMetricLinksApi";
-import { getDictionaryByTypeAdmin } from "@/api/admin/dictionaryAdminApi";
-import { getAllTags } from "@/api/tagApi";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -36,6 +34,12 @@ import {
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { syncTagMetricCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
+import { adminKeys } from "@/shared/lib/queryKeys";
+import {
+  getAdminDictionaryByTypeQueryOptions,
+  getAdminTagMetricsQueryOptions,
+  getTagListQueryOptions,
+} from "@/shared/lib/queryOptions";
 import type { ApiResponse } from "@/shared/types/api";
 import type { DictionaryResponse } from "@/shared/types/adminDictionary";
 import type { AdminTagMetricLink } from "@/shared/types/adminTagMetricLink";
@@ -79,31 +83,22 @@ function areSelectionsEqual(left: number[], right: number[]) {
 
 type AdminTagMetricNamesManagerProps = {
   updatedTag?: Tag | null;
-  reloadToken?: number;
 };
 
 export function AdminTagMetricNamesManager({
   updatedTag = null,
-  reloadToken = 0,
 }: AdminTagMetricNamesManagerProps) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
   const [metricQuery, setMetricQuery] = useState("");
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-  const [metricNames, setMetricNames] = useState<DictionaryResponse[]>([]);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [selectedTagName, setSelectedTagName] = useState<string | null>(null);
   const [initialMetricNameIds, setInitialMetricNameIds] = useState<number[]>([]);
   const [draftMetricNameIds, setDraftMetricNameIds] = useState<number[]>([]);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
-  const [isLoadingMetricNames, setIsLoadingMetricNames] = useState(false);
-  const [isLoadingLinks, setIsLoadingLinks] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [tagsErrorMessage, setTagsErrorMessage] = useState<string | null>(null);
-  const [metricNamesErrorMessage, setMetricNamesErrorMessage] = useState<string | null>(null);
-  const [linksErrorMessage, setLinksErrorMessage] = useState<string | null>(null);
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
   const debouncedTagQuery = useDebouncedValue(tagQuery.trim(), 180);
 
   function sortTags(tags: Tag[]) {
@@ -121,65 +116,49 @@ export function AdminTagMetricNamesManager({
     });
   }
 
-  useEffect(() => {
-    let isActive = true;
+  const tagsQuery = useQuery<Tag[], Error>(getTagListQueryOptions(debouncedTagQuery));
+  const metricNamesQuery = useQuery<DictionaryResponse[], Error>(
+    getAdminDictionaryByTypeQueryOptions("METRIC_NAME")
+  );
+  const linksQuery = useQuery<AdminTagMetricLink[], Error>({
+    ...getAdminTagMetricsQueryOptions(selectedTagId ?? 0),
+    enabled: selectedTagId != null,
+  });
 
-    async function loadTags() {
-      try {
-        setIsLoadingTags(true);
-        setTagsErrorMessage(null);
+  const availableTags = useMemo(() => {
+    const tags = sortTags(tagsQuery.data ?? []);
 
-        const data = await getAllTags(debouncedTagQuery);
-        if (!isActive) {
-          return;
-        }
-
-        setAvailableTags(sortTags(data));
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setAvailableTags([]);
-        setTagsErrorMessage(
-          extractApiErrorMessage(error, t("admin.tagMetricNames.tagsLoadError"))
-        );
-      } finally {
-        if (isActive) {
-          setIsLoadingTags(false);
-        }
-      }
+    if (updatedTag == null || !tags.some((tag) => tag.id === updatedTag.id)) {
+      return tags;
     }
 
-    void loadTags();
+    return sortTags(
+      tags.map((tag) => (tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag))
+    );
+  }, [locale, tagsQuery.data, updatedTag]);
 
-    return () => {
-      isActive = false;
-    };
-  }, [debouncedTagQuery, locale, reloadToken, t]);
+  const metricNames = useMemo(
+    () => sortMetricNames(metricNamesQuery.data ?? []),
+    [locale, metricNamesQuery.data]
+  );
+
+  const isLoadingTags = tagsQuery.isPending;
+  const isLoadingMetricNames = metricNamesQuery.isPending;
+  const isLoadingLinks = selectedTagId != null && linksQuery.isPending;
+  const tagsErrorMessage = tagsQuery.error?.message ?? null;
+  const metricNamesErrorMessage = metricNamesQuery.error?.message ?? null;
+  const linksErrorMessage = saveErrorMessage ?? linksQuery.error?.message ?? null;
 
   useEffect(() => {
     if (updatedTag == null) {
       return;
     }
 
-    setAvailableTags((current) => {
-      if (!current.some((tag) => tag.id === updatedTag.id)) {
-        return current;
-      }
-
-      return sortTags(
-        current.map((tag) =>
-          tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag
-        )
-      );
-    });
-
     if (selectedTagId === updatedTag.id) {
       setSelectedTagName(updatedTag.name);
       setTagQuery(updatedTag.name);
     }
-  }, [locale, selectedTagId, updatedTag]);
+  }, [selectedTagId, updatedTag]);
 
   useEffect(() => {
     if (selectedTagId == null) {
@@ -196,103 +175,31 @@ export function AdminTagMetricNamesManager({
     setMetricQuery("");
     setInitialMetricNameIds([]);
     setDraftMetricNameIds([]);
-    setLinksErrorMessage(null);
+    setSaveErrorMessage(null);
   }, [availableTags, selectedTagId]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    async function loadMetricNames() {
-      try {
-        setIsLoadingMetricNames(true);
-        setMetricNamesErrorMessage(null);
-
-        const data = await getDictionaryByTypeAdmin("METRIC_NAME");
-        if (!isActive) {
-          return;
-        }
-
-        setMetricNames(
-          sortMetricNames(
-            data.filter((item) => item.type === "METRIC_NAME")
-          )
-        );
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setMetricNames([]);
-        setMetricNamesErrorMessage(
-          extractApiErrorMessage(
-            error,
-            t("admin.tagMetricNames.metricNamesLoadError")
-          )
-        );
-      } finally {
-        if (isActive) {
-          setIsLoadingMetricNames(false);
-        }
-      }
-    }
-
-    void loadMetricNames();
-
-    return () => {
-      isActive = false;
-    };
-  }, [locale, t]);
 
   useEffect(() => {
     if (selectedTagId == null) {
       setInitialMetricNameIds([]);
       setDraftMetricNameIds([]);
-      setLinksErrorMessage(null);
+      setSaveErrorMessage(null);
       return;
     }
 
-    const currentTagId = selectedTagId;
-    let isActive = true;
+    setInitialMetricNameIds([]);
+    setDraftMetricNameIds([]);
+    setSaveErrorMessage(null);
+  }, [selectedTagId]);
 
-    async function loadLinks() {
-      try {
-        setIsLoadingLinks(true);
-        setLinksErrorMessage(null);
-
-        const data = await adminTagMetricLinksApi.getTagMetricsByTagAdmin(
-          currentTagId
-        );
-
-        if (!isActive) {
-          return;
-        }
-
-        const nextMetricNameIds = mapLinkMetricNameIds(data);
-        setInitialMetricNameIds(nextMetricNameIds);
-        setDraftMetricNameIds(nextMetricNameIds);
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setInitialMetricNameIds([]);
-        setDraftMetricNameIds([]);
-        setLinksErrorMessage(
-          extractApiErrorMessage(error, t("admin.tagMetricNames.linksLoadError"))
-        );
-      } finally {
-        if (isActive) {
-          setIsLoadingLinks(false);
-        }
-      }
+  useEffect(() => {
+    if (selectedTagId == null || linksQuery.data == null) {
+      return;
     }
 
-    void loadLinks();
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedTagId, t]);
+    const nextMetricNameIds = mapLinkMetricNameIds(linksQuery.data);
+    setInitialMetricNameIds(nextMetricNameIds);
+    setDraftMetricNameIds(nextMetricNameIds);
+  }, [linksQuery.data, selectedTagId]);
 
   const draftMetricNameSet = useMemo(
     () => new Set(draftMetricNameIds),
@@ -317,10 +224,7 @@ export function AdminTagMetricNamesManager({
   }, [locale, metricNames, metricQuery]);
 
   const selectedMetricNames = useMemo(
-    () =>
-      metricNames.filter((metricName) =>
-        draftMetricNameSet.has(metricName.id)
-      ),
+    () => metricNames.filter((metricName) => draftMetricNameSet.has(metricName.id)),
     [draftMetricNameSet, metricNames]
   );
 
@@ -334,7 +238,7 @@ export function AdminTagMetricNamesManager({
       setInitialMetricNameIds([]);
       setDraftMetricNameIds([]);
       setMetricQuery("");
-      setLinksErrorMessage(null);
+      setSaveErrorMessage(null);
       return;
     }
 
@@ -344,7 +248,7 @@ export function AdminTagMetricNamesManager({
       setInitialMetricNameIds([]);
       setDraftMetricNameIds([]);
       setMetricQuery("");
-      setLinksErrorMessage(null);
+      setSaveErrorMessage(null);
     }
   }
 
@@ -355,6 +259,7 @@ export function AdminTagMetricNamesManager({
     setSelectedTagId(nextTagId);
     setSelectedTagName(nextTag?.name ?? null);
     setMetricQuery("");
+    setSaveErrorMessage(null);
 
     if (nextTag) {
       setTagQuery(nextTag.name);
@@ -383,13 +288,18 @@ export function AdminTagMetricNamesManager({
 
     try {
       setIsSaving(true);
-      setLinksErrorMessage(null);
+      setSaveErrorMessage(null);
 
       const data = await adminTagMetricLinksApi.replaceTagMetricsByTagAdmin(
         selectedTagId,
         { metricNameIds: draftMetricNameIds }
       );
-      await syncTagMetricCachesAfterAdminMutation(queryClient);
+
+      queryClient.setQueryData(
+        adminKeys.tagMetricsByTag(selectedTagId),
+        data
+      );
+      await syncTagMetricCachesAfterAdminMutation(queryClient, selectedTagId);
 
       const nextMetricNameIds = mapLinkMetricNameIds(data);
       setInitialMetricNameIds(nextMetricNameIds);
@@ -399,7 +309,7 @@ export function AdminTagMetricNamesManager({
         t("admin.tagMetricNames.saveSuccess", { tagName: selectedTagName })
       );
     } catch (error) {
-      setLinksErrorMessage(
+      setSaveErrorMessage(
         extractApiErrorMessage(error, t("admin.tagMetricNames.saveError"))
       );
     } finally {

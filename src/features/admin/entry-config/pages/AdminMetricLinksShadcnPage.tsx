@@ -1,11 +1,10 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Link2, Plus, Ruler, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { adminMetricLinksApi } from "@/api/admin/adminMetricLinksApi";
-import { getDictionaryByTypeAdmin } from "@/api/admin/dictionaryAdminApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -33,6 +32,10 @@ import {
 } from "@/shared/components/ui/table";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { syncMetricUnitLinkCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
+import {
+  getAdminDictionaryByTypeQueryOptions,
+  getAdminMetricLinksQueryOptions,
+} from "@/shared/lib/queryOptions";
 import type { DictionaryResponse } from "@/shared/types/adminDictionary";
 import type { MetricLinkResponse } from "@/shared/types/adminMetricLink";
 
@@ -40,13 +43,8 @@ export default function AdminMetricLinksShadcnPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
-  const [metricNames, setMetricNames] = useState<DictionaryResponse[]>([]);
-  const [metricUnits, setMetricUnits] = useState<DictionaryResponse[]>([]);
-  const [linkedUnits, setLinkedUnits] = useState<MetricLinkResponse[]>([]);
   const [selectedMetricNameId, setSelectedMetricNameId] = useState<number | null>(null);
   const [selectedMetricUnitId, setSelectedMetricUnitId] = useState<number | null>(null);
-  const [isLoadingDictionaries, setIsLoadingDictionaries] = useState(false);
-  const [isLoadingLinks, setIsLoadingLinks] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<MetricLinkResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -67,18 +65,52 @@ export default function AdminMetricLinksShadcnPage() {
       : `${item.label} (${t("admin.metricLinksPage.inactiveSuffix")})`;
   }
 
-  useEffect(() => {
-    void loadDictionaries();
-  }, []);
+  const metricNamesQuery = useQuery<DictionaryResponse[], Error>(
+    getAdminDictionaryByTypeQueryOptions("METRIC_NAME")
+  );
+  const metricUnitsQuery = useQuery<DictionaryResponse[], Error>(
+    getAdminDictionaryByTypeQueryOptions("METRIC_UNIT")
+  );
+  const metricNames = useMemo(
+    () => sortDictionaryItems(metricNamesQuery.data ?? []),
+    [locale, metricNamesQuery.data]
+  );
+  const metricUnits = useMemo(
+    () => sortDictionaryItems(metricUnitsQuery.data ?? []),
+    [locale, metricUnitsQuery.data]
+  );
+  const {
+    data: linkedUnits = [],
+    isPending: isLoadingLinks,
+    error: linkedUnitsError,
+  } = useQuery<MetricLinkResponse[], Error>({
+    ...getAdminMetricLinksQueryOptions(selectedMetricNameId ?? 0),
+    enabled: selectedMetricNameId != null,
+  });
+  const isLoadingDictionaries =
+    metricNamesQuery.isPending || metricUnitsQuery.isPending;
+  const dictionariesErrorMessage =
+    metricNamesQuery.error?.message ??
+    metricUnitsQuery.error?.message ??
+    null;
+  const linksErrorMessage = linkedUnitsError?.message ?? null;
 
   useEffect(() => {
-    if (selectedMetricNameId == null) {
-      setLinkedUnits([]);
-      return;
-    }
+    setSelectedMetricNameId((current) => {
+      if (metricNames.length === 0) {
+        return null;
+      }
 
-    void loadLinks(selectedMetricNameId);
-  }, [selectedMetricNameId]);
+      if (
+        current != null &&
+        metricNames.some((metricName) => metricName.id === current)
+      ) {
+        return current;
+      }
+
+      return metricNames[0]?.id ?? null;
+    });
+  }, [metricNames]);
 
   const linkedUnitIds = useMemo(
     () => new Set(linkedUnits.map((unit) => unit.id)),
@@ -115,52 +147,6 @@ export default function AdminMetricLinksShadcnPage() {
     });
   }, [availableUnits]);
 
-  async function loadDictionaries() {
-    try {
-      setIsLoadingDictionaries(true);
-
-      const [metricNamesData, metricUnitsData] = await Promise.all([
-        getDictionaryByTypeAdmin("METRIC_NAME"),
-        getDictionaryByTypeAdmin("METRIC_UNIT"),
-      ]);
-
-      const nextMetricNames = sortDictionaryItems(metricNamesData);
-      const nextMetricUnits = sortDictionaryItems(metricUnitsData);
-
-      setMetricNames(nextMetricNames);
-      setMetricUnits(nextMetricUnits);
-      setSelectedMetricNameId((current) => {
-        if (
-          current != null &&
-          nextMetricNames.some((metricName) => metricName.id === current)
-        ) {
-          return current;
-        }
-
-        return nextMetricNames[0]?.id ?? null;
-      });
-    } catch (error) {
-      console.error(error);
-      toast.error(t("admin.metricLinksPage.dictionariesLoadError"));
-    } finally {
-      setIsLoadingDictionaries(false);
-    }
-  }
-
-  async function loadLinks(metricNameId: number) {
-    try {
-      setIsLoadingLinks(true);
-      const data = await adminMetricLinksApi.getUnitsByMetricNameAdmin(metricNameId);
-      setLinkedUnits(data);
-    } catch (error) {
-      console.error(error);
-      setLinkedUnits([]);
-      toast.error(t("admin.metricLinksPage.linksLoadError"));
-    } finally {
-      setIsLoadingLinks(false);
-    }
-  }
-
   async function handleCreate() {
     if (selectedMetricNameId == null) {
       toast.error(t("admin.metricLinksPage.metricRequired"));
@@ -174,13 +160,25 @@ export default function AdminMetricLinksShadcnPage() {
 
     try {
       setIsCreating(true);
-      await adminMetricLinksApi.createMetricLink({
+      const createdLink = await adminMetricLinksApi.createMetricLink({
         metricNameId: selectedMetricNameId,
         metricUnitId: selectedMetricUnitId,
       });
-      await syncMetricUnitLinkCachesAfterAdminMutation(queryClient);
+      queryClient.setQueryData<MetricLinkResponse[]>(
+        getAdminMetricLinksQueryOptions(selectedMetricNameId).queryKey,
+        (current = []) => {
+          if (current.some((link) => link.id === createdLink.id)) {
+            return current;
+          }
+
+          return [...current, createdLink];
+        }
+      );
+      await syncMetricUnitLinkCachesAfterAdminMutation(
+        queryClient,
+        selectedMetricNameId
+      );
       setSelectedMetricUnitId(null);
-      await loadLinks(selectedMetricNameId);
       toast.success(t("admin.metricLinksPage.linkCreated"));
     } catch {
       // axios interceptor already shows the backend error
@@ -200,9 +198,16 @@ export default function AdminMetricLinksShadcnPage() {
         selectedMetricNameId,
         pendingDelete.id
       );
-      await syncMetricUnitLinkCachesAfterAdminMutation(queryClient);
+      queryClient.setQueryData<MetricLinkResponse[]>(
+        getAdminMetricLinksQueryOptions(selectedMetricNameId).queryKey,
+        (current = []) =>
+          current.filter((linkedUnit) => linkedUnit.id !== pendingDelete.id)
+      );
+      await syncMetricUnitLinkCachesAfterAdminMutation(
+        queryClient,
+        selectedMetricNameId
+      );
       setPendingDelete(null);
-      await loadLinks(selectedMetricNameId);
       toast.success(t("admin.metricLinksPage.linkDeleted"));
     } catch {
       // axios interceptor already shows the backend error
@@ -268,6 +273,11 @@ export default function AdminMetricLinksShadcnPage() {
             })}
           </Badge>
         </CardContent>
+        {dictionariesErrorMessage && (
+          <CardContent className="pt-0">
+            <p className="text-sm text-destructive">{dictionariesErrorMessage}</p>
+          </CardContent>
+        )}
       </Card>
 
       <Card className="border border-border bg-surface">
@@ -370,6 +380,12 @@ export default function AdminMetricLinksShadcnPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                     {t("admin.metricLinksPage.loadingLinks")}
+                  </TableCell>
+                </TableRow>
+              ) : linksErrorMessage ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="py-8 text-center text-destructive">
+                    {linksErrorMessage}
                   </TableCell>
                 </TableRow>
               ) : linkedUnitsWithMeta.length === 0 ? (
