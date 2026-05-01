@@ -58,7 +58,7 @@ const TIME_WHEEL_EVENT_OPTIONS: AddEventListenerOptions = {
   passive: false,
   capture: true,
 };
-const LOCKED_CREATE_DURATION_MINUTES = 1;
+const MIN_ENTRY_TIME_INTERVAL_MINUTES = 1;
 
 function getCurrentTimeHHmm() {
   const now = new Date();
@@ -101,6 +101,17 @@ function addMinutes(value: string, minutes: number) {
   const minute = String(normalized % 60).padStart(2, "0");
 
   return `${hour}:${minute}`;
+}
+
+function isTimeRangeInvalid(startValue?: string, endValue?: string) {
+  const startMinutes = toMinutes(startValue);
+  const endMinutes = toMinutes(endValue);
+
+  if (startMinutes == null || endMinutes == null) {
+    return false;
+  }
+
+  return endMinutes <= startMinutes;
 }
 
 function clampWheelSteps(amount: number) {
@@ -384,7 +395,7 @@ export default function EntryTemplateForm(props: Props) {
   const currentTime = getCurrentTimeHHmm();
   const defaultCreateTimeEnd = addMinutes(
     currentTime,
-    LOCKED_CREATE_DURATION_MINUTES
+    MIN_ENTRY_TIME_INTERVAL_MINUTES
   );
   const initialTimeStart =
     mode === "edit" ? normalizeTime(props.initialValues.timeStart) : "";
@@ -461,37 +472,23 @@ export default function EntryTemplateForm(props: Props) {
 
       setTimeFieldValue("timeStart", normalizedStartValue);
 
-      if (mode === "create") {
-        setTimeFieldValue(
-          "timeEnd",
-          addMinutes(normalizedStartValue, LOCKED_CREATE_DURATION_MINUTES)
-        );
-        return;
-      }
-
       const currentEndValue = normalizeTime(form.getValues("timeEnd"));
       if (!currentEndValue) {
         setTimeFieldValue(
           "timeEnd",
-          addMinutes(normalizedStartValue, LOCKED_CREATE_DURATION_MINUTES)
+          addMinutes(normalizedStartValue, MIN_ENTRY_TIME_INTERVAL_MINUTES)
         );
         return;
       }
 
-      const startMinutes = toMinutes(normalizedStartValue);
-      const endMinutes = toMinutes(currentEndValue);
-      if (
-        startMinutes != null &&
-        endMinutes != null &&
-        endMinutes <= startMinutes
-      ) {
+      if (isTimeRangeInvalid(normalizedStartValue, currentEndValue)) {
         setTimeFieldValue(
           "timeEnd",
-          addMinutes(normalizedStartValue, LOCKED_CREATE_DURATION_MINUTES)
+          addMinutes(normalizedStartValue, MIN_ENTRY_TIME_INTERVAL_MINUTES)
         );
       }
     },
-    [form, mode, setTimeFieldValue]
+    [form, setTimeFieldValue]
   );
 
   const handleTimeEndChange = useCallback(
@@ -501,37 +498,23 @@ export default function EntryTemplateForm(props: Props) {
 
       setTimeFieldValue("timeEnd", normalizedEndValue);
 
-      if (mode === "create") {
-        setTimeFieldValue(
-          "timeStart",
-          addMinutes(normalizedEndValue, -LOCKED_CREATE_DURATION_MINUTES)
-        );
-        return;
-      }
-
       const currentStartValue = normalizeTime(form.getValues("timeStart"));
       if (!currentStartValue) {
         setTimeFieldValue(
           "timeStart",
-          addMinutes(normalizedEndValue, -LOCKED_CREATE_DURATION_MINUTES)
+          addMinutes(normalizedEndValue, -MIN_ENTRY_TIME_INTERVAL_MINUTES)
         );
         return;
       }
 
-      const startMinutes = toMinutes(currentStartValue);
-      const endMinutes = toMinutes(normalizedEndValue);
-      if (
-        startMinutes != null &&
-        endMinutes != null &&
-        startMinutes >= endMinutes
-      ) {
+      if (isTimeRangeInvalid(currentStartValue, normalizedEndValue)) {
         setTimeFieldValue(
           "timeStart",
-          addMinutes(normalizedEndValue, -LOCKED_CREATE_DURATION_MINUTES)
+          addMinutes(normalizedEndValue, -MIN_ENTRY_TIME_INTERVAL_MINUTES)
         );
       }
     },
-    [form, mode, setTimeFieldValue]
+    [form, setTimeFieldValue]
   );
 
   return (
@@ -570,17 +553,13 @@ export default function EntryTemplateForm(props: Props) {
                   }));
 
                 if (mode === "create") {
-                  const timeStart =
-                    normalizedTimeStart ||
-                    (normalizedTimeEnd
-                      ? addMinutes(
-                          normalizedTimeEnd,
-                          -LOCKED_CREATE_DURATION_MINUTES
-                        )
-                      : undefined);
-                  const timeEnd = timeStart
-                    ? addMinutes(timeStart, LOCKED_CREATE_DURATION_MINUTES)
-                    : normalizedTimeEnd || undefined;
+                  const timeStart = normalizedTimeStart || currentTime;
+                  const nextTimeEnd =
+                    normalizedTimeEnd ||
+                    addMinutes(timeStart, MIN_ENTRY_TIME_INTERVAL_MINUTES);
+                  const timeEnd = isTimeRangeInvalid(timeStart, nextTimeEnd)
+                    ? addMinutes(timeStart, MIN_ENTRY_TIME_INTERVAL_MINUTES)
+                    : nextTimeEnd;
 
                   return onSubmit({
                     name,
