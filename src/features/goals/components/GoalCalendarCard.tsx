@@ -193,10 +193,10 @@ export const GoalCalendarCard = memo(function GoalCalendarCard({
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-border/70 bg-input p-3">
+          <div className="rounded-2xl bg-input p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-medium">Finished days</div>
-              <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+              <Badge variant="outline" className="rounded-full border-transparent px-2.5 py-0.5">
                 {stats.finishedDays}
               </Badge>
             </div>
@@ -206,20 +206,20 @@ export const GoalCalendarCard = memo(function GoalCalendarCard({
               className="mt-3"
             />
           </div>
-          <div className="rounded-2xl border border-border/70 bg-input p-3">
+          <div className="rounded-2xl bg-input p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-medium">Completed</div>
-              <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+              <Badge variant="outline" className="rounded-full border-transparent px-2.5 py-0.5">
                 {stats.avgCompletion}%
               </Badge>
             </div>
             <div className="mt-3 text-2xl font-semibold">{stats.avgCompletion}%</div>
             <Progress value={stats.avgCompletion} className="mt-3" />
           </div>
-          <div className="rounded-2xl border border-border/70 bg-input p-3">
+          <div className="rounded-2xl bg-input p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-medium">Week streak</div>
-              <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+              <Badge variant="outline" className="rounded-full border-transparent px-2.5 py-0.5">
                 {stats.weeklyStreak}
               </Badge>
             </div>

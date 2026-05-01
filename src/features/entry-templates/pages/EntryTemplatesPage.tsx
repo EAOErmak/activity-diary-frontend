@@ -192,10 +192,10 @@ export default function EntryTemplatesPage() {
               <button
                 type="button"
                 onClick={() => setTemplateKind("entry")}
-                className={`h-full w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
+                className={`h-full w-full rounded-2xl px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                   templateKind === "entry"
-                    ? "border-primary bg-[hsl(var(--input-hover))]"
-                    : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
+                    ? "bg-[hsl(var(--input-hover))]"
+                    : "bg-input hover:bg-[hsl(var(--input-hover))]"
                 }`}
               >
                 <div className="text-sm font-semibold sm:text-base">{t("templates.entryTypeTitle")}</div>
@@ -206,10 +206,10 @@ export default function EntryTemplatesPage() {
               <button
                 type="button"
                 onClick={() => setTemplateKind("weekday")}
-                className={`h-full w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
+                className={`h-full w-full rounded-2xl px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                   templateKind === "weekday"
-                    ? "border-primary bg-[hsl(var(--input-hover))]"
-                    : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
+                    ? "bg-[hsl(var(--input-hover))]"
+                    : "bg-input hover:bg-[hsl(var(--input-hover))]"
                 }`}
               >
                 <div className="text-sm font-semibold sm:text-base">{t("templates.dayTypeTitle")}</div>
@@ -220,10 +220,10 @@ export default function EntryTemplatesPage() {
               <button
                 type="button"
                 onClick={() => setTemplateKind("week")}
-                className={`h-full w-full rounded-2xl border px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
+                className={`h-full w-full rounded-2xl px-4 py-3.5 text-left text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                   templateKind === "week"
-                    ? "border-primary bg-[hsl(var(--input-hover))]"
-                    : "border-border/60 bg-input hover:border-border hover:bg-[hsl(var(--input-hover))]"
+                    ? "bg-[hsl(var(--input-hover))]"
+                    : "bg-input hover:bg-[hsl(var(--input-hover))]"
                 }`}
               >
                 <div className="text-sm font-semibold sm:text-base">{t("templates.weekTypeTitle")}</div>
@@ -267,7 +267,7 @@ export default function EntryTemplatesPage() {
                       return (
                         <div
                           key={tpl.id}
-                          className="flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-input/80 p-4"
+                          className="flex h-full flex-col gap-3 rounded-2xl bg-input/80 p-4"
                         >
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="min-w-0">
@@ -324,7 +324,7 @@ export default function EntryTemplatesPage() {
                     {dayTemplates.map((tpl) => (
                       <div
                         key={tpl.id}
-                        className="flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-input/80 p-4"
+                        className="flex h-full flex-col gap-3 rounded-2xl bg-input/80 p-4"
                       >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0">
@@ -374,7 +374,7 @@ export default function EntryTemplatesPage() {
                     {weekTemplates.map((tpl) => (
                       <div
                         key={tpl.id}
-                        className="flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-input/80 p-4"
+                        className="flex h-full flex-col gap-3 rounded-2xl bg-input/80 p-4"
                       >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0">
