@@ -55,6 +55,8 @@ export function getTagListQueryOptions(query = "") {
   return {
     queryKey: tagKeys.list(normalizedQuery),
     queryFn: () => getAllTags(normalizedQuery),
+    placeholderData: (previousData: Awaited<ReturnType<typeof getAllTags>> | undefined) =>
+      previousData,
     staleTime: FIVE_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,

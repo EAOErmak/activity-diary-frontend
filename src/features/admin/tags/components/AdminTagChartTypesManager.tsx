@@ -69,6 +69,14 @@ function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
   return fallbackMessage;
 }
 
+function areChartTypeListsEqual(left: ChartType[], right: ChartType[]) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((value, index) => value === right[index]);
+}
+
 type AdminTagChartTypesManagerProps = {
   updatedTag?: Tag | null;
 };
@@ -83,6 +91,10 @@ export function AdminTagChartTypesManager({
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [selectedTagName, setSelectedTagName] = useState<string | null>(null);
   const [selectedChartType, setSelectedChartType] = useState<ChartType | null>(null);
+  const [linkedChartTypeIds, setLinkedChartTypeIds] = useState<ChartType[]>([]);
+  const [linkedChartTypesTagId, setLinkedChartTypesTagId] = useState<number | null>(
+    null
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [mutationErrorMessage, setMutationErrorMessage] = useState<string | null>(
@@ -119,6 +131,31 @@ export function AdminTagChartTypesManager({
     });
   }
 
+  function mapLinkChartTypeIds(linksToMap: AdminTagChartTypeLink[]) {
+    return sortChartTypes([...new Set(linksToMap.map((link) => link.chartType))]);
+  }
+
+  function debugState(event: string, payload?: Record<string, unknown>) {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    console.debug("[AdminTagChartTypesManager]", event, payload);
+  }
+
+  function resetSelectedChartType(reason: string) {
+    setSelectedChartType((current) => {
+      if (current != null) {
+        debugState("selectedChartType:reset", {
+          reason,
+          previousChartType: current,
+        });
+      }
+
+      return null;
+    });
+  }
+
   const tagsQuery = useQuery<Tag[], Error>(getTagListQueryOptions(debouncedTagQuery));
   const linksQuery = useQuery<AdminTagChartTypeLink[], Error>({
     ...getAdminTagChartTypesQueryOptions(selectedTagId ?? 0),
@@ -126,20 +163,38 @@ export function AdminTagChartTypesManager({
   });
 
   const availableTags = useMemo(() => {
-    const tags = sortTags(tagsQuery.data ?? []);
+    let tags = sortTags(tagsQuery.data ?? []);
 
-    if (updatedTag == null || !tags.some((tag) => tag.id === updatedTag.id)) {
-      return tags;
+    if (updatedTag != null && tags.some((tag) => tag.id === updatedTag.id)) {
+      tags = sortTags(
+        tags.map((tag) => (tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag))
+      );
     }
 
-    return sortTags(
-      tags.map((tag) => (tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag))
-    );
-  }, [locale, tagsQuery.data, updatedTag]);
+    // Keep the selected tag available in the Select even while the search field
+    // is filtering to a different term or refetching a new option list.
+    if (
+      selectedTagId != null &&
+      selectedTagName != null &&
+      !tags.some((tag) => tag.id === selectedTagId)
+    ) {
+      tags = sortTags([...tags, { id: selectedTagId, name: selectedTagName }]);
+    }
+
+    return tags;
+  }, [locale, selectedTagId, selectedTagName, tagsQuery.data, updatedTag]);
 
   const links = useMemo(
-    () => sortTagChartTypeLinks(linksQuery.data ?? []),
-    [linksQuery.data, locale]
+    () =>
+      sortTagChartTypeLinks(
+        linkedChartTypesTagId === selectedTagId
+          ? linkedChartTypeIds.map((chartType) => ({
+              tagId: selectedTagId ?? 0,
+              chartType,
+            }))
+          : []
+      ),
+    [linkedChartTypeIds, linkedChartTypesTagId, locale, selectedTagId]
   );
   const isLoadingTags = tagsQuery.isPending;
   const isLoadingLinks = selectedTagId != null && linksQuery.isPending;
@@ -152,6 +207,11 @@ export function AdminTagChartTypesManager({
     }
 
     if (selectedTagId === updatedTag.id) {
+      debugState("selectedTag:update", {
+        reason: "updatedTag-prop",
+        tagId: updatedTag.id,
+        tagName: updatedTag.name,
+      });
       setSelectedTagName(updatedTag.name);
       setTagQuery(updatedTag.name);
     }
@@ -159,38 +219,46 @@ export function AdminTagChartTypesManager({
 
   useEffect(() => {
     if (selectedTagId == null) {
-      return;
-    }
-
-    if (availableTags.some((tag) => tag.id === selectedTagId)) {
-      return;
-    }
-
-    setSelectedTagId(null);
-    setSelectedTagName(null);
-    setTagQuery("");
-    setSelectedChartType(null);
-    setMutationErrorMessage(null);
-  }, [availableTags, selectedTagId]);
-
-  useEffect(() => {
-    if (selectedTagId == null) {
-      setSelectedChartType(null);
+      setLinkedChartTypesTagId(null);
+      setLinkedChartTypeIds([]);
+      resetSelectedChartType("selectedTag-cleared");
       setMutationErrorMessage(null);
     }
   }, [selectedTagId]);
 
-  const linkedChartTypes = useMemo(
-    () => new Set(links.map((link) => link.chartType)),
-    [links]
+  useEffect(() => {
+    if (selectedTagId == null || linksQuery.data == null) {
+      return;
+    }
+
+    const nextLinkedChartTypeIds = mapLinkChartTypeIds(linksQuery.data);
+
+    setLinkedChartTypesTagId(selectedTagId);
+    setLinkedChartTypeIds((current) =>
+      areChartTypeListsEqual(current, nextLinkedChartTypeIds)
+        ? current
+        : nextLinkedChartTypeIds
+    );
+    debugState("linkedChartTypes:loaded", {
+      tagId: selectedTagId,
+      chartTypes: nextLinkedChartTypeIds,
+      source: "linksQuery.data",
+    });
+  }, [linksQuery.data, selectedTagId]);
+
+  const activeLinkedChartTypes = useMemo(
+    () => (linkedChartTypesTagId === selectedTagId ? linkedChartTypeIds : []),
+    [linkedChartTypeIds, linkedChartTypesTagId, selectedTagId]
   );
 
   const availableChartTypes = useMemo(
     () =>
       sortChartTypes(
-        ALL_CHART_TYPES.filter((chartType) => !linkedChartTypes.has(chartType))
+        ALL_CHART_TYPES.filter(
+          (chartType) => !activeLinkedChartTypes.includes(chartType)
+        )
       ),
-    [linkedChartTypes, locale]
+    [activeLinkedChartTypes, locale]
   );
 
   useEffect(() => {
@@ -199,42 +267,69 @@ export function AdminTagChartTypesManager({
         return current;
       }
 
-      return availableChartTypes.includes(current) ? current : null;
+      if (availableChartTypes.includes(current)) {
+        return current;
+      }
+
+      debugState("selectedChartType:reset", {
+        reason: "availableChartTypes-updated",
+        previousChartType: current,
+      });
+      return null;
     });
   }, [availableChartTypes]);
 
   function handleTagQueryChange(value: string) {
     setTagQuery(value);
 
-    const normalized = value.trim().toLowerCase();
-    if (!normalized) {
-      setSelectedTagId(null);
-      setSelectedTagName(null);
-      setSelectedChartType(null);
-      setMutationErrorMessage(null);
+    if (value.trim()) {
       return;
     }
 
-    if (selectedTagName && selectedTagName.toLowerCase() !== normalized) {
-      setSelectedTagId(null);
-      setSelectedTagName(null);
-      setSelectedChartType(null);
-      setMutationErrorMessage(null);
+    if (selectedTagId != null || selectedTagName != null) {
+      debugState("selectedTag:clear", {
+        reason: "tag-search-cleared",
+        tagId: selectedTagId,
+        tagName: selectedTagName,
+      });
     }
+
+    setSelectedTagId(null);
+    setSelectedTagName(null);
+    setLinkedChartTypesTagId(null);
+    setLinkedChartTypeIds([]);
+    resetSelectedChartType("tag-search-cleared");
+    setMutationErrorMessage(null);
   }
 
   function handleSelectTag(value: string) {
     const nextTagId = Number(value);
     const nextTag = availableTags.find((tag) => tag.id === nextTagId) ?? null;
 
-    setSelectedTagId(nextTagId);
-    setSelectedTagName(nextTag?.name ?? null);
-    setSelectedChartType(null);
-    setMutationErrorMessage(null);
-
-    if (nextTag) {
-      setTagQuery(nextTag.name);
+    if (nextTag == null) {
+      debugState("selectedTag:clear", {
+        reason: "tag-select-missing-option",
+        rawValue: value,
+      });
+      setSelectedTagId(null);
+      setSelectedTagName(null);
+      setLinkedChartTypesTagId(null);
+      setLinkedChartTypeIds([]);
+      resetSelectedChartType("tag-select-missing-option");
+      setMutationErrorMessage(null);
+      return;
     }
+
+    debugState("selectedTag:set", {
+      reason: "tag-select-value-change",
+      tagId: nextTag.id,
+      tagName: nextTag.name,
+    });
+    setSelectedTagId(nextTagId);
+    setSelectedTagName(nextTag.name);
+    resetSelectedChartType("tag-select-value-change");
+    setMutationErrorMessage(null);
+    setTagQuery(nextTag.name);
   }
 
   async function handleCreate() {
@@ -261,8 +356,19 @@ export function AdminTagChartTypesManager({
         adminKeys.tagChartTypesByTag(selectedTagId),
         (current = []) => sortTagChartTypeLinks([...current, createdLink])
       );
+      setLinkedChartTypesTagId(selectedTagId);
+      setLinkedChartTypeIds((current) => {
+        const nextLinkedChartTypeIds = sortChartTypes([
+          ...current,
+          createdLink.chartType,
+        ]);
+
+        return areChartTypeListsEqual(current, nextLinkedChartTypeIds)
+          ? current
+          : nextLinkedChartTypeIds;
+      });
       await syncTagChartTypeCachesAfterAdminMutation(queryClient, selectedTagId);
-      setSelectedChartType(null);
+      resetSelectedChartType("create-link-success");
       toast.success(
         t("admin.tagChartTypes.linkCreated", {
           chartType: getChartTypeLabel(selectedChartType),
@@ -294,6 +400,10 @@ export function AdminTagChartTypesManager({
         adminKeys.tagChartTypesByTag(selectedTagId),
         (current = []) =>
           current.filter((link) => link.chartType !== pendingDelete.chartType)
+      );
+      setLinkedChartTypesTagId(selectedTagId);
+      setLinkedChartTypeIds((current) =>
+        current.filter((chartType) => chartType !== pendingDelete.chartType)
       );
       await syncTagChartTypeCachesAfterAdminMutation(queryClient, selectedTagId);
       const deletedChartType = pendingDelete.chartType;
