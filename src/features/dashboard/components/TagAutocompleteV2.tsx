@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, Search } from "lucide-react";
+import { Check, ChevronDown, Loader2, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Tag } from "@/shared/types/tag";
 import { Input } from "@/shared/components/ui/input";
@@ -29,6 +29,7 @@ export default function TagAutocompleteV2({
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const trimmedValue = value.trim().toLowerCase();
+  const hasActiveValue = selectedTagId !== null || value.trim().length > 0;
   const visibleTags = trimmedValue
     ? tags.filter((tag) => tag.name.toLowerCase().includes(trimmedValue))
     : tags;
@@ -52,6 +53,12 @@ export default function TagAutocompleteV2({
   const selectTag = (tag: Tag) => {
     onSelect(tag);
     setHighlightedIndex(visibleTags.findIndex((item) => item.id === tag.id));
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    onValueChange("");
+    setHighlightedIndex(0);
     setIsOpen(false);
   };
 
@@ -104,17 +111,40 @@ export default function TagAutocompleteV2({
               }
             }}
             placeholder={isLoading ? t("dashboard.tagLoading") : t("dashboard.tagPlaceholder")}
-            className="pl-11 pr-10"
+            className="pl-11 pr-12"
             role="combobox"
             aria-expanded={isOpen}
             aria-autocomplete="list"
           />
-          <ChevronDown
-            className={cn(
-              "pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-mutedForeground transition-transform",
-              isOpen && "rotate-180"
+          <button
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              if (hasActiveValue) {
+                handleClear();
+                return;
+              }
+
+              setIsOpen((current) => !current);
+            }}
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-mutedForeground transition-colors hover:bg-accent hover:text-accentForeground focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label={
+              hasActiveValue
+                ? t("dashboard.clearTagSelection")
+                : t("dashboard.openTagList")
+            }
+          >
+            {hasActiveValue ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  isOpen && "rotate-180"
+                )}
+              />
             )}
-          />
+          </button>
         </div>
 
         {isOpen && (

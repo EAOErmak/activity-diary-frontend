@@ -277,6 +277,8 @@ const enBase = {
     tagLabel: "Tag",
     tagPlaceholder: "Start typing a tag",
     tagLoading: "Loading tags...",
+    openTagList: "Open tag list",
+    clearTagSelection: "Clear tag",
     nothingFound: "Nothing found",
     noData: "No data available for the selected filters.",
     valueLabel: "Value",
