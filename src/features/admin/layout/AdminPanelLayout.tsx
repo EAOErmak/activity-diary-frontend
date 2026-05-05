@@ -76,7 +76,7 @@ export default function AdminPanelLayout() {
   return (
     <div className="min-h-screen bg-page text-foreground">
       <div className="flex min-h-screen flex-col md:flex-row">
-        <aside className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-72 md:shrink-0 md:border-b-0 md:border-r">
+        <aside className="bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-72 md:shrink-0">
           <div className="flex h-full flex-col p-4 sm:p-6">
             <div className="mb-6 flex items-start gap-3">
               <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ export default function AdminPanelLayout() {
             </nav>
 
             <div className="mt-auto space-y-4 pt-6">
-              <div className="mx-auto flex w-fit items-center gap-2 rounded-3xl border border-border bg-background/90 p-2 shadow-sm">
+              <div className="mx-auto flex w-fit items-center gap-2 rounded-3xl bg-background/90 p-2 shadow-sm">
                 <LanguageToggle />
                 <Button
                   variant="surface"

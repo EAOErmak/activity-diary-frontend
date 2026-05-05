@@ -429,211 +429,219 @@ export function AdminTagChartTypesManager({
   }).trim();
 
   return (
-    <Card className="border border-border bg-surface">
-      <CardHeader className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div className="space-y-1">
-          <CardTitle>{t("admin.tagChartTypes.title")}</CardTitle>
-          <CardDescription>
-            {t("admin.tagChartTypes.description")}
-          </CardDescription>
-        </div>
-        <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-          <Link2 className="mr-2 h-3.5 w-3.5" />
-          {t("admin.tagChartTypes.linksCount", { count: links.length })}
-        </Badge>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Search className="h-4 w-4" />
-              {t("admin.tagChartTypes.tagSearchLabel")}
-            </div>
-            <Input
-              value={tagQuery}
-              onChange={(event) => handleTagQueryChange(event.target.value)}
-              placeholder={t("admin.tagChartTypes.tagSearchPlaceholder")}
-            />
+    <div className="space-y-4">
+      <Card className="bg-surface">
+        <CardHeader className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="space-y-1">
+            <CardTitle>{t("admin.tagChartTypes.title")}</CardTitle>
+            <CardDescription>
+              {t("admin.tagChartTypes.description")}
+            </CardDescription>
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Tags className="h-4 w-4" />
-              {t("admin.tagChartTypes.tagLabel")}
-            </div>
-            <Select
-              value={selectedTagId != null ? String(selectedTagId) : ""}
-              onValueChange={handleSelectTag}
-              disabled={availableTags.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    isLoadingTags && availableTags.length === 0
-                      ? t("admin.tagChartTypes.tagLoading")
-                      : availableTags.length === 0
-                        ? t("admin.tagChartTypes.tagEmpty")
-                        : t("admin.tagChartTypes.tagPlaceholder")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTags.map((tag) => (
-                  <SelectItem key={tag.id} value={String(tag.id)}>
-                    {tag.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {tagsErrorMessage && (
-          <p className="text-sm text-destructive">{tagsErrorMessage}</p>
-        )}
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BarChart3 className="h-4 w-4" />
-              {t("admin.tagChartTypes.chartTypeLabel")}
-            </div>
-            <Select
-              value={selectedChartType ?? ""}
-              onValueChange={(value) => setSelectedChartType(value || null)}
-              disabled={
-                selectedTagId == null ||
-                isLoadingLinks ||
-                availableChartTypes.length === 0
-              }
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    selectedTagId == null
-                      ? t("admin.tagChartTypes.chartTypePlaceholderSelectTag")
-                      : isLoadingLinks
-                        ? t("admin.tagChartTypes.chartTypePlaceholderLoading")
-                        : availableChartTypes.length === 0
-                          ? t("admin.tagChartTypes.chartTypePlaceholderAllLinked")
-                          : t("admin.tagChartTypes.chartTypePlaceholderSelect")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableChartTypes.map((chartType) => (
-                  <SelectItem key={chartType} value={chartType}>
-                    {getChartTypeLabel(chartType)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            onClick={handleCreate}
-            disabled={
-              isCreating ||
-              selectedTagId == null ||
-              selectedChartType == null
-            }
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            {isCreating
-              ? t("admin.tagChartTypes.creatingLink")
-              : t("admin.tagChartTypes.createLink")}
-          </Button>
-        </div>
+            <Link2 className="mr-2 h-3.5 w-3.5" />
+            {t("admin.tagChartTypes.linksCount", { count: links.length })}
+          </Badge>
+        </CardHeader>
 
-        {selectedTagId != null &&
-          !isLoadingLinks &&
-          !linksErrorMessage &&
-          availableChartTypes.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              {t("admin.tagChartTypes.allLinkedForTag")}
-            </p>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Search className="h-4 w-4" />
+                {t("admin.tagChartTypes.tagSearchLabel")}
+              </div>
+              <Input
+                value={tagQuery}
+                onChange={(event) => handleTagQueryChange(event.target.value)}
+                placeholder={t("admin.tagChartTypes.tagSearchPlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Tags className="h-4 w-4" />
+                {t("admin.tagChartTypes.tagLabel")}
+              </div>
+              <Select
+                value={selectedTagId != null ? String(selectedTagId) : ""}
+                onValueChange={handleSelectTag}
+                disabled={availableTags.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingTags && availableTags.length === 0
+                        ? t("admin.tagChartTypes.tagLoading")
+                        : availableTags.length === 0
+                          ? t("admin.tagChartTypes.tagEmpty")
+                          : t("admin.tagChartTypes.tagPlaceholder")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTags.map((tag) => (
+                    <SelectItem key={tag.id} value={String(tag.id)}>
+                      {tag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {tagsErrorMessage && (
+            <p className="text-sm text-destructive">{tagsErrorMessage}</p>
           )}
 
-        <div className="space-y-3">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BarChart3 className="h-4 w-4" />
+                {t("admin.tagChartTypes.chartTypeLabel")}
+              </div>
+              <Select
+                value={selectedChartType ?? ""}
+                onValueChange={(value) => setSelectedChartType(value || null)}
+                disabled={
+                  selectedTagId == null ||
+                  isLoadingLinks ||
+                  availableChartTypes.length === 0
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      selectedTagId == null
+                        ? t("admin.tagChartTypes.chartTypePlaceholderSelectTag")
+                        : isLoadingLinks
+                          ? t("admin.tagChartTypes.chartTypePlaceholderLoading")
+                          : availableChartTypes.length === 0
+                            ? t("admin.tagChartTypes.chartTypePlaceholderAllLinked")
+                            : t("admin.tagChartTypes.chartTypePlaceholderSelect")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableChartTypes.map((chartType) => (
+                    <SelectItem key={chartType} value={chartType}>
+                      {getChartTypeLabel(chartType)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={handleCreate}
+              disabled={
+                isCreating ||
+                selectedTagId == null ||
+                selectedChartType == null
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {isCreating
+                ? t("admin.tagChartTypes.creatingLink")
+                : t("admin.tagChartTypes.createLink")}
+            </Button>
+          </div>
+
+          {selectedTagId != null &&
+            !isLoadingLinks &&
+            !linksErrorMessage &&
+            availableChartTypes.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                {t("admin.tagChartTypes.allLinkedForTag")}
+              </p>
+            )}
+
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">{currentLinksTitle}</h3>
             <p className="text-sm text-muted-foreground">
               {t("admin.tagChartTypes.currentLinksDescription")}
             </p>
           </div>
+        </CardContent>
+      </Card>
 
-          <Table>
-            <TableHeader>
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("admin.tagChartTypes.chartTypeColumn")}</TableHead>
+              <TableHead className="w-[220px]">
+                {t("admin.tagChartTypes.enumColumn")}
+              </TableHead>
+              <TableHead className="w-32 text-right">
+                {t("admin.tagChartTypes.actionColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {selectedTagId == null ? (
               <TableRow>
-                <TableHead>{t("admin.tagChartTypes.chartTypeColumn")}</TableHead>
-                <TableHead className="w-[220px]">
-                  {t("admin.tagChartTypes.enumColumn")}
-                </TableHead>
-                <TableHead className="w-32 text-right">
-                  {t("admin.tagChartTypes.actionColumn")}
-                </TableHead>
+                <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagChartTypes.selectTagHint")}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selectedTagId == null ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagChartTypes.selectTagHint")}
+            ) : isLoadingLinks ? (
+              <TableRow>
+                <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagChartTypes.loadingLinks")}
+                </TableCell>
+              </TableRow>
+            ) : linksErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={3} className="py-8 text-center text-destructive">
+                  {linksErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : links.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagChartTypes.emptyLinks")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              links.map((link) => (
+                <TableRow key={`${link.tagId}:${link.chartType}`}>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p className="font-medium">{getChartTypeLabel(link.chartType)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t("admin.tagChartTypes.backendRuleLabel")}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-transparent bg-input"
+                    >
+                      {link.chartType}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="surface"
+                      size="sm"
+                      disabled={isDeleting}
+                      onClick={() => setPendingDelete(link)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t("common.delete")}
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : isLoadingLinks ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagChartTypes.loadingLinks")}
-                  </TableCell>
-                </TableRow>
-              ) : linksErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-destructive">
-                    {linksErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : links.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagChartTypes.emptyLinks")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                links.map((link) => (
-                  <TableRow key={`${link.tagId}:${link.chartType}`}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{getChartTypeLabel(link.chartType)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {t("admin.tagChartTypes.backendRuleLabel")}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="rounded-full">
-                        {link.chartType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="surface"
-                        size="sm"
-                        disabled={isDeleting}
-                        onClick={() => setPendingDelete(link)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t("common.delete")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
 
       <AdminConfirmationDialog
         open={pendingDelete !== null}
@@ -659,6 +667,6 @@ export function AdminTagChartTypesManager({
         tone="danger"
         onConfirm={handleDelete}
       />
-    </Card>
+    </div>
   );
 }

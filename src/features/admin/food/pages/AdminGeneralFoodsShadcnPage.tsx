@@ -169,7 +169,7 @@ export default function AdminGeneralFoodsShadcnPage() {
         </Button>
       </div>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.foodsPage.searchTitle")}</CardTitle>
           <CardDescription>
@@ -190,103 +190,110 @@ export default function AdminGeneralFoodsShadcnPage() {
             />
           </div>
 
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
+          >
             <Database className="mr-2 h-3.5 w-3.5" />
             {resultLabel}
           </Badge>
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.foodsPage.databaseTitle")}</CardTitle>
           <CardDescription>
             {t("admin.foodsPage.databaseDescription")}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
+      </Card>
+
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("food.product")}</TableHead>
+              <TableHead className="w-36 whitespace-nowrap text-right">{t("food.proteins")}</TableHead>
+              <TableHead className="w-36 whitespace-nowrap text-right">{t("food.fats")}</TableHead>
+              <TableHead className="w-40 whitespace-nowrap text-right">{t("food.carbs")}</TableHead>
+              <TableHead className="w-44 whitespace-nowrap text-right">{t("food.caloriesPerGram")}</TableHead>
+              <TableHead className="w-44 text-right">{t("common.actions")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {showInitialLoading ? (
               <TableRow>
-                <TableHead>{t("food.product")}</TableHead>
-                <TableHead className="w-36 whitespace-nowrap text-right">{t("food.proteins")}</TableHead>
-                <TableHead className="w-36 whitespace-nowrap text-right">{t("food.fats")}</TableHead>
-                <TableHead className="w-40 whitespace-nowrap text-right">{t("food.carbs")}</TableHead>
-                <TableHead className="w-44 whitespace-nowrap text-right">{t("food.caloriesPerGram")}</TableHead>
-                <TableHead className="w-44 text-right">{t("common.actions")}</TableHead>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  {t("common.loading")}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {showInitialLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    {t("common.loading")}
-                  </TableCell>
-                </TableRow>
-              ) : errorMessage && foods.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-destructive">
-                    {errorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : foods.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    {t("food.noGeneralProducts")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                foods.map((food) => (
-                  <TableRow key={food.id}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{food.dictionaryItemLabel}</p>
-                          <Badge variant="outline" className="rounded-full">
-                            #{food.dictionaryItemId}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {t("food.sharedProductLabel")}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {t("food.dictionaryItemId", {
-                            id: String(food.dictionaryItemId),
-                          })}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">{formatMacro(food.protein, locale)}</TableCell>
-                    <TableCell className="text-right">{formatMacro(food.fat, locale)}</TableCell>
-                    <TableCell className="text-right">{formatMacro(food.carbs, locale)}</TableCell>
-                    <TableCell className="text-right">{formatMacro(food.callories, locale)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="surface"
-                          onClick={() => setEditingFood(food)}
+            ) : errorMessage && foods.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-destructive">
+                  {errorMessage}
+                </TableCell>
+              </TableRow>
+            ) : foods.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  {t("food.noGeneralProducts")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              foods.map((food) => (
+                <TableRow key={food.id}>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{food.dictionaryItemLabel}</p>
+                        <Badge
+                          variant="outline"
+                          className="rounded-full border-transparent bg-input"
                         >
-                          <ShieldCheck className="mr-2 h-4 w-4" />
-                          {t("common.edit")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="surface"
-                          className="text-destructive"
-                          onClick={() => setPendingDelete(food)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t("common.delete")}
-                        </Button>
+                          #{food.dictionaryItemId}
+                        </Badge>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        {t("food.sharedProductLabel")}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {t("food.dictionaryItemId", {
+                          id: String(food.dictionaryItemId),
+                        })}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">{formatMacro(food.protein, locale)}</TableCell>
+                  <TableCell className="text-right">{formatMacro(food.fat, locale)}</TableCell>
+                  <TableCell className="text-right">{formatMacro(food.carbs, locale)}</TableCell>
+                  <TableCell className="text-right">{formatMacro(food.callories, locale)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="surface"
+                        onClick={() => setEditingFood(food)}
+                      >
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        {t("common.edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="surface"
+                        className="text-destructive"
+                        onClick={() => setPendingDelete(food)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {t("common.delete")}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
 
       <FoodFormDialog

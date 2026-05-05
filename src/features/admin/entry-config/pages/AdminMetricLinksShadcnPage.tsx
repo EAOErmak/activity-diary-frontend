@@ -219,7 +219,10 @@ export default function AdminMetricLinksShadcnPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+        <Badge
+          variant="outline"
+          className="w-fit rounded-full border-transparent px-3 py-1"
+        >
           {t("admin.metricLinksPage.badge")}
         </Badge>
         <h1 className="text-3xl font-bold tracking-tight">
@@ -230,7 +233,7 @@ export default function AdminMetricLinksShadcnPage() {
         </p>
       </div>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.metricLinksPage.selectMetricTitle")}</CardTitle>
           <CardDescription>
@@ -267,7 +270,10 @@ export default function AdminMetricLinksShadcnPage() {
             </Select>
           </div>
 
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
+          >
             {t("admin.metricLinksPage.linksCount", {
               count: linkedUnits.length,
             })}
@@ -280,7 +286,7 @@ export default function AdminMetricLinksShadcnPage() {
         )}
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.metricLinksPage.addLinkTitle")}</CardTitle>
           <CardDescription>
@@ -340,7 +346,7 @@ export default function AdminMetricLinksShadcnPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <CardTitle>{t("admin.metricLinksPage.currentLinksTitle")}</CardTitle>
@@ -352,91 +358,95 @@ export default function AdminMetricLinksShadcnPage() {
                 : t("admin.metricLinksPage.currentLinksDescriptionEmpty")}
             </CardDescription>
           </div>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
+          >
             <Link2 className="mr-2 h-3.5 w-3.5" />
             {linkedUnits.length}
           </Badge>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
+      </Card>
+
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">ID</TableHead>
+              <TableHead>{t("admin.metricLinksPage.unitColumn")}</TableHead>
+              <TableHead className="w-40">{t("admin.metricLinksPage.statusColumn")}</TableHead>
+              <TableHead className="w-32 text-right">
+                {t("admin.metricLinksPage.actionColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {selectedMetricNameId == null ? (
               <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>{t("admin.metricLinksPage.unitColumn")}</TableHead>
-                <TableHead className="w-40">{t("admin.metricLinksPage.statusColumn")}</TableHead>
-                <TableHead className="w-32 text-right">
-                  {t("admin.metricLinksPage.actionColumn")}
-                </TableHead>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.metricLinksPage.noMetricSelected")}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selectedMetricNameId == null ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.metricLinksPage.noMetricSelected")}
+            ) : isLoadingLinks ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.metricLinksPage.loadingLinks")}
+                </TableCell>
+              </TableRow>
+            ) : linksErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-destructive">
+                  {linksErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : linkedUnitsWithMeta.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.metricLinksPage.emptyLinks")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              linkedUnitsWithMeta.map((unit) => (
+                <TableRow key={unit.id}>
+                  <TableCell>{unit.id}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p className="font-medium">{unit.label}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t("admin.metricLinksPage.unitMeta")}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        unit.dictionaryUnit?.active === false
+                          ? "rounded-full border-transparent bg-destructive/10 text-destructive"
+                          : "rounded-full border-transparent bg-primary/10 text-primary"
+                      }
+                    >
+                      {unit.dictionaryUnit?.active === false
+                        ? t("admin.metricLinksPage.inactiveStatus")
+                        : t("admin.metricLinksPage.activeStatus")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="surface"
+                      size="sm"
+                      disabled={isDeleting}
+                      onClick={() => setPendingDelete(unit)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t("admin.metricLinksPage.deleteConfirm")}
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : isLoadingLinks ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.metricLinksPage.loadingLinks")}
-                  </TableCell>
-                </TableRow>
-              ) : linksErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-destructive">
-                    {linksErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : linkedUnitsWithMeta.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.metricLinksPage.emptyLinks")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                linkedUnitsWithMeta.map((unit) => (
-                  <TableRow key={unit.id}>
-                    <TableCell>{unit.id}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{unit.label}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {t("admin.metricLinksPage.unitMeta")}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          unit.dictionaryUnit?.active === false
-                            ? "rounded-full border-destructive/30 text-destructive"
-                            : "rounded-full border-primary/30 text-primary"
-                        }
-                      >
-                        {unit.dictionaryUnit?.active === false
-                          ? t("admin.metricLinksPage.inactiveStatus")
-                          : t("admin.metricLinksPage.activeStatus")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="surface"
-                        size="sm"
-                        disabled={isDeleting}
-                        onClick={() => setPendingDelete(unit)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t("admin.metricLinksPage.deleteConfirm")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
 
       <AdminConfirmationDialog

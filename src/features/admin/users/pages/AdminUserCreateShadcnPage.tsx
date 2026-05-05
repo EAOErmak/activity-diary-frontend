@@ -19,7 +19,10 @@ export default function AdminUserCreateShadcnPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-3">
-        <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+        <Badge
+          variant="outline"
+          className="w-fit rounded-full border-transparent px-3 py-1"
+        >
           {t("admin.userCreatePage.badge")}
         </Badge>
         <div className="space-y-2">
@@ -32,7 +35,7 @@ export default function AdminUserCreateShadcnPage() {
         </div>
       </div>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-foreground">
             <UserPlus className="h-5 w-5" />

@@ -324,293 +324,298 @@ export function AdminTagMetricNamesManager({
   }).trim();
 
   return (
-    <Card className="border border-border bg-surface">
-      <CardHeader className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div className="space-y-1">
-          <CardTitle>{t("admin.tagMetricNames.title")}</CardTitle>
-          <CardDescription>
-            {t("admin.tagMetricNames.description")}
-          </CardDescription>
-        </div>
-        <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-          <Link2 className="mr-2 h-3.5 w-3.5" />
-          {t("admin.tagMetricNames.linksCount", {
-            count: draftMetricNameIds.length,
-          })}
-        </Badge>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Search className="h-4 w-4" />
-              {t("admin.tagMetricNames.tagSearchLabel")}
-            </div>
-            <Input
-              value={tagQuery}
-              onChange={(event) => handleTagQueryChange(event.target.value)}
-              placeholder={t("admin.tagMetricNames.tagSearchPlaceholder")}
-            />
+    <div className="space-y-4">
+      <Card className="bg-surface">
+        <CardHeader className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="space-y-1">
+            <CardTitle>{t("admin.tagMetricNames.title")}</CardTitle>
+            <CardDescription>
+              {t("admin.tagMetricNames.description")}
+            </CardDescription>
           </div>
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
+          >
+            <Link2 className="mr-2 h-3.5 w-3.5" />
+            {t("admin.tagMetricNames.linksCount", {
+              count: draftMetricNameIds.length,
+            })}
+          </Badge>
+        </CardHeader>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Tags className="h-4 w-4" />
-              {t("admin.tagMetricNames.tagLabel")}
-            </div>
-            <Select
-              value={selectedTagId != null ? String(selectedTagId) : ""}
-              onValueChange={handleSelectTag}
-              disabled={availableTags.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    isLoadingTags && availableTags.length === 0
-                      ? t("admin.tagMetricNames.tagLoading")
-                      : availableTags.length === 0
-                        ? t("admin.tagMetricNames.tagEmpty")
-                        : t("admin.tagMetricNames.tagPlaceholder")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTags.map((tag) => (
-                  <SelectItem key={tag.id} value={String(tag.id)}>
-                    {tag.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {tagsErrorMessage && (
-          <p className="text-sm text-destructive">{tagsErrorMessage}</p>
-        )}
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BookOpen className="h-4 w-4" />
-              {t("admin.tagMetricNames.metricSearchLabel")}
-            </div>
-            <Input
-              value={metricQuery}
-              onChange={(event) => setMetricQuery(event.target.value)}
-              placeholder={t("admin.tagMetricNames.metricSearchPlaceholder")}
-              disabled={isLoadingMetricNames || metricNames.length === 0}
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="surface"
-              onClick={handleReset}
-              disabled={!hasChanges || isSaving}
-            >
-              {t("common.reset")}
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={
-                isSaving ||
-                selectedTagId == null ||
-                isLoadingMetricNames ||
-                isLoadingLinks ||
-                metricNamesErrorMessage != null ||
-                !hasChanges
-              }
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {isSaving ? t("common.saving") : t("common.saveChanges")}
-            </Button>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-border/70 bg-background/60 p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">{currentLinksTitle}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t("admin.tagMetricNames.currentLinksDescription")}
-              </p>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Search className="h-4 w-4" />
+                {t("admin.tagMetricNames.tagSearchLabel")}
+              </div>
+              <Input
+                value={tagQuery}
+                onChange={(event) => handleTagQueryChange(event.target.value)}
+                placeholder={t("admin.tagMetricNames.tagSearchPlaceholder")}
+              />
             </div>
 
-            {hasChanges && (
-              <Badge
-                variant="outline"
-                className="w-fit rounded-full border-amber-500/30 text-amber-600 dark:text-amber-300"
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Tags className="h-4 w-4" />
+                {t("admin.tagMetricNames.tagLabel")}
+              </div>
+              <Select
+                value={selectedTagId != null ? String(selectedTagId) : ""}
+                onValueChange={handleSelectTag}
+                disabled={availableTags.length === 0}
               >
-                {t("admin.tagMetricNames.unsavedChanges")}
-              </Badge>
-            )}
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingTags && availableTags.length === 0
+                        ? t("admin.tagMetricNames.tagLoading")
+                        : availableTags.length === 0
+                          ? t("admin.tagMetricNames.tagEmpty")
+                          : t("admin.tagMetricNames.tagPlaceholder")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTags.map((tag) => (
+                    <SelectItem key={tag.id} value={String(tag.id)}>
+                      {tag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {selectedTagId == null ? (
-              <p className="text-sm text-muted-foreground">
-                {t("admin.tagMetricNames.selectTagHint")}
-              </p>
-            ) : isLoadingLinks ? (
-              <p className="text-sm text-muted-foreground">
-                {t("admin.tagMetricNames.loadingLinks")}
-              </p>
-            ) : linksErrorMessage ? (
-              <p className="text-sm text-destructive">{linksErrorMessage}</p>
-            ) : selectedMetricNames.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("admin.tagMetricNames.emptyCurrentLinks")}
-              </p>
-            ) : (
-              selectedMetricNames.map((metricName) => (
+          {tagsErrorMessage && (
+            <p className="text-sm text-destructive">{tagsErrorMessage}</p>
+          )}
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BookOpen className="h-4 w-4" />
+                {t("admin.tagMetricNames.metricSearchLabel")}
+              </div>
+              <Input
+                value={metricQuery}
+                onChange={(event) => setMetricQuery(event.target.value)}
+                placeholder={t("admin.tagMetricNames.metricSearchPlaceholder")}
+                disabled={isLoadingMetricNames || metricNames.length === 0}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="surface"
+                onClick={handleReset}
+                disabled={!hasChanges || isSaving}
+              >
+                {t("common.reset")}
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={
+                  isSaving ||
+                  selectedTagId == null ||
+                  isLoadingMetricNames ||
+                  isLoadingLinks ||
+                  metricNamesErrorMessage != null ||
+                  !hasChanges
+                }
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {isSaving ? t("common.saving") : t("common.saveChanges")}
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-3xl bg-background/60 p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-1">
+                <h3 className="text-lg font-semibold">{currentLinksTitle}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {t("admin.tagMetricNames.currentLinksDescription")}
+                </p>
+              </div>
+
+              {hasChanges && (
                 <Badge
-                  key={metricName.id}
                   variant="outline"
-                  className="rounded-full border-primary/30 text-primary"
+                  className="w-fit rounded-full border-transparent bg-amber-500/10 text-amber-600 dark:text-amber-300"
                 >
-                  {metricName.label}
+                  {t("admin.tagMetricNames.unsavedChanges")}
                 </Badge>
-              ))
-            )}
-          </div>
-        </div>
+              )}
+            </div>
 
-        <div className="space-y-3">
+            <div className="mt-4 flex flex-wrap gap-2">
+              {selectedTagId == null ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("admin.tagMetricNames.selectTagHint")}
+                </p>
+              ) : isLoadingLinks ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("admin.tagMetricNames.loadingLinks")}
+                </p>
+              ) : linksErrorMessage ? (
+                <p className="text-sm text-destructive">{linksErrorMessage}</p>
+              ) : selectedMetricNames.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("admin.tagMetricNames.emptyCurrentLinks")}
+                </p>
+              ) : (
+                selectedMetricNames.map((metricName) => (
+                  <Badge
+                    key={metricName.id}
+                    variant="outline"
+                    className="rounded-full border-transparent bg-primary/10 text-primary"
+                  >
+                    {metricName.label}
+                  </Badge>
+                ))
+              )}
+            </div>
+          </div>
+
           <p className="text-sm text-muted-foreground">
             {hasChanges
               ? t("admin.tagMetricNames.saveHintDirty")
               : t("admin.tagMetricNames.saveHintClean")}
           </p>
+        </CardContent>
+      </Card>
 
-          <Table>
-            <TableHeader>
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("admin.tagMetricNames.metricColumn")}</TableHead>
+              <TableHead className="w-40">
+                {t("admin.tagMetricNames.statusColumn")}
+              </TableHead>
+              <TableHead className="w-40">
+                {t("admin.tagMetricNames.relationColumn")}
+              </TableHead>
+              <TableHead className="w-32 text-right">
+                {t("admin.tagMetricNames.actionColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {selectedTagId == null ? (
               <TableRow>
-                <TableHead>{t("admin.tagMetricNames.metricColumn")}</TableHead>
-                <TableHead className="w-40">
-                  {t("admin.tagMetricNames.statusColumn")}
-                </TableHead>
-                <TableHead className="w-40">
-                  {t("admin.tagMetricNames.relationColumn")}
-                </TableHead>
-                <TableHead className="w-32 text-right">
-                  {t("admin.tagMetricNames.actionColumn")}
-                </TableHead>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagMetricNames.selectTagHint")}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selectedTagId == null ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagMetricNames.selectTagHint")}
-                  </TableCell>
-                </TableRow>
-              ) : isLoadingMetricNames ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagMetricNames.loadingMetricNames")}
-                  </TableCell>
-                </TableRow>
-              ) : metricNamesErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-destructive">
-                    {metricNamesErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : isLoadingLinks ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagMetricNames.loadingLinks")}
-                  </TableCell>
-                </TableRow>
-              ) : linksErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-destructive">
-                    {linksErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : metricNames.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagMetricNames.emptyMetricNames")}
-                  </TableCell>
-                </TableRow>
-              ) : filteredMetricNames.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagMetricNames.emptySearch")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredMetricNames.map((metricName) => {
-                  const isLinked = draftMetricNameSet.has(metricName.id);
+            ) : isLoadingMetricNames ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagMetricNames.loadingMetricNames")}
+                </TableCell>
+              </TableRow>
+            ) : metricNamesErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-destructive">
+                  {metricNamesErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : isLoadingLinks ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagMetricNames.loadingLinks")}
+                </TableCell>
+              </TableRow>
+            ) : linksErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-destructive">
+                  {linksErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : metricNames.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagMetricNames.emptyMetricNames")}
+                </TableCell>
+              </TableRow>
+            ) : filteredMetricNames.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagMetricNames.emptySearch")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredMetricNames.map((metricName) => {
+                const isLinked = draftMetricNameSet.has(metricName.id);
 
-                  return (
-                    <TableRow key={metricName.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-medium">{metricName.label}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {t("admin.tagMetricNames.metricMeta", {
-                              id: String(metricName.id),
-                            })}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            metricName.active
-                              ? "rounded-full border-primary/30 text-primary"
-                              : "rounded-full border-destructive/30 text-destructive"
-                          }
-                        >
-                          {metricName.active
-                            ? t("admin.tagMetricNames.activeStatus")
-                            : t("admin.tagMetricNames.inactiveStatus")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            isLinked
-                              ? "rounded-full border-primary/30 text-primary"
-                              : "rounded-full border-border/70 text-muted-foreground"
-                          }
-                        >
-                          {isLinked
-                            ? t("admin.tagMetricNames.linkedStatus")
-                            : t("admin.tagMetricNames.unlinkedStatus")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant={isLinked ? "surface" : undefined}
-                          disabled={isSaving}
-                          onClick={() => toggleMetricName(metricName.id)}
-                        >
-                          {isLinked ? (
-                            <X className="mr-2 h-4 w-4" />
-                          ) : (
-                            <Plus className="mr-2 h-4 w-4" />
-                          )}
-                          {isLinked
-                            ? t("admin.tagMetricNames.removeAction")
-                            : t("admin.tagMetricNames.addAction")}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                return (
+                  <TableRow key={metricName.id}>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <p className="font-medium">{metricName.label}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {t("admin.tagMetricNames.metricMeta", {
+                            id: String(metricName.id),
+                          })}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          metricName.active
+                            ? "rounded-full border-transparent bg-primary/10 text-primary"
+                            : "rounded-full border-transparent bg-destructive/10 text-destructive"
+                        }
+                      >
+                        {metricName.active
+                          ? t("admin.tagMetricNames.activeStatus")
+                          : t("admin.tagMetricNames.inactiveStatus")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          isLinked
+                            ? "rounded-full border-transparent bg-primary/10 text-primary"
+                            : "rounded-full border-transparent bg-input text-muted-foreground"
+                        }
+                      >
+                        {isLinked
+                          ? t("admin.tagMetricNames.linkedStatus")
+                          : t("admin.tagMetricNames.unlinkedStatus")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant={isLinked ? "surface" : undefined}
+                        disabled={isSaving}
+                        onClick={() => toggleMetricName(metricName.id)}
+                      >
+                        {isLinked ? (
+                          <X className="mr-2 h-4 w-4" />
+                        ) : (
+                          <Plus className="mr-2 h-4 w-4" />
+                        )}
+                        {isLinked
+                          ? t("admin.tagMetricNames.removeAction")
+                          : t("admin.tagMetricNames.addAction")}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+    </div>
   );
 }

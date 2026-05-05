@@ -162,7 +162,7 @@ export default function AdminDictionaryShadcnPage() {
         </p>
       </div>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.dictionaryPage.typeTitle")}</CardTitle>
           <CardDescription>
@@ -171,13 +171,13 @@ export default function AdminDictionaryShadcnPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button
-            variant={tab === "METRIC_NAME" ? "primary" : "surface"}
+            variant={tab === "METRIC_NAME" ? "primary" : "form"}
             onClick={() => setTab("METRIC_NAME")}
           >
             {t("admin.dictionaryPage.metricNameTab")}
           </Button>
           <Button
-            variant={tab === "METRIC_UNIT" ? "primary" : "surface"}
+            variant={tab === "METRIC_UNIT" ? "primary" : "form"}
             onClick={() => setTab("METRIC_UNIT")}
           >
             {t("admin.dictionaryPage.metricUnitTab")}
@@ -185,7 +185,7 @@ export default function AdminDictionaryShadcnPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.dictionaryPage.addTitle")}</CardTitle>
           <CardDescription>
@@ -236,7 +236,7 @@ export default function AdminDictionaryShadcnPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <CardTitle>{t("admin.dictionaryPage.itemsTitle")}</CardTitle>
@@ -244,101 +244,105 @@ export default function AdminDictionaryShadcnPage() {
               {t("admin.dictionaryPage.itemsDescription")}
             </CardDescription>
           </div>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
+          >
             {t("admin.dictionaryPage.totalCount", { count: items.length })}
           </Badge>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
+      </Card>
+
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">ID</TableHead>
+              <TableHead>{t("admin.dictionaryPage.nameColumn")}</TableHead>
+              <TableHead className="w-[240px]">
+                {t("admin.dictionaryPage.accessColumn")}
+              </TableHead>
+              <TableHead className="w-32 text-center">
+                {t("admin.dictionaryPage.activeColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoadingItems ? (
               <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>{t("admin.dictionaryPage.nameColumn")}</TableHead>
-                <TableHead className="w-[240px]">
-                  {t("admin.dictionaryPage.accessColumn")}
-                </TableHead>
-                <TableHead className="w-32 text-center">
-                  {t("admin.dictionaryPage.activeColumn")}
-                </TableHead>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.dictionaryPage.loading")}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingItems ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.dictionaryPage.loading")}
+            ) : itemsErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-destructive">
+                  {itemsErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.dictionaryPage.empty")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.id}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.type}
+                      </p>
+                    </div>
                   </TableCell>
-                </TableRow>
-              ) : itemsErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-destructive">
-                    {itemsErrorMessage}
+                  <TableCell>
+                    <Select
+                      value={item.allowedRole ?? "ALL"}
+                      onValueChange={(value) =>
+                        requestRoleChange(item, value === "ALL" ? null : value)
+                      }
+                      disabled={isMutating}
+                    >
+                      <SelectTrigger className="min-w-[180px]">
+                        <SelectValue>{getRoleLabel(item.allowedRole)}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">{t("admin.dictionaryPage.allAccess")}</SelectItem>
+                        <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
+                        <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
+                        <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
-                </TableRow>
-              ) : items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.dictionaryPage.empty")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{item.label}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.type}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={item.allowedRole ?? "ALL"}
-                        onValueChange={(value) =>
-                          requestRoleChange(item, value === "ALL" ? null : value)
+                  <TableCell className="text-center">
+                    <div className="inline-flex items-center gap-3">
+                      <Badge
+                        variant="outline"
+                        className={
+                          item.active
+                            ? "rounded-full border-transparent bg-primary/10 text-primary"
+                            : "rounded-full border-transparent bg-input text-muted-foreground"
                         }
-                        disabled={isMutating}
                       >
-                        <SelectTrigger className="min-w-[180px]">
-                          <SelectValue>{getRoleLabel(item.allowedRole)}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ALL">{t("admin.dictionaryPage.allAccess")}</SelectItem>
-                          <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
-                          <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
-                          <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="inline-flex items-center gap-3">
-                        <Badge
-                          variant="outline"
-                          className={
-                            item.active
-                              ? "rounded-full border-primary/30 text-primary"
-                              : "rounded-full"
-                          }
-                        >
-                          {item.active
-                            ? t("admin.dictionaryPage.yes")
-                            : t("admin.dictionaryPage.no")}
-                        </Badge>
-                        <Switch
-                          checked={item.active}
-                          onCheckedChange={() => requestToggle(item)}
-                          disabled={isMutating}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+                        {item.active
+                          ? t("admin.dictionaryPage.yes")
+                          : t("admin.dictionaryPage.no")}
+                      </Badge>
+                      <Switch
+                        checked={item.active}
+                        onCheckedChange={() => requestToggle(item)}
+                        disabled={isMutating}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
 
       <AdminConfirmationDialog
