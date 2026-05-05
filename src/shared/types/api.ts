@@ -1,8 +1,20 @@
-// src/shared/types/api.ts
+export type DropdownOption = {
+  id: number;
+  label: string;
+};
 
-// Обёртка, которая у тебя на бэке как ApiResponse<T>
+export type PageResponse<T> = {
+  items: T[];
+  page: number;
+  limit: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+};
+
 export type ApiResponse<T> = {
   success: boolean;
-  message?: string | null;
+  message: string | null;
   data: T;
 };

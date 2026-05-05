@@ -5,9 +5,11 @@ import type {
   DictionaryType,
   DictionaryEntity,
 } from "@/shared/types/dictionary";
-import type { ApiResponse } from "@/shared/types/api";
-
-type DictionaryOptionDto = Pick<DictionaryEntity, "id" | "label">;
+import type {
+  ApiResponse,
+  DropdownOption,
+  PageResponse,
+} from "@/shared/types/api";
 
 const mapDictionary = (d: DictionaryResponse): DictionaryEntity => ({
   id: d.id,
@@ -103,19 +105,37 @@ export const getUnits = async (): Promise<DictionaryEntity[]> => {
   return getByType("METRIC_UNIT");
 };
 
+type GetUnitsByMetricNameIdParams = {
+  metricNameId: number;
+  page: number;
+  limit: number;
+  q?: string;
+};
+
 export const getUnitsByMetricNameId = async (
-  metricNameId: number
-): Promise<DictionaryEntity[]> => {
-  const { data } = await api.get<ApiResponse<DictionaryOptionDto[]>>(
-    `/dictionary/metric-names/${metricNameId}/units`
+  params: GetUnitsByMetricNameIdParams
+): Promise<PageResponse<DropdownOption>> => {
+  const { metricNameId, page, limit, q } = params;
+  const normalizedQuery = q?.trim();
+
+  const { data } = await api.get<ApiResponse<PageResponse<DropdownOption>>>(
+    `/dictionary/metric-names/${metricNameId}/units`,
+    {
+      params: {
+        page,
+        limit,
+        ...(normalizedQuery ? { q: normalizedQuery } : {}),
+      },
+    }
   );
 
-  return data.data.map((unit) => ({
-    id: unit.id,
-    type: "METRIC_UNIT",
-    label: unit.label,
-    parentId: metricNameId,
-  }));
+  return {
+    ...data.data,
+    items: data.data.items.map((unit) => ({
+      id: unit.id,
+      label: unit.label,
+    })),
+  };
 };
 
 export const dictionaryApi = {
