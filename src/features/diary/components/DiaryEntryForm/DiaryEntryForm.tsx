@@ -11,7 +11,12 @@ import {
   CardFooter,
 } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
+import { getMetricsByTagIds } from "@/api/tagApi";
 import { useMetricsByTags } from "@/shared/hooks/useMetricsByTags";
+import {
+  collectExistingDropdownOptionIds,
+  ENTRY_DROPDOWN_PAGE_LIMIT,
+} from "@/shared/lib/entryDropdown";
 import { useTagsQuery } from "@/shared/hooks/useTags";
 import { parseMetricValueInput } from "@/shared/lib/metricValue";
 
@@ -171,10 +176,24 @@ export default function DiaryEntryForm(props: Props) {
   );
 
   const selectedTagIdsKey = selectedTagIds.join(",");
+  const selectedMetricTypeIdsKey = useMemo(
+    () =>
+      watchedMetrics
+        .map((metric) =>
+          metric.metricTypeId != null ? String(metric.metricTypeId) : ""
+        )
+        .join(","),
+    [watchedMetrics]
+  );
 
-  const metricsByTags = useMetricsByTags(selectedTagIds);
-  const metricTypes = metricsByTags.metrics;
+  const metricsByTags = useMetricsByTags({
+    tagIds: selectedTagIds,
+    page: 0,
+    limit: ENTRY_DROPDOWN_PAGE_LIMIT,
+    q: "",
+  });
   const hasSelectedTags = selectedTagIds.length > 0;
+  const hasAvailableMetricOptions = metricsByTags.data.totalElements > 0;
   const hasDescriptionTags = descriptionTagNames.size > 0;
   const hasMetricData = watchedMetrics.some(
     (metric) =>
@@ -206,56 +225,84 @@ export default function DiaryEntryForm(props: Props) {
   }, [form, selectedTagNames]);
 
   useEffect(() => {
-    const currentMetrics = form.getValues("metrics") ?? [];
+    let isCancelled = false;
 
-    if (!hasSelectedTags) {
-      if (hasDescriptionTags && (!areTagsLoaded || areTagsPending)) {
+    async function syncMetricsWithSelectedTags() {
+      const currentMetrics = form.getValues("metrics") ?? [];
+
+      if (!hasSelectedTags) {
+        if (hasDescriptionTags && (!areTagsLoaded || areTagsPending)) {
+          return;
+        }
+
+        if (shouldPreserveInitialEditMetrics) {
+          return;
+        }
+
+        if (currentMetrics.length > 0) {
+          form.setValue("metrics", [], {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
         return;
       }
 
-      if (shouldPreserveInitialEditMetrics) {
+      if (!metricsByTags.isSuccess || shouldPreserveInitialEditMetrics) {
         return;
       }
 
-      if (currentMetrics.length > 0) {
-        form.setValue("metrics", [], {
+      const selectedMetricIds = currentMetrics
+        .map((metric) => metric.metricTypeId)
+        .filter((metricTypeId): metricTypeId is number => metricTypeId != null);
+
+      if (selectedMetricIds.length === 0) {
+        return;
+      }
+
+      const validMetricTypeIds = await collectExistingDropdownOptionIds(
+        selectedMetricIds,
+        (page) =>
+          getMetricsByTagIds({
+            tagIds: selectedTagIds,
+            page,
+            limit: ENTRY_DROPDOWN_PAGE_LIMIT,
+            q: "",
+          })
+      );
+
+      if (isCancelled) {
+        return;
+      }
+
+      const validMetrics = currentMetrics.filter(
+        (metric) =>
+          metric.metricTypeId == null ||
+          validMetricTypeIds.has(metric.metricTypeId)
+      );
+
+      if (validMetrics.length !== currentMetrics.length) {
+        form.setValue("metrics", validMetrics, {
           shouldDirty: true,
           shouldValidate: true,
         });
       }
-
-      return;
     }
 
-    if (!metricsByTags.isSuccess) {
-      return;
-    }
+    void syncMetricsWithSelectedTags();
 
-    if (shouldPreserveInitialEditMetrics) {
-      return;
-    }
-
-    const allowedMetricTypeIds = new Set(metricTypes.map((metric) => metric.id));
-    const validMetrics = currentMetrics.filter(
-      (metric) =>
-        metric.metricTypeId == null ||
-        allowedMetricTypeIds.has(metric.metricTypeId)
-    );
-
-    if (validMetrics.length !== currentMetrics.length) {
-      form.setValue("metrics", validMetrics, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
+    return () => {
+      isCancelled = true;
+    };
   }, [
     form,
     areTagsLoaded,
     areTagsPending,
     hasDescriptionTags,
     hasSelectedTags,
-    metricTypes,
     metricsByTags.isSuccess,
+    selectedMetricTypeIdsKey,
     selectedTagIdsKey,
     shouldPreserveInitialEditMetrics,
   ]);
@@ -266,7 +313,9 @@ export default function DiaryEntryForm(props: Props) {
       ? t("diary.metricsLoading")
       : metricsByTags.isError
         ? t("diary.metricsLoadError")
-        : hasSelectedTags && metricsByTags.isSuccess && metricTypes.length === 0
+        : hasSelectedTags &&
+            metricsByTags.isSuccess &&
+            metricsByTags.data.totalElements === 0
           ? t("diary.noMetricsForTags")
           : undefined;
   const isMetricStatePending =
@@ -345,14 +394,11 @@ export default function DiaryEntryForm(props: Props) {
             <DiaryTimeSection mode={mode} />
 
             <DiaryMetricsSection
-              metricTypes={metricTypes}
+              selectedTagIds={selectedTagIds}
+              hasAvailableMetricOptions={hasAvailableMetricOptions}
               copyFirstMetricOnAppend={mode === "create"}
               hasSelectedTags={hasSelectedTags}
-              disabled={
-                areTagsLoading ||
-                metricsByTags.isLoading ||
-                metricsByTags.isError
-              }
+              disabled={areTagsLoading || metricsByTags.isError}
               message={metricSelectorMessage}
             />
 

@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { getMetricsByTagIds } from "@/api/tagApi";
 
 import type {
   DiaryEntryTemplateCreate,
@@ -43,9 +44,13 @@ import {
   extractDescriptionTagNames,
   normalizeDescriptionTagName,
 } from "@/features/diary/components/DiaryEntryForm/sections/descriptionTagAutocomplete";
-import { useDictionary } from "@/shared/hooks/useDictionary";
+import { useMetricsByTags } from "@/shared/hooks/useMetricsByTags";
 import { useTagsQuery } from "@/shared/hooks/useTags";
 import { useTranslation } from "react-i18next";
+import {
+  collectExistingDropdownOptionIds,
+  ENTRY_DROPDOWN_PAGE_LIMIT,
+} from "@/shared/lib/entryDropdown";
 import { parseMetricValueInput } from "@/shared/lib/metricValue";
 import type { MetricFormValue } from "@/shared/types/metricForm";
 
@@ -421,16 +426,25 @@ export default function EntryTemplateForm(props: Props) {
   });
 
   const {
-    formState: { isSubmitting },
+    formState: { isSubmitting, dirtyFields },
   } = form;
 
-  const { tags: availableTags, isLoading: areTagsLoading } = useTagsQuery();
+  const {
+    tags: availableTags,
+    isLoading: areTagsLoading,
+    isPending: areTagsPending,
+    isLoaded: areTagsLoaded,
+  } = useTagsQuery();
   const description =
     useWatch({
       control: form.control,
       name: "description",
     }) ?? "";
-  const metricTypes = useDictionary("METRIC_NAME");
+  const watchedMetrics =
+    useWatch({
+      control: form.control,
+      name: "metrics",
+    }) ?? [];
   const descriptionTagNames = useMemo(
     () => new Set(extractDescriptionTagNames(description)),
     [description]
@@ -451,7 +465,43 @@ export default function EntryTemplateForm(props: Props) {
       }),
     [availableTags, descriptionTagNames]
   );
+  const selectedTagIds = useMemo(
+    () =>
+      [...new Set(selectedTags.map((tag) => tag.id))].sort(
+        (left, right) => left - right
+      ),
+    [selectedTags]
+  );
+  const selectedTagIdsKey = selectedTagIds.join(",");
+  const selectedMetricTypeIdsKey = useMemo(
+    () =>
+      watchedMetrics
+        .map((metric) =>
+          metric.metricTypeId != null ? String(metric.metricTypeId) : ""
+        )
+        .join(","),
+    [watchedMetrics]
+  );
   const hasSelectedTags = selectedTags.length > 0;
+  const hasDescriptionTags = descriptionTagNames.size > 0;
+  const metricsByTags = useMetricsByTags({
+    tagIds: selectedTagIds,
+    page: 0,
+    limit: ENTRY_DROPDOWN_PAGE_LIMIT,
+    q: "",
+  });
+  const hasAvailableMetricOptions = metricsByTags.data.totalElements > 0;
+  const hasMetricData = watchedMetrics.some(
+    (metric) =>
+      metric.metricTypeId != null ||
+      metric.values.some(
+        (value) => value.unitId != null || value.value.trim() !== ""
+      )
+  );
+  const shouldPreserveInitialEditMetrics =
+    mode === "edit" &&
+    props.initialValues.metrics.length > 0 &&
+    !dirtyFields.description;
 
   const setTimeFieldValue = useCallback(
     (fieldName: "timeStart" | "timeEnd", nextValue: string) => {
@@ -516,6 +566,105 @@ export default function EntryTemplateForm(props: Props) {
     },
     [form, setTimeFieldValue]
   );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function syncMetricsWithSelectedTags() {
+      const currentMetrics = form.getValues("metrics") ?? [];
+
+      if (!hasSelectedTags) {
+        if (hasDescriptionTags && (!areTagsLoaded || areTagsPending)) {
+          return;
+        }
+
+        if (shouldPreserveInitialEditMetrics) {
+          return;
+        }
+
+        if (currentMetrics.length > 0) {
+          form.setValue("metrics", [], {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        return;
+      }
+
+      if (!metricsByTags.isSuccess || shouldPreserveInitialEditMetrics) {
+        return;
+      }
+
+      const selectedMetricIds = currentMetrics
+        .map((metric) => metric.metricTypeId)
+        .filter((metricTypeId): metricTypeId is number => metricTypeId != null);
+
+      if (selectedMetricIds.length === 0) {
+        return;
+      }
+
+      const validMetricTypeIds = await collectExistingDropdownOptionIds(
+        selectedMetricIds,
+        (page) =>
+          getMetricsByTagIds({
+            tagIds: selectedTagIds,
+            page,
+            limit: ENTRY_DROPDOWN_PAGE_LIMIT,
+            q: "",
+          })
+      );
+
+      if (isCancelled) {
+        return;
+      }
+
+      const validMetrics = currentMetrics.filter(
+        (metric) =>
+          metric.metricTypeId == null ||
+          validMetricTypeIds.has(metric.metricTypeId)
+      );
+
+      if (validMetrics.length !== currentMetrics.length) {
+        form.setValue("metrics", validMetrics, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    }
+
+    void syncMetricsWithSelectedTags();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    areTagsLoaded,
+    areTagsPending,
+    form,
+    hasDescriptionTags,
+    hasSelectedTags,
+    metricsByTags.isSuccess,
+    selectedMetricTypeIdsKey,
+    selectedTagIds,
+    selectedTagIdsKey,
+    shouldPreserveInitialEditMetrics,
+  ]);
+
+  const metricSelectorMessage = areTagsLoading
+    ? t("diary.tagsLoading")
+    : hasMetricData && metricsByTags.isLoading
+      ? t("diary.metricsLoading")
+      : metricsByTags.isError
+        ? t("diary.metricsLoadError")
+        : hasSelectedTags &&
+            metricsByTags.isSuccess &&
+            metricsByTags.data.totalElements === 0
+          ? t("diary.noMetricsForTags")
+          : undefined;
+  const isMetricStatePending =
+    hasMetricData &&
+    (areTagsLoading || metricsByTags.isLoading || metricsByTags.isError);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-1 no-scrollbar">
@@ -640,18 +789,19 @@ export default function EntryTemplateForm(props: Props) {
               <DiaryMoodSection />
 
               <DiaryMetricsSection
-                metricTypes={metricTypes}
+                selectedTagIds={selectedTagIds}
+                hasAvailableMetricOptions={hasAvailableMetricOptions}
                 copyFirstMetricOnAppend={mode === "create"}
                 hasSelectedTags={hasSelectedTags}
-                disabled={areTagsLoading}
-                message={areTagsLoading ? t("diary.tagsLoading") : undefined}
+                disabled={areTagsLoading || metricsByTags.isError}
+                message={metricSelectorMessage}
               />
 
               <CardFooter className="justify-end px-0 pt-2">
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isMetricStatePending}
                 >
                   {isSubmitting ? t("common.saving") : submitLabel}
                 </Button>
