@@ -94,7 +94,7 @@ export const WeekViewCard = memo(function WeekViewCard({
       <CardContent className="flex flex-1 min-h-0 flex-col space-y-4 overflow-hidden">
         <div className="grid flex-1 min-h-0 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 lg:auto-rows-fr">
-            <div className="rounded-2xl border border-border bg-input p-4">
+            <div className="rounded-2xl bg-input p-4">
               <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Focus
               </div>
@@ -106,7 +106,7 @@ export const WeekViewCard = memo(function WeekViewCard({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-input p-4">
+            <div className="rounded-2xl bg-input p-4">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-medium">Finished days</div>
                 <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
@@ -118,7 +118,7 @@ export const WeekViewCard = memo(function WeekViewCard({
               <Progress value={Math.min(100, Math.round((stats.finished / 7) * 100))} className="mt-3" />
             </div>
 
-            <div className="rounded-2xl border border-border bg-input p-4">
+            <div className="rounded-2xl bg-input p-4">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-medium">Average completion</div>
                 <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
@@ -219,19 +219,18 @@ export const WeekViewCard = memo(function WeekViewCard({
                     if (draggingTemplate) onHoverDate(day.dateKey);
                   }}
                   className={[
-                    "relative flex min-h-[170px] flex-col justify-between overflow-hidden rounded-2xl border bg-input p-4 text-center",
+                    "relative flex min-h-[170px] flex-col justify-between overflow-hidden rounded-2xl bg-input p-4 text-center",
                     day.isInYear ? "cursor-pointer" : "cursor-default",
-                    day.isInYear ? "border-border" : "border-border/40",
                     isPreviewTarget
                       ? day.isInYear
-                        ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
-                        : "border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
+                        ? "border border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
+                        : "border border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
                       : "",
                     isSelectedDailyDate
-                      ? "border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
+                      ? "border border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
                       : "",
                     isToday && day.isInYear
-                      ? "border-amber-300/80 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50"
+                      ? "border border-amber-300/80 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50"
                       : "",
                     creatingDate === day.dateKey ? "animate-pulse" : "",
                   ].join(" ")}

@@ -333,13 +333,11 @@ export const GoalCalendarCard = memo(function GoalCalendarCard({
                     }
                   }}
                   className={[
-                    "aspect-square w-full rounded-[4px] border",
-                    isInCurrentYear
-                      ? "cursor-pointer border-border/70"
-                      : "cursor-default border-border/30 opacity-60",
+                    "aspect-square w-full rounded-[4px]",
+                    isInCurrentYear ? "cursor-pointer" : "cursor-default opacity-60",
                     isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
                     isSelectedWeek
-                      ? "border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
+                      ? "border border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
                       : "",
                   ].join(" ")}
                   style={

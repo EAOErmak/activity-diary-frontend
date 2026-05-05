@@ -340,7 +340,7 @@ export default function GoalsPage() {
     return toIsoDate(today);
   }, []);
 
-  const { isLoadingTemplates, templateItems, loadTemplates } = useGoalsTemplates();
+  const { isLoadingTemplates, templateItems } = useGoalsTemplates();
   const {
     dayScores,
     dayGoalIdsByDate,
@@ -1549,9 +1549,6 @@ export default function GoalsPage() {
           onEraserModeChange={setEraserMode}
           onFilterKindChange={setFilterKind}
           onFilterNameChange={setFilterName}
-          onRefreshTemplates={() => {
-            void loadTemplates();
-          }}
           onTemplatePointerDown={handleTemplatePointerDown}
         />
       </div>
