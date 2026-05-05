@@ -2,21 +2,32 @@
 import api from "../http/axiosInstance";
 import type { ApiResponse } from "@/shared/types/api";
 import type {
+  AdminDictionaryListParams,
+  AdminDictionaryListResponse,
   DictionaryCreate,
   DictionaryUpdate,
   DictionaryResponse,
 } from "@/shared/types/adminDictionary";
-import type { DictionaryType } from "@/shared/types/dictionary";
 
 /* ===========================
    GET BY TYPE (ADMIN)
 =========================== */
 
 export const getDictionaryByTypeAdmin = async (
-  type: DictionaryType
-): Promise<DictionaryResponse[]> => {
-  const { data } = await api.get<ApiResponse<DictionaryResponse[]>>(
-    `/admin/dict/${type}`
+  params: AdminDictionaryListParams
+): Promise<AdminDictionaryListResponse> => {
+  const normalizedQuery = params.q?.trim() ?? "";
+  const page = params.page ?? 0;
+  const limit = params.limit ?? 20;
+  const { data } = await api.get<ApiResponse<AdminDictionaryListResponse>>(
+    `/admin/dict/${params.type}`,
+    {
+      params: {
+        page,
+        limit,
+        q: normalizedQuery,
+      },
+    }
   );
   return data.data;
 };

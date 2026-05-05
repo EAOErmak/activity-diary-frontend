@@ -41,9 +41,15 @@ import {
   getTagListQueryOptions,
 } from "@/shared/lib/queryOptions";
 import type { ApiResponse } from "@/shared/types/api";
-import type { DictionaryResponse } from "@/shared/types/adminDictionary";
+import type {
+  AdminDictionaryListResponse,
+  DictionaryResponse,
+} from "@/shared/types/adminDictionary";
 import type { AdminTagMetricLink } from "@/shared/types/adminTagMetricLink";
 import type { Tag } from "@/shared/types/tag";
+
+const DEFAULT_PAGE = 0;
+const DEFAULT_LIMIT = 20;
 
 function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
@@ -81,6 +87,38 @@ function areSelectionsEqual(left: number[], right: number[]) {
   return left.every((value, index) => value === right[index]);
 }
 
+function sortMetricNames(items: DictionaryResponse[], locale: string) {
+  return [...items].sort((left, right) => {
+    if (left.active !== right.active) {
+      return left.active ? -1 : 1;
+    }
+
+    const labelCompare = left.label.localeCompare(right.label, locale);
+    return labelCompare || left.id - right.id;
+  });
+}
+
+function mergeDictionaryLookup(
+  current: Record<number, DictionaryResponse>,
+  items: DictionaryResponse[]
+) {
+  if (items.length === 0) {
+    return current;
+  }
+
+  let changed = false;
+  const next = { ...current };
+
+  for (const item of items) {
+    if (next[item.id] !== item) {
+      next[item.id] = item;
+      changed = true;
+    }
+  }
+
+  return changed ? next : current;
+}
+
 type AdminTagMetricNamesManagerProps = {
   updatedTag?: Tag | null;
 };
@@ -93,32 +131,31 @@ export function AdminTagMetricNamesManager({
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
   const [tagQuery, setTagQuery] = useState("");
   const [metricQuery, setMetricQuery] = useState("");
+  const [metricPage, setMetricPage] = useState(DEFAULT_PAGE);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [selectedTagName, setSelectedTagName] = useState<string | null>(null);
   const [initialMetricNameIds, setInitialMetricNameIds] = useState<number[]>([]);
   const [draftMetricNameIds, setDraftMetricNameIds] = useState<number[]>([]);
+  const [knownMetricNames, setKnownMetricNames] = useState<Record<number, DictionaryResponse>>(
+    {}
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
   const debouncedTagQuery = useDebouncedValue(tagQuery.trim(), 180);
+  const debouncedMetricQuery = useDebouncedValue(metricQuery.trim(), 300);
 
   function sortTags(tags: Tag[]) {
     return [...tags].sort((left, right) => left.name.localeCompare(right.name, locale));
   }
 
-  function sortMetricNames(items: DictionaryResponse[]) {
-    return [...items].sort((left, right) => {
-      if (left.active !== right.active) {
-        return left.active ? -1 : 1;
-      }
-
-      const labelCompare = left.label.localeCompare(right.label, locale);
-      return labelCompare || left.id - right.id;
-    });
-  }
-
   const tagsQuery = useQuery<Tag[], Error>(getTagListQueryOptions(debouncedTagQuery));
-  const metricNamesQuery = useQuery<DictionaryResponse[], Error>(
-    getAdminDictionaryByTypeQueryOptions("METRIC_NAME")
+  const metricNamesQuery = useQuery<AdminDictionaryListResponse, Error>(
+    getAdminDictionaryByTypeQueryOptions({
+      type: "METRIC_NAME",
+      page: metricPage,
+      limit: DEFAULT_LIMIT,
+      q: debouncedMetricQuery,
+    })
   );
   const linksQuery = useQuery<AdminTagMetricLink[], Error>({
     ...getAdminTagMetricsQueryOptions(selectedTagId ?? 0),
@@ -137,9 +174,15 @@ export function AdminTagMetricNamesManager({
     );
   }, [locale, tagsQuery.data, updatedTag]);
 
+  const metricNameItems = metricNamesQuery.data?.items ?? [];
+
+  useEffect(() => {
+    setKnownMetricNames((current) => mergeDictionaryLookup(current, metricNameItems));
+  }, [metricNameItems]);
+
   const metricNames = useMemo(
-    () => sortMetricNames(metricNamesQuery.data ?? []),
-    [locale, metricNamesQuery.data]
+    () => sortMetricNames(metricNameItems, locale),
+    [locale, metricNameItems]
   );
 
   const isLoadingTags = tagsQuery.isPending;
@@ -173,6 +216,7 @@ export function AdminTagMetricNamesManager({
     setSelectedTagName(null);
     setTagQuery("");
     setMetricQuery("");
+    setMetricPage(DEFAULT_PAGE);
     setInitialMetricNameIds([]);
     setDraftMetricNameIds([]);
     setSaveErrorMessage(null);
@@ -211,21 +255,25 @@ export function AdminTagMetricNamesManager({
     [draftMetricNameIds, initialMetricNameIds]
   );
 
-  const filteredMetricNames = useMemo(() => {
-    const normalizedQuery = metricQuery.trim().toLocaleLowerCase(locale);
-
-    if (!normalizedQuery) {
-      return metricNames;
-    }
-
-    return metricNames.filter((metricName) =>
-      metricName.label.toLocaleLowerCase(locale).includes(normalizedQuery)
-    );
-  }, [locale, metricNames, metricQuery]);
-
   const selectedMetricNames = useMemo(
-    () => metricNames.filter((metricName) => draftMetricNameSet.has(metricName.id)),
-    [draftMetricNameSet, metricNames]
+    () =>
+      draftMetricNameIds.map((metricNameId) => {
+        const knownMetricName = knownMetricNames[metricNameId];
+        const linkedMetricName =
+          linksQuery.data?.find((link) => link.metricNameId === metricNameId) ?? null;
+
+        return {
+          id: metricNameId,
+          label:
+            knownMetricName?.label ??
+            linkedMetricName?.metricNameLabel ??
+            t("admin.tagMetricNames.metricMeta", {
+              id: String(metricNameId),
+            }),
+          active: knownMetricName?.active ?? null,
+        };
+      }),
+    [draftMetricNameIds, knownMetricNames, linksQuery.data, t]
   );
 
   function handleTagQueryChange(value: string) {
@@ -238,6 +286,7 @@ export function AdminTagMetricNamesManager({
       setInitialMetricNameIds([]);
       setDraftMetricNameIds([]);
       setMetricQuery("");
+      setMetricPage(DEFAULT_PAGE);
       setSaveErrorMessage(null);
       return;
     }
@@ -248,6 +297,7 @@ export function AdminTagMetricNamesManager({
       setInitialMetricNameIds([]);
       setDraftMetricNameIds([]);
       setMetricQuery("");
+      setMetricPage(DEFAULT_PAGE);
       setSaveErrorMessage(null);
     }
   }
@@ -259,6 +309,7 @@ export function AdminTagMetricNamesManager({
     setSelectedTagId(nextTagId);
     setSelectedTagName(nextTag?.name ?? null);
     setMetricQuery("");
+    setMetricPage(DEFAULT_PAGE);
     setSaveErrorMessage(null);
 
     if (nextTag) {
@@ -402,9 +453,12 @@ export function AdminTagMetricNamesManager({
               </div>
               <Input
                 value={metricQuery}
-                onChange={(event) => setMetricQuery(event.target.value)}
+                onChange={(event) => {
+                  setMetricQuery(event.target.value);
+                  setMetricPage(DEFAULT_PAGE);
+                }}
                 placeholder={t("admin.tagMetricNames.metricSearchPlaceholder")}
-                disabled={isLoadingMetricNames || metricNames.length === 0}
+                disabled={isLoadingMetricNames && metricNames.length === 0}
               />
             </div>
 
@@ -469,23 +523,48 @@ export function AdminTagMetricNamesManager({
                 </p>
               ) : (
                 selectedMetricNames.map((metricName) => (
-                  <Badge
+                  <Button
                     key={metricName.id}
-                    variant="outline"
-                    className="rounded-full border-transparent bg-primary/10 text-primary"
+                    type="button"
+                    size="sm"
+                    variant="surface"
+                    disabled={isSaving}
+                    onClick={() => toggleMetricName(metricName.id)}
+                    className="rounded-full border-0 bg-primary/10 text-primary hover:bg-primary/15"
                   >
+                    <X className="mr-2 h-4 w-4" />
                     {metricName.label}
-                  </Badge>
+                  </Button>
                 ))
               )}
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            {hasChanges
-              ? t("admin.tagMetricNames.saveHintDirty")
-              : t("admin.tagMetricNames.saveHintClean")}
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {hasChanges
+                ? t("admin.tagMetricNames.saveHintDirty")
+                : t("admin.tagMetricNames.saveHintClean")}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!metricNamesQuery.data?.hasPrevious}
+                onClick={() => setMetricPage((current) => Math.max(DEFAULT_PAGE, current - 1))}
+              >
+                {t("common.previous")}
+              </Button>
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!metricNamesQuery.data?.hasNext}
+                onClick={() => setMetricPage((current) => current + 1)}
+              >
+                {t("common.next")}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -542,14 +621,8 @@ export function AdminTagMetricNamesManager({
                   {t("admin.tagMetricNames.emptyMetricNames")}
                 </TableCell>
               </TableRow>
-            ) : filteredMetricNames.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                  {t("admin.tagMetricNames.emptySearch")}
-                </TableCell>
-              </TableRow>
             ) : (
-              filteredMetricNames.map((metricName) => {
+              metricNames.map((metricName) => {
                 const isLinked = draftMetricNameSet.has(metricName.id);
 
                 return (

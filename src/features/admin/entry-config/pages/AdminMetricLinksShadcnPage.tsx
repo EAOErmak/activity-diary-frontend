@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Link2, Plus, Ruler, Trash2 } from "lucide-react";
+import { BookOpen, Link2, Plus, Ruler, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
+import { Input } from "@/shared/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -30,54 +31,112 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getIntlLocale } from "@/shared/i18n/locale";
 import { syncMetricUnitLinkCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import {
   getAdminDictionaryByTypeQueryOptions,
   getAdminMetricLinksQueryOptions,
 } from "@/shared/lib/queryOptions";
-import type { DictionaryResponse } from "@/shared/types/adminDictionary";
+import type {
+  AdminDictionaryListResponse,
+  DictionaryResponse,
+} from "@/shared/types/adminDictionary";
 import type { MetricLinkResponse } from "@/shared/types/adminMetricLink";
+
+const DEFAULT_PAGE = 0;
+const DEFAULT_LIMIT = 20;
+
+function sortDictionaryItems(items: DictionaryResponse[], locale: string) {
+  return [...items].sort((left, right) => {
+    if (left.active !== right.active) {
+      return left.active ? -1 : 1;
+    }
+
+    const labelCompare = left.label.localeCompare(right.label, locale);
+    return labelCompare || left.id - right.id;
+  });
+}
+
+function formatDictionaryOption(
+  item: Pick<DictionaryResponse, "label" | "active">,
+  inactiveSuffix: string
+) {
+  return item.active ? item.label : `${item.label} (${inactiveSuffix})`;
+}
+
+function upsertDictionaryOption(
+  items: DictionaryResponse[],
+  selectedItem: DictionaryResponse | null,
+  locale: string
+) {
+  if (selectedItem == null || items.some((item) => item.id === selectedItem.id)) {
+    return sortDictionaryItems(items, locale);
+  }
+
+  return sortDictionaryItems([...items, selectedItem], locale);
+}
+
+function mergeDictionaryLookup(
+  current: Record<number, DictionaryResponse>,
+  items: DictionaryResponse[]
+) {
+  if (items.length === 0) {
+    return current;
+  }
+
+  let changed = false;
+  const next = { ...current };
+
+  for (const item of items) {
+    if (next[item.id] !== item) {
+      next[item.id] = item;
+      changed = true;
+    }
+  }
+
+  return changed ? next : current;
+}
 
 export default function AdminMetricLinksShadcnPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const locale = getIntlLocale(i18n.resolvedLanguage === "en" ? "en" : "ru");
-  const [selectedMetricNameId, setSelectedMetricNameId] = useState<number | null>(null);
-  const [selectedMetricUnitId, setSelectedMetricUnitId] = useState<number | null>(null);
+  const inactiveSuffix = t("admin.metricLinksPage.inactiveSuffix");
+
+  const [metricNameQuery, setMetricNameQuery] = useState("");
+  const [metricNamePage, setMetricNamePage] = useState(DEFAULT_PAGE);
+  const [unitQuery, setUnitQuery] = useState("");
+  const [unitPage, setUnitPage] = useState(DEFAULT_PAGE);
+  const [selectedMetricName, setSelectedMetricName] = useState<DictionaryResponse | null>(null);
+  const [selectedMetricUnit, setSelectedMetricUnit] = useState<DictionaryResponse | null>(null);
+  const [knownMetricUnits, setKnownMetricUnits] = useState<Record<number, DictionaryResponse>>(
+    {}
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<MetricLinkResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  function sortDictionaryItems(items: DictionaryResponse[]) {
-    return [...items].sort((left, right) => {
-      if (left.active !== right.active) {
-        return left.active ? -1 : 1;
-      }
+  const debouncedMetricNameQuery = useDebouncedValue(metricNameQuery.trim(), 300);
+  const debouncedUnitQuery = useDebouncedValue(unitQuery.trim(), 300);
+  const selectedMetricNameId = selectedMetricName?.id ?? null;
+  const selectedMetricUnitId = selectedMetricUnit?.id ?? null;
 
-      return left.label.localeCompare(right.label, locale);
-    });
-  }
-
-  function formatDictionaryOption(item: DictionaryResponse) {
-    return item.active
-      ? item.label
-      : `${item.label} (${t("admin.metricLinksPage.inactiveSuffix")})`;
-  }
-
-  const metricNamesQuery = useQuery<DictionaryResponse[], Error>(
-    getAdminDictionaryByTypeQueryOptions("METRIC_NAME")
+  const metricNamesQuery = useQuery<AdminDictionaryListResponse, Error>(
+    getAdminDictionaryByTypeQueryOptions({
+      type: "METRIC_NAME",
+      page: metricNamePage,
+      limit: DEFAULT_LIMIT,
+      q: debouncedMetricNameQuery,
+    })
   );
-  const metricUnitsQuery = useQuery<DictionaryResponse[], Error>(
-    getAdminDictionaryByTypeQueryOptions("METRIC_UNIT")
-  );
-  const metricNames = useMemo(
-    () => sortDictionaryItems(metricNamesQuery.data ?? []),
-    [locale, metricNamesQuery.data]
-  );
-  const metricUnits = useMemo(
-    () => sortDictionaryItems(metricUnitsQuery.data ?? []),
-    [locale, metricUnitsQuery.data]
+  const metricUnitsQuery = useQuery<AdminDictionaryListResponse, Error>(
+    getAdminDictionaryByTypeQueryOptions({
+      type: "METRIC_UNIT",
+      page: unitPage,
+      limit: DEFAULT_LIMIT,
+      q: debouncedUnitQuery,
+    })
   );
   const {
     data: linkedUnits = [],
@@ -87,65 +146,52 @@ export default function AdminMetricLinksShadcnPage() {
     ...getAdminMetricLinksQueryOptions(selectedMetricNameId ?? 0),
     enabled: selectedMetricNameId != null,
   });
-  const isLoadingDictionaries =
-    metricNamesQuery.isPending || metricUnitsQuery.isPending;
-  const dictionariesErrorMessage =
-    metricNamesQuery.error?.message ??
-    metricUnitsQuery.error?.message ??
-    null;
-  const linksErrorMessage = linkedUnitsError?.message ?? null;
+
+  const metricNameItems = metricNamesQuery.data?.items ?? [];
+  const metricUnitItems = metricUnitsQuery.data?.items ?? [];
 
   useEffect(() => {
-    setSelectedMetricNameId((current) => {
-      if (metricNames.length === 0) {
-        return null;
-      }
+    setKnownMetricUnits((current) => mergeDictionaryLookup(current, metricUnitItems));
+  }, [metricUnitItems]);
 
-      if (
-        current != null &&
-        metricNames.some((metricName) => metricName.id === current)
-      ) {
-        return current;
-      }
+  useEffect(() => {
+    if (metricNameItems.length === 0 || selectedMetricName != null) {
+      return;
+    }
 
-      return metricNames[0]?.id ?? null;
-    });
-  }, [metricNames]);
+    setSelectedMetricName(metricNameItems[0] ?? null);
+  }, [metricNameItems, selectedMetricName]);
+
+  const metricNames = useMemo(
+    () => upsertDictionaryOption(metricNameItems, selectedMetricName, locale),
+    [locale, metricNameItems, selectedMetricName]
+  );
 
   const linkedUnitIds = useMemo(
     () => new Set(linkedUnits.map((unit) => unit.id)),
     [linkedUnits]
   );
 
-  const availableUnits = useMemo(
-    () => metricUnits.filter((unit) => !linkedUnitIds.has(unit.id)),
-    [linkedUnitIds, metricUnits]
-  );
-
-  const selectedMetricName = useMemo(
-    () => metricNames.find((metricName) => metricName.id === selectedMetricNameId) ?? null,
-    [metricNames, selectedMetricNameId]
-  );
+  const availableUnits = useMemo(() => {
+    const filteredUnits = metricUnitItems.filter((unit) => !linkedUnitIds.has(unit.id));
+    return upsertDictionaryOption(filteredUnits, selectedMetricUnit, locale).filter(
+      (unit) => !linkedUnitIds.has(unit.id) || unit.id === selectedMetricUnitId
+    );
+  }, [linkedUnitIds, locale, metricUnitItems, selectedMetricUnit, selectedMetricUnitId]);
 
   const linkedUnitsWithMeta = useMemo(
     () =>
       linkedUnits.map((linkedUnit) => ({
         ...linkedUnit,
-        dictionaryUnit:
-          metricUnits.find((metricUnit) => metricUnit.id === linkedUnit.id) ?? null,
+        dictionaryUnit: knownMetricUnits[linkedUnit.id] ?? null,
       })),
-    [linkedUnits, metricUnits]
+    [knownMetricUnits, linkedUnits]
   );
 
-  useEffect(() => {
-    setSelectedMetricUnitId((current) => {
-      if (current == null) {
-        return current;
-      }
-
-      return availableUnits.some((unit) => unit.id === current) ? current : null;
-    });
-  }, [availableUnits]);
+  const isLoadingDictionaries = metricNamesQuery.isPending || metricUnitsQuery.isPending;
+  const dictionariesErrorMessage =
+    metricNamesQuery.error?.message ?? metricUnitsQuery.error?.message ?? null;
+  const linksErrorMessage = linkedUnitsError?.message ?? null;
 
   async function handleCreate() {
     if (selectedMetricNameId == null) {
@@ -178,7 +224,7 @@ export default function AdminMetricLinksShadcnPage() {
         queryClient,
         selectedMetricNameId
       );
-      setSelectedMetricUnitId(null);
+      setSelectedMetricUnit(null);
       toast.success(t("admin.metricLinksPage.linkCreated"));
     } catch {
       // axios interceptor already shows the backend error
@@ -240,44 +286,91 @@ export default function AdminMetricLinksShadcnPage() {
             {t("admin.metricLinksPage.selectMetricDescription")}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BookOpen className="h-4 w-4" />
-              {t("admin.metricLinksPage.metricNameLabel")}
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Search className="h-4 w-4" />
+                {t("common.search")}
+              </div>
+              <Input
+                value={metricNameQuery}
+                onChange={(event) => {
+                  setMetricNameQuery(event.target.value);
+                  setMetricNamePage(DEFAULT_PAGE);
+                }}
+                placeholder={t("admin.metricLinksPage.metricNameLabel")}
+                className="max-w-xl"
+              />
             </div>
-            <Select
-              value={selectedMetricNameId != null ? String(selectedMetricNameId) : ""}
-              onValueChange={(value) => setSelectedMetricNameId(Number(value))}
-              disabled={isLoadingDictionaries || metricNames.length === 0}
+
+            <Badge
+              variant="outline"
+              className="w-fit rounded-full border-transparent px-3 py-1"
             >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    isLoadingDictionaries
-                      ? t("admin.metricLinksPage.metricNameLoading")
-                      : t("admin.metricLinksPage.metricNamePlaceholder")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {metricNames.map((metricName) => (
-                  <SelectItem key={metricName.id} value={String(metricName.id)}>
-                    {formatDictionaryOption(metricName)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {t("admin.metricLinksPage.linksCount", {
+                count: linkedUnits.length,
+              })}
+            </Badge>
           </div>
 
-          <Badge
-            variant="outline"
-            className="w-fit rounded-full border-transparent px-3 py-1"
-          >
-            {t("admin.metricLinksPage.linksCount", {
-              count: linkedUnits.length,
-            })}
-          </Badge>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BookOpen className="h-4 w-4" />
+                {t("admin.metricLinksPage.metricNameLabel")}
+              </div>
+              <Select
+                value={selectedMetricNameId != null ? String(selectedMetricNameId) : ""}
+                onValueChange={(value) => {
+                  const nextMetricName =
+                    metricNames.find((metricName) => metricName.id === Number(value)) ?? null;
+
+                  setSelectedMetricName(nextMetricName);
+                  setSelectedMetricUnit(null);
+                }}
+                disabled={isLoadingDictionaries || metricNames.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingDictionaries
+                        ? t("admin.metricLinksPage.metricNameLoading")
+                        : t("admin.metricLinksPage.metricNamePlaceholder")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {metricNames.map((metricName) => (
+                    <SelectItem key={metricName.id} value={String(metricName.id)}>
+                      {formatDictionaryOption(metricName, inactiveSuffix)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!metricNamesQuery.data?.hasPrevious}
+                onClick={() =>
+                  setMetricNamePage((current) => Math.max(DEFAULT_PAGE, current - 1))
+                }
+              >
+                {t("common.previous")}
+              </Button>
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!metricNamesQuery.data?.hasNext}
+                onClick={() => setMetricNamePage((current) => current + 1)}
+              >
+                {t("common.next")}
+              </Button>
+            </div>
+          </div>
         </CardContent>
         {dictionariesErrorMessage && (
           <CardContent className="pt-0">
@@ -293,56 +386,100 @@ export default function AdminMetricLinksShadcnPage() {
             {t("admin.metricLinksPage.addLinkDescription")}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Ruler className="h-4 w-4" />
-              {t("admin.metricLinksPage.unitLabel")}
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Search className="h-4 w-4" />
+                {t("common.search")}
+              </div>
+              <Input
+                value={unitQuery}
+                onChange={(event) => {
+                  setUnitQuery(event.target.value);
+                  setUnitPage(DEFAULT_PAGE);
+                }}
+                placeholder={t("admin.metricLinksPage.unitLabel")}
+                className="max-w-xl"
+              />
             </div>
-            <Select
-              value={selectedMetricUnitId != null ? String(selectedMetricUnitId) : ""}
-              onValueChange={(value) => setSelectedMetricUnitId(Number(value))}
-              disabled={
-                selectedMetricNameId == null ||
-                isLoadingDictionaries ||
-                isLoadingLinks ||
-                availableUnits.length === 0
-              }
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    selectedMetricNameId == null
-                      ? t("admin.metricLinksPage.unitPlaceholderSelectMetric")
-                      : availableUnits.length === 0
-                        ? t("admin.metricLinksPage.unitPlaceholderAllLinked")
-                        : t("admin.metricLinksPage.unitPlaceholderSelect")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableUnits.map((unit) => (
-                  <SelectItem key={unit.id} value={String(unit.id)}>
-                    {formatDictionaryOption(unit)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            <div className="flex gap-2">
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!metricUnitsQuery.data?.hasPrevious}
+                onClick={() => setUnitPage((current) => Math.max(DEFAULT_PAGE, current - 1))}
+              >
+                {t("common.previous")}
+              </Button>
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!metricUnitsQuery.data?.hasNext}
+                onClick={() => setUnitPage((current) => current + 1)}
+              >
+                {t("common.next")}
+              </Button>
+            </div>
           </div>
 
-          <Button
-            onClick={handleCreate}
-            disabled={
-              isCreating ||
-              selectedMetricNameId == null ||
-              selectedMetricUnitId == null
-            }
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {isCreating
-              ? t("admin.metricLinksPage.creatingLink")
-              : t("admin.metricLinksPage.createLink")}
-          </Button>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Ruler className="h-4 w-4" />
+                {t("admin.metricLinksPage.unitLabel")}
+              </div>
+              <Select
+                value={selectedMetricUnitId != null ? String(selectedMetricUnitId) : ""}
+                onValueChange={(value) => {
+                  const nextUnit =
+                    availableUnits.find((unit) => unit.id === Number(value)) ?? null;
+
+                  setSelectedMetricUnit(nextUnit);
+                }}
+                disabled={
+                  selectedMetricNameId == null ||
+                  isLoadingDictionaries ||
+                  isLoadingLinks ||
+                  availableUnits.length === 0
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      selectedMetricNameId == null
+                        ? t("admin.metricLinksPage.unitPlaceholderSelectMetric")
+                        : availableUnits.length === 0
+                          ? t("admin.metricLinksPage.unitPlaceholderAllLinked")
+                          : t("admin.metricLinksPage.unitPlaceholderSelect")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUnits.map((unit) => (
+                    <SelectItem key={unit.id} value={String(unit.id)}>
+                      {formatDictionaryOption(unit, inactiveSuffix)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={handleCreate}
+              disabled={
+                isCreating ||
+                selectedMetricNameId == null ||
+                selectedMetricUnitId == null
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {isCreating
+                ? t("admin.metricLinksPage.creatingLink")
+                : t("admin.metricLinksPage.createLink")}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -421,14 +558,18 @@ export default function AdminMetricLinksShadcnPage() {
                     <Badge
                       variant="outline"
                       className={
-                        unit.dictionaryUnit?.active === false
-                          ? "rounded-full border-transparent bg-destructive/10 text-destructive"
-                          : "rounded-full border-transparent bg-primary/10 text-primary"
+                        unit.dictionaryUnit == null
+                          ? "rounded-full border-transparent bg-input text-muted-foreground"
+                          : unit.dictionaryUnit.active
+                            ? "rounded-full border-transparent bg-primary/10 text-primary"
+                            : "rounded-full border-transparent bg-destructive/10 text-destructive"
                       }
                     >
-                      {unit.dictionaryUnit?.active === false
-                        ? t("admin.metricLinksPage.inactiveStatus")
-                        : t("admin.metricLinksPage.activeStatus")}
+                      {unit.dictionaryUnit == null
+                        ? t("common.notSpecified")
+                        : unit.dictionaryUnit.active
+                          ? t("admin.metricLinksPage.activeStatus")
+                          : t("admin.metricLinksPage.inactiveStatus")}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

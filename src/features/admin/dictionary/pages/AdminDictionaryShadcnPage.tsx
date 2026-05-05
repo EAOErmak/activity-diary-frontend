@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen, Plus, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -35,15 +35,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { syncDictionaryCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import { getAdminDictionaryByTypeQueryOptions } from "@/shared/lib/queryOptions";
 import type {
+  AdminDictionaryListResponse,
   DictionaryCreate,
   DictionaryResponse,
   DictionaryUpdate,
 } from "@/shared/types/adminDictionary";
 
 type Tab = "METRIC_NAME" | "METRIC_UNIT";
+
+const DEFAULT_PAGE = 0;
+const DEFAULT_LIMIT = 20;
 
 type PendingAction =
   | {
@@ -59,14 +64,29 @@ export default function AdminDictionaryShadcnPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("METRIC_NAME");
   const [label, setLabel] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [page, setPage] = useState(DEFAULT_PAGE);
   const [allowedRole, setAllowedRole] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
-  const { data: items = [], isPending: isLoadingItems, error } = useQuery<
-    DictionaryResponse[],
+  const debouncedSearchText = useDebouncedValue(searchText.trim(), 300);
+  const {
+    data,
+    isPending: isLoadingItems,
+    error,
+  } = useQuery<
+    AdminDictionaryListResponse,
     Error
-  >(getAdminDictionaryByTypeQueryOptions(tab));
+  >(
+    getAdminDictionaryByTypeQueryOptions({
+      type: tab,
+      page,
+      limit: DEFAULT_LIMIT,
+      q: debouncedSearchText,
+    })
+  );
+  const items = data?.items ?? [];
   const itemsErrorMessage = error?.message ?? null;
 
   function getRoleLabel(role: string | null) {
@@ -172,13 +192,19 @@ export default function AdminDictionaryShadcnPage() {
         <CardContent className="flex flex-wrap gap-3">
           <Button
             variant={tab === "METRIC_NAME" ? "primary" : "form"}
-            onClick={() => setTab("METRIC_NAME")}
+            onClick={() => {
+              setTab("METRIC_NAME");
+              setPage(DEFAULT_PAGE);
+            }}
           >
             {t("admin.dictionaryPage.metricNameTab")}
           </Button>
           <Button
             variant={tab === "METRIC_UNIT" ? "primary" : "form"}
-            onClick={() => setTab("METRIC_UNIT")}
+            onClick={() => {
+              setTab("METRIC_UNIT");
+              setPage(DEFAULT_PAGE);
+            }}
           >
             {t("admin.dictionaryPage.metricUnitTab")}
           </Button>
@@ -248,9 +274,47 @@ export default function AdminDictionaryShadcnPage() {
             variant="outline"
             className="w-fit rounded-full border-transparent px-3 py-1"
           >
-            {t("admin.dictionaryPage.totalCount", { count: items.length })}
+            {t("admin.dictionaryPage.totalCount", {
+              count: data?.totalElements ?? 0,
+            })}
           </Badge>
         </CardHeader>
+        <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Search className="h-4 w-4" />
+              {t("common.search")}
+            </div>
+            <Input
+              value={searchText}
+              onChange={(event) => {
+                setSearchText(event.target.value);
+                setPage(DEFAULT_PAGE);
+              }}
+              placeholder={t("admin.dictionaryPage.namePlaceholder")}
+              className="max-w-xl"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="surface"
+              size="sm"
+              disabled={!data?.hasPrevious}
+              onClick={() => setPage((current) => Math.max(DEFAULT_PAGE, current - 1))}
+            >
+              {t("common.previous")}
+            </Button>
+            <Button
+              variant="surface"
+              size="sm"
+              disabled={!data?.hasNext}
+              onClick={() => setPage((current) => current + 1)}
+            >
+              {t("common.next")}
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
       <Card className="overflow-hidden bg-surface">
@@ -343,6 +407,16 @@ export default function AdminDictionaryShadcnPage() {
             )}
           </TableBody>
         </Table>
+        {data && data.totalPages > 0 && (
+          <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {t("admin.tagsPage.pageLabel", { page: String(data.page + 1) })}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t("admin.dictionaryPage.totalCount", { count: data.totalElements })}
+            </p>
+          </CardContent>
+        )}
       </Card>
 
       <AdminConfirmationDialog

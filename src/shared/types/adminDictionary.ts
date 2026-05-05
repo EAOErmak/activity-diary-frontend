@@ -26,3 +26,20 @@ export type DictionaryResponse = {
 };
 
 export type DictionaryListItem = DictionaryResponse;
+
+export type AdminDictionaryListResponse = {
+  items: DictionaryResponse[];
+  page: number;
+  limit: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+};
+
+export type AdminDictionaryListParams = {
+  type: DictionaryType;
+  page?: number;
+  limit?: number;
+  q?: string;
+};

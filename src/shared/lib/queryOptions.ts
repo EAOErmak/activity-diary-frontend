@@ -22,6 +22,7 @@ import {
   templateKeys,
   userKeys,
 } from "@/shared/lib/queryKeys";
+import type { AdminDictionaryListResponse } from "@/shared/types/adminDictionary";
 import type { DictionaryType } from "@/shared/types/dictionary";
 
 const ONE_MINUTE_MS = 60 * 1000;
@@ -73,10 +74,28 @@ export function getAdminUsersQueryOptions() {
   } as const;
 }
 
-export function getAdminDictionaryByTypeQueryOptions(type: DictionaryType) {
+export function getAdminDictionaryByTypeQueryOptions(params: {
+  type: DictionaryType;
+  page?: number;
+  limit?: number;
+  q?: string;
+}) {
+  const page = params.page ?? 0;
+  const limit = params.limit ?? 20;
+  const normalizedQuery = params.q?.trim() ?? "";
+
   return {
-    queryKey: adminKeys.dictionaryByType(type),
-    queryFn: () => getDictionaryByTypeAdmin(type),
+    queryKey: adminKeys.dictionaryList(params.type, page, limit, normalizedQuery),
+    queryFn: () =>
+      getDictionaryByTypeAdmin({
+        type: params.type,
+        page,
+        limit,
+        q: normalizedQuery,
+      }),
+    placeholderData: (
+      previousData: AdminDictionaryListResponse | undefined
+    ) => previousData,
     staleTime: ONE_MINUTE_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,

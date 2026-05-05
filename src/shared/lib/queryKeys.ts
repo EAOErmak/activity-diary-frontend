@@ -89,6 +89,19 @@ export const adminKeys = {
   dictionary: () => [...adminKeys.all, "dictionary"] as const,
   dictionaryByType: (type: DictionaryType) =>
     [...adminKeys.dictionary(), type] as const,
+  dictionaryList: (
+    type: DictionaryType,
+    page: number,
+    limit: number,
+    query = ""
+  ) =>
+    [
+      ...adminKeys.dictionaryByType(type),
+      "list",
+      page,
+      limit,
+      normalizeSearchQuery(query),
+    ] as const,
   tags: () => [...adminKeys.all, "tags"] as const,
   tagsList: (page: number, size: number, query = "") =>
     [
