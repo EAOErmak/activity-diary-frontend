@@ -48,7 +48,7 @@ import type {
 type Tab = "METRIC_NAME" | "METRIC_UNIT";
 
 const DEFAULT_PAGE = 0;
-const DEFAULT_LIMIT = 20;
+const DEFAULT_LIMIT = 10;
 
 type PendingAction =
   | {
@@ -58,6 +58,15 @@ type PendingAction =
       run: () => Promise<void>;
     }
   | null;
+
+function getVisiblePages(currentPage: number, totalPages: number) {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index);
+  }
+
+  const start = Math.max(0, Math.min(currentPage - 2, totalPages - 5));
+  return Array.from({ length: 5 }, (_, index) => start + index);
+}
 
 export default function AdminDictionaryShadcnPage() {
   const { t } = useTranslation();
@@ -88,6 +97,7 @@ export default function AdminDictionaryShadcnPage() {
   );
   const items = data?.items ?? [];
   const itemsErrorMessage = error?.message ?? null;
+  const visiblePages = getVisiblePages(page, data?.totalPages ?? 0);
 
   function getRoleLabel(role: string | null) {
     if (role === "ADMIN") return t("admin.roles.admin");
@@ -296,7 +306,7 @@ export default function AdminDictionaryShadcnPage() {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="surface"
               size="sm"
@@ -313,6 +323,16 @@ export default function AdminDictionaryShadcnPage() {
             >
               {t("common.next")}
             </Button>
+            {visiblePages.map((pageIndex) => (
+              <Button
+                key={pageIndex}
+                variant={pageIndex === page ? "primary" : "surface"}
+                size="sm"
+                onClick={() => setPage(pageIndex)}
+              >
+                {pageIndex + 1}
+              </Button>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -410,11 +430,41 @@ export default function AdminDictionaryShadcnPage() {
         {data && data.totalPages > 0 && (
           <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              {t("admin.tagsPage.pageLabel", { page: String(data.page + 1) })}
+              {t("admin.tagsPage.pageLabel", { page: String(data.page + 1) })} / {data.totalPages}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {t("admin.dictionaryPage.totalCount", { count: data.totalElements })}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                {t("admin.dictionaryPage.totalCount", { count: data.totalElements })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="surface"
+                  size="sm"
+                  disabled={!data.hasPrevious}
+                  onClick={() => setPage((current) => Math.max(DEFAULT_PAGE, current - 1))}
+                >
+                  {t("common.previous")}
+                </Button>
+                {visiblePages.map((pageIndex) => (
+                  <Button
+                    key={`footer-${pageIndex}`}
+                    variant={pageIndex === page ? "primary" : "surface"}
+                    size="sm"
+                    onClick={() => setPage(pageIndex)}
+                  >
+                    {pageIndex + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="surface"
+                  size="sm"
+                  disabled={!data.hasNext}
+                  onClick={() => setPage((current) => current + 1)}
+                >
+                  {t("common.next")}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         )}
       </Card>

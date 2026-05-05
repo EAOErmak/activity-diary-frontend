@@ -81,7 +81,7 @@ export function getAdminDictionaryByTypeQueryOptions(params: {
   q?: string;
 }) {
   const page = params.page ?? 0;
-  const limit = params.limit ?? 20;
+  const limit = params.limit ?? 10;
   const normalizedQuery = params.q?.trim() ?? "";
 
   return {

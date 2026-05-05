@@ -49,7 +49,7 @@ import type { AdminTagMetricLink } from "@/shared/types/adminTagMetricLink";
 import type { Tag } from "@/shared/types/tag";
 
 const DEFAULT_PAGE = 0;
-const DEFAULT_LIMIT = 20;
+const DEFAULT_LIMIT = 10;
 
 function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError<ApiResponse<unknown>>(error)) {

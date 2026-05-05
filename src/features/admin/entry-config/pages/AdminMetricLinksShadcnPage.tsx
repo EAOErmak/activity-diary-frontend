@@ -45,7 +45,7 @@ import type {
 import type { MetricLinkResponse } from "@/shared/types/adminMetricLink";
 
 const DEFAULT_PAGE = 0;
-const DEFAULT_LIMIT = 20;
+const DEFAULT_LIMIT = 10;
 
 function sortDictionaryItems(items: DictionaryResponse[], locale: string) {
   return [...items].sort((left, right) => {
