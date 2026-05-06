@@ -39,6 +39,7 @@ import ProfilePage from "@/features/profile/pages/ProfilePage";
 import ProfileEditPage from "@/features/profile/pages/ProfileEditPage";
 import AdminUserCreatePage from "@/features/admin/users/pages/AdminUserCreateShadcnPage";
 import RouteScrollManager from "@/shared/components/layout/RouteScrollManager";
+import WebOnlyRoute from "@/shared/components/layout/WebOnlyRoute";
 
 export default function AppRouter() {
   const location = useLocation();
@@ -70,9 +71,11 @@ export default function AppRouter() {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/analytics" element={<DashboardPageV3 />} />
           <Route path="/dashboard" element={<DashboardPageV3 />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/edit" element={<ProfileEditPage />} />
+          <Route element={<WebOnlyRoute />}>
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/edit" element={<ProfileEditPage />} />
+          </Route>
         </Route>
 
         <Route

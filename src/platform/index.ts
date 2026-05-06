@@ -18,6 +18,8 @@ const desktopRuntime: RuntimePlatform = {
 const isDesktopRuntime =
   typeof window !== "undefined" && window.electronAPI?.isDesktop === true;
 
+export const isDesktopApp = isDesktopRuntime;
+
 export const bootstrap = webBootstrap;
 export const dialog = webDialog;
 export const runtime = isDesktopRuntime ? desktopRuntime : webRuntime;

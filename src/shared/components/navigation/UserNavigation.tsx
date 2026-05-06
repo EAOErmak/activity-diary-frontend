@@ -22,7 +22,7 @@ import userImgWhite from "@/assets/AD_white.svg";
 import adminImgBlack from "@/assets/ADP_black.svg";
 import adminImgWhite from "@/assets/ADP_white.svg";
 import { useTranslation } from "react-i18next";
-import { runtime } from "@/platform";
+import { isDesktopApp } from "@/platform";
 import { useAuthStore } from "@/shared/store/authStore";
 import { useTheme } from "@/theme-provider";
 
@@ -45,7 +45,7 @@ export default function UserNavigation({ onNavigate }: Props) {
       ? userImgWhite
       : userImgBlack;
   const isPremium = role === "PREMIUM" || role === "ADMIN";
-  const isDesktop = runtime.kind === "desktop";
+  const isDesktop = isDesktopApp;
 
   const handleLogout = () => {
     if (isDesktop) {
@@ -94,13 +94,13 @@ export default function UserNavigation({ onNavigate }: Props) {
       to: "/settings",
       label: t("navigation.settings"),
       icon: Settings,
-      show: true,
+      show: !isDesktop,
     },
     {
       to: "/profile",
       label: t("navigation.profile"),
       icon: UserCircle2,
-      show: true,
+      show: !isDesktop,
     },
     {
       to: "/dashboard",

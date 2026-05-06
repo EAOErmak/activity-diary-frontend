@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { PlusCircle, List, Settings } from "lucide-react";
+import { isDesktopApp } from "@/platform";
 
 export function DiarySidebar() {
   return (
@@ -23,12 +24,14 @@ export function DiarySidebar() {
           Шаблоны
         </Button>
       </Link>
-      <Link to="/settings">
-        <Button variant="surface" className="w-full justify-start">
-          <Settings className="mr-2 h-4 w-4" />
-          Settings
-        </Button>
-      </Link>
+      {!isDesktopApp && (
+        <Link to="/settings">
+          <Button variant="surface" className="w-full justify-start">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }
