@@ -89,6 +89,7 @@ export function PaginatedDropdownSelect({
       : searchMode === "trigger"
         ? 224
         : Math.min(Math.max(contentWidth, 224), 288);
+  const hasListItems = !isLoading && !isError && items.length > 0;
 
   useEffect(() => {
     const node = triggerRef.current;
@@ -231,17 +232,17 @@ export function PaginatedDropdownSelect({
             />
           )}
 
-          <div className="min-h-[13.5rem]">
+          <div className={cn(hasListItems ? "h-auto" : "min-h-[9rem]")}>
             {isLoading ? (
-              <div className="flex min-h-[13.5rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-muted-foreground">
+              <div className="flex min-h-[9rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-muted-foreground">
                 {loadingLabel ?? t("common.loading")}
               </div>
             ) : isError ? (
-              <div className="flex min-h-[13.5rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-destructive">
+              <div className="flex min-h-[9rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-destructive">
                 {errorLabel ?? t("common.error")}
               </div>
             ) : items.length === 0 ? (
-              <div className="flex min-h-[13.5rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-muted-foreground">
+              <div className="flex min-h-[9rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-muted-foreground">
                 {emptyLabel ?? "No results"}
               </div>
             ) : (
