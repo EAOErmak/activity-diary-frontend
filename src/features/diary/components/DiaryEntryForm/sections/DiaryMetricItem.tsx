@@ -448,6 +448,7 @@ export function DiaryMetricItem({
                   disabled={
                     disabled || (!isStaticMetricOptions && selectedTagIds.length === 0)
                   }
+                  searchMode="trigger"
                   searchPlaceholder={t("common.search")}
                   loadingLabel={t("diary.metricsLoading")}
                   emptyLabel="No results"
@@ -464,6 +465,8 @@ export function DiaryMetricItem({
                   onPageChange={setMetricPage}
                   onSelect={(selectedMetricType) => {
                     field.onChange(selectedMetricType.id);
+                    setMetricSearch("");
+                    setMetricPage(0);
                     form.setValue(
                       `metrics.${index}.metricTypeName`,
                       selectedMetricType.label,
