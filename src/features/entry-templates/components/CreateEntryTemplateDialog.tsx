@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,7 @@ import { useTranslation } from "react-i18next";
 
 import EntryTemplateForm from "@/features/entry-templates/components/EntryTemplateForm/EntryTemplateForm";
 import { entryTemplateApi } from "@/api/entryTemplateApi";
+import { invalidateTemplateQueries } from "@/features/entry-templates/lib/invalidateTemplateQueries";
 import { toast } from "sonner";
 
 type Props = {
@@ -22,6 +24,8 @@ export function CreateEntryTemplateDialog({
   onCreated,
 }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
@@ -32,6 +36,7 @@ export function CreateEntryTemplateDialog({
           mode="create"
           onSubmit={async (payload) => {
             await entryTemplateApi.createEntryTemplate(payload);
+            await invalidateTemplateQueries(queryClient, "entry");
             toast.success(t("templates.created"));
             onOpenChange(false);
             onCreated?.();

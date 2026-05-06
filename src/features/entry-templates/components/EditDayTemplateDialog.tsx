@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -6,6 +7,7 @@ import {
 } from "@/shared/components/ui/dialog";
 
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
+import { invalidateTemplateQueries } from "@/features/entry-templates/lib/invalidateTemplateQueries";
 import DayTemplateForm from "@/features/entry-templates/components/ScheduleTemplateForm/DayTemplateForm";
 import type { ScheduleTemplateOption } from "@/features/entry-templates/components/ScheduleTemplateForm/types";
 import type { DayTemplateView } from "@/shared/types/scheduleTemplate";
@@ -28,6 +30,7 @@ export function EditDayTemplateDialog({
   onUpdated,
 }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   if (!template) return null;
 
   return (
@@ -56,6 +59,7 @@ export function EditDayTemplateDialog({
                 position: slot,
               })),
             });
+            await invalidateTemplateQueries(queryClient, "day");
             toast.success(t("templates.dayUpdated"));
             onOpenChange(false);
             onUpdated?.();

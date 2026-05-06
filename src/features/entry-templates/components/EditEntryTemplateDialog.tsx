@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,7 @@ import EntryTemplateForm, {
   EntryTemplateFormValues,
 } from "@/features/entry-templates/components/EntryTemplateForm/EntryTemplateForm";
 import { entryTemplateApi } from "@/api/entryTemplateApi";
+import { invalidateTemplateQueries } from "@/features/entry-templates/lib/invalidateTemplateQueries";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { DiaryEntryTemplateUpdate } from "@/shared/types/entryTemplate";
@@ -29,6 +31,8 @@ export function EditEntryTemplateDialog({
   onUpdated,
 }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
@@ -44,6 +48,7 @@ export function EditEntryTemplateDialog({
               templateId,
               payload
             );
+            await invalidateTemplateQueries(queryClient, "entry");
             toast.success(t("templates.updated"));
             onOpenChange(false);
             onUpdated?.();

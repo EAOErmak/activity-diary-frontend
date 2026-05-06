@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { entryTemplateApi } from "@/api/entryTemplateApi";
@@ -13,6 +13,7 @@ import { EditWeekTemplateDialog } from "@/features/entry-templates/components/Ed
 import type { EntryTemplateFormValues } from "@/features/entry-templates/components/EntryTemplateForm/EntryTemplateForm";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { invalidateTemplateQueries } from "@/features/entry-templates/lib/invalidateTemplateQueries";
 import { formatMetricValueForForm } from "@/shared/lib/metricValue";
 import {
   getDayTemplatesQueryOptions,
@@ -27,6 +28,7 @@ const TEMPLATE_PAGE_SIZE = 50;
 
 export default function EntryTemplatesPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [templateKind, setTemplateKind] = useState<"entry" | "weekday" | "week">(
     "entry"
   );
@@ -51,17 +53,14 @@ export default function EntryTemplatesPage() {
   const {
     data: entryTemplates = [],
     isPending: isEntryTemplatesPending,
-    refetch: refetchEntryTemplates,
   } = useQuery(getEntryTemplatesQueryOptions(TEMPLATE_PAGE, TEMPLATE_PAGE_SIZE));
   const {
     data: dayTemplates = [],
     isPending: isDayTemplatesPending,
-    refetch: refetchDayTemplates,
   } = useQuery(getDayTemplatesQueryOptions(TEMPLATE_PAGE, TEMPLATE_PAGE_SIZE));
   const {
     data: weekTemplates = [],
     isPending: isWeekTemplatesPending,
-    refetch: refetchWeekTemplates,
   } = useQuery(getWeekTemplatesQueryOptions(TEMPLATE_PAGE, TEMPLATE_PAGE_SIZE));
 
   const entryLoading = isEntryTemplatesPending && entryTemplates.length === 0;
@@ -84,18 +83,6 @@ export default function EntryTemplatesPage() {
       })),
     [dayTemplates]
   );
-
-  const loadEntryTemplates = useCallback(async () => {
-    await refetchEntryTemplates();
-  }, [refetchEntryTemplates]);
-
-  const loadDayTemplates = useCallback(async () => {
-    await refetchDayTemplates();
-  }, [refetchDayTemplates]);
-
-  const loadWeekTemplates = useCallback(async () => {
-    await refetchWeekTemplates();
-  }, [refetchWeekTemplates]);
 
   const openEntryTemplateEdit = async (id: number) => {
     const template: DiaryEntryTemplate = await entryTemplateApi.getEntryTemplate(
@@ -134,21 +121,21 @@ export default function EntryTemplatesPage() {
     const confirmed = window.confirm(t("templates.deleteEntryConfirm"));
     if (!confirmed) return;
     await entryTemplateApi.deleteEntryTemplate(id);
-    await loadEntryTemplates();
+    await invalidateTemplateQueries(queryClient, "entry");
   };
 
   const removeDayTemplate = async (id: number) => {
     const confirmed = window.confirm(t("templates.deleteDayConfirm"));
     if (!confirmed) return;
     await scheduleTemplateApi.deleteDayTemplate(id);
-    await Promise.all([loadDayTemplates(), loadWeekTemplates()]);
+    await invalidateTemplateQueries(queryClient, "day");
   };
 
   const removeWeekTemplate = async (id: number) => {
     const confirmed = window.confirm(t("templates.deleteWeekConfirm"));
     if (!confirmed) return;
     await scheduleTemplateApi.deleteWeekTemplate(id);
-    await loadWeekTemplates();
+    await invalidateTemplateQueries(queryClient, "week");
   };
 
   return (
@@ -414,21 +401,18 @@ export default function EntryTemplatesPage() {
         <CreateEntryTemplateDialog
           open={entryOpen}
           onOpenChange={setEntryOpen}
-          onCreated={loadEntryTemplates}
         />
 
         <CreateDayTemplateDialog
           open={dayOpen}
           onOpenChange={setDayOpen}
           entryTemplates={entryTemplateOptions}
-          onCreated={loadDayTemplates}
         />
 
         <CreateWeekTemplateDialog
           open={weekOpen}
           onOpenChange={setWeekOpen}
           dayTemplates={dayTemplateOptions}
-          onCreated={loadWeekTemplates}
         />
 
         <EditDayTemplateDialog
@@ -439,9 +423,6 @@ export default function EntryTemplatesPage() {
           }}
           template={editingDayTemplate}
           entryTemplates={entryTemplateOptions}
-          onUpdated={async () => {
-            await Promise.all([loadDayTemplates(), loadWeekTemplates()]);
-          }}
         />
 
         <EditWeekTemplateDialog
@@ -452,7 +433,6 @@ export default function EntryTemplatesPage() {
           }}
           template={editingWeekTemplate}
           dayTemplates={dayTemplateOptions}
-          onUpdated={loadWeekTemplates}
         />
 
         {editOpen && editId !== null && editValues && (
@@ -464,7 +444,6 @@ export default function EntryTemplatesPage() {
               if (!next) setEditId(null);
             }}
             initialValues={editValues}
-            onUpdated={loadEntryTemplates}
           />
         )}
       </div>

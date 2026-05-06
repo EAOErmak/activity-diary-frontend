@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -6,6 +7,7 @@ import {
 } from "@/shared/components/ui/dialog";
 
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
+import { invalidateTemplateQueries } from "@/features/entry-templates/lib/invalidateTemplateQueries";
 import WeekTemplateForm from "@/features/entry-templates/components/ScheduleTemplateForm/WeekTemplateForm";
 import type { ScheduleTemplateOption } from "@/features/entry-templates/components/ScheduleTemplateForm/types";
 import { toast } from "sonner";
@@ -25,6 +27,8 @@ export function CreateWeekTemplateDialog({
   onCreated,
 }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[500px] max-w-2xl max-h-[90vh] flex flex-col">
@@ -46,6 +50,7 @@ export function CreateWeekTemplateDialog({
                 dayOfWeek: slot,
               })),
             });
+            await invalidateTemplateQueries(queryClient, "week");
             toast.success(t("templates.weekCreated"));
             onOpenChange(false);
             onCreated?.();

@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -6,6 +7,7 @@ import {
 } from "@/shared/components/ui/dialog";
 
 import { scheduleTemplateApi } from "@/api/scheduleTemplateApi";
+import { invalidateTemplateQueries } from "@/features/entry-templates/lib/invalidateTemplateQueries";
 import WeekTemplateForm from "@/features/entry-templates/components/ScheduleTemplateForm/WeekTemplateForm";
 import type { ScheduleTemplateOption } from "@/features/entry-templates/components/ScheduleTemplateForm/types";
 import type { WeekTemplateView } from "@/shared/types/scheduleTemplate";
@@ -28,6 +30,7 @@ export function EditWeekTemplateDialog({
   onUpdated,
 }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   if (!template) return null;
 
   return (
@@ -56,6 +59,7 @@ export function EditWeekTemplateDialog({
                 dayOfWeek: slot,
               })),
             });
+            await invalidateTemplateQueries(queryClient, "week");
             toast.success(t("templates.weekUpdated"));
             onOpenChange(false);
             onUpdated?.();

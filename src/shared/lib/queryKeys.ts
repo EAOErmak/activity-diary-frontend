@@ -178,12 +178,15 @@ export const analyticsKeys = {
 
 export const templateKeys = {
   all: ["templates"] as const,
+  entryTemplatesRoot: () => [...templateKeys.all, "entry-templates"] as const,
   entryTemplates: (page: number, size: number) =>
-    [...templateKeys.all, "entry-templates", { page, size }] as const,
+    [...templateKeys.entryTemplatesRoot(), { page, size }] as const,
+  dayTemplatesRoot: () => [...templateKeys.all, "day-templates"] as const,
   dayTemplates: (page: number, size: number) =>
-    [...templateKeys.all, "day-templates", { page, size }] as const,
+    [...templateKeys.dayTemplatesRoot(), { page, size }] as const,
+  weekTemplatesRoot: () => [...templateKeys.all, "week-templates"] as const,
   weekTemplates: (page: number, size: number) =>
-    [...templateKeys.all, "week-templates", { page, size }] as const,
+    [...templateKeys.weekTemplatesRoot(), { page, size }] as const,
 };
 
 export const goalKeys = {
