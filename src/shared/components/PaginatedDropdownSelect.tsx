@@ -83,6 +83,12 @@ export function PaginatedDropdownSelect({
     searchMode === "trigger" && searchValue.length === 0
       ? selectedDisplayLabel
       : searchValue;
+  const dropdownWidth =
+    contentWidth == null
+      ? undefined
+      : searchMode === "trigger"
+        ? 224
+        : Math.min(Math.max(contentWidth, 224), 288);
 
   useEffect(() => {
     const node = triggerRef.current;
@@ -200,12 +206,12 @@ export function PaginatedDropdownSelect({
 
       <PopoverContent
         align="start"
-        className="w-full rounded-2xl p-2.5"
+        className="rounded-2xl p-2.5"
         style={
-          contentWidth == null
+          dropdownWidth == null
             ? undefined
             : {
-                width: `${Math.min(Math.max(contentWidth, 224), 288)}px`,
+                width: `${dropdownWidth}px`,
                 maxWidth: "calc(100vw - 2rem)",
               }
         }
