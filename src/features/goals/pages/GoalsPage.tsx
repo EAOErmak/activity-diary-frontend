@@ -340,7 +340,7 @@ export default function GoalsPage() {
     return toIsoDate(today);
   }, []);
 
-  const { isLoadingTemplates, templateItems, loadTemplates } = useGoalsTemplates();
+  const { isLoadingTemplates, templateItems } = useGoalsTemplates();
   const {
     dayScores,
     dayGoalIdsByDate,
@@ -1413,8 +1413,8 @@ export default function GoalsPage() {
                         key={option.id}
                         value={option.id}
                         className={cn(
-                          "group relative h-auto min-h-[112px] items-start overflow-hidden rounded-[24px] border border-border/70 bg-background p-4 text-left shadow-sm transition-none hover:border-border hover:bg-surface/60",
-                          "data-[state=active]:border-foreground/10 data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+                          "group relative h-auto min-h-[112px] items-start overflow-hidden rounded-[24px] bg-input p-4 text-left shadow-sm transition-none hover:bg-[hsl(var(--input-hover))]",
+                          "data-[state=active]:bg-input data-[state=active]:text-foreground data-[state=active]:shadow-[0_20px_60px_rgba(15,23,42,0.12)]"
                         )}
                       >
                         <div
@@ -1429,10 +1429,10 @@ export default function GoalsPage() {
                             <div className="flex min-w-0 items-center gap-3">
                               <div
                                 className={cn(
-                                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
                                   isActive
-                                    ? "border-white/15 bg-white/10 text-white"
-                                    : "border-border bg-surface text-foreground"
+                                    ? "bg-[hsl(var(--input-hover))] text-foreground"
+                                    : "bg-surface text-foreground"
                                 )}
                               >
                                 <Icon className="h-5 w-5" />
@@ -1446,8 +1446,8 @@ export default function GoalsPage() {
                               className={cn(
                                 "shrink-0 rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.18em]",
                                 isActive
-                                  ? "border-white/15 bg-white/10 text-white/85"
-                                  : "border-border/70 bg-surface text-muted-foreground"
+                                  ? "bg-[hsl(var(--input-hover))] text-foreground"
+                                  : "bg-surface text-muted-foreground"
                               )}
                             >
                               {option.contextLabel}
@@ -1549,9 +1549,6 @@ export default function GoalsPage() {
           onEraserModeChange={setEraserMode}
           onFilterKindChange={setFilterKind}
           onFilterNameChange={setFilterName}
-          onRefreshTemplates={() => {
-            void loadTemplates();
-          }}
           onTemplatePointerDown={handleTemplatePointerDown}
         />
       </div>

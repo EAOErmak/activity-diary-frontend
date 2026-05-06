@@ -277,22 +277,22 @@ export const GoalCalendarDayCell = memo(function GoalCalendarDayCell({
         }
       }}
       className={[
-        "relative aspect-square w-full overflow-hidden rounded-[4px] border",
+        "relative aspect-square w-full overflow-hidden rounded-[4px]",
         isInCurrentYear
-          ? "cursor-pointer border-border/70"
-          : "cursor-default border-transparent bg-transparent",
+          ? "cursor-pointer"
+          : "cursor-default bg-transparent",
         isConfirmPending ? "cursor-wait" : "",
         isInCurrentYear && !hasScore ? "bg-surfaceMuted" : "",
         draggingTemplate && isPreviewTarget
           ? isInCurrentYear
-            ? "border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.45)]"
-            : "border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.45)]"
+            ? "border border-sky-200 shadow-[0_0_0_2px_rgba(59,130,246,0.45)]"
+            : "border border-red-200 shadow-[0_0_0_2px_rgba(239,68,68,0.45)]"
           : "",
         isSelectedDay && isInCurrentYear
-          ? "border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
+          ? "border border-sky-300 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]"
           : "",
         isToday && isInCurrentYear
-          ? "border-amber-300/80 shadow-[0_0_18px_rgba(251,146,60,0.24)]"
+          ? "border border-amber-300/80 shadow-[0_0_18px_rgba(251,146,60,0.24)]"
           : "",
         isCreating ? "animate-pulse" : "",
       ].join(" ")}

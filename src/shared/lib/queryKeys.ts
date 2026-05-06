@@ -53,17 +53,42 @@ export const tagKeys = {
   lists: () => [...tagKeys.all, "list"] as const,
   list: (query = "") =>
     [...tagKeys.lists(), normalizeSearchQuery(query)] as const,
-  metrics: () => [...tagKeys.all, "metrics"] as const,
-  metricsByTags: (tagIds: readonly number[]) =>
-    [...tagKeys.metrics(), normalizeNumericIds(tagIds)] as const,
 };
 
 export const dictionaryKeys = {
   root: ["dictionary"] as const,
   all: ["dictionary", "all"] as const,
-  metricUnits: () => [...dictionaryKeys.root, "metric-units"] as const,
-  metricUnitsByName: (metricNameId: NullableId) =>
-    [...dictionaryKeys.metricUnits(), metricNameId ?? null] as const,
+};
+
+export const entryDropdownKeys = {
+  tagMetrics: () => ["entry-dropdown-tag-metrics"] as const,
+  metricsByTags: (
+    tagIds: readonly number[],
+    page: number,
+    limit: number,
+    query = ""
+  ) =>
+    [
+      "entry-dropdown-tag-metrics",
+      normalizeNumericIds(tagIds),
+      page,
+      limit,
+      normalizeSearchQuery(query),
+    ] as const,
+  metricUnits: () => ["entry-dropdown-metric-units"] as const,
+  metricUnitsByName: (
+    metricNameId: NullableId,
+    page: number,
+    limit: number,
+    query = ""
+  ) =>
+    [
+      "entry-dropdown-metric-units",
+      metricNameId ?? null,
+      page,
+      limit,
+      normalizeSearchQuery(query),
+    ] as const,
 };
 
 export const generalFoodKeys = {
@@ -89,6 +114,19 @@ export const adminKeys = {
   dictionary: () => [...adminKeys.all, "dictionary"] as const,
   dictionaryByType: (type: DictionaryType) =>
     [...adminKeys.dictionary(), type] as const,
+  dictionaryList: (
+    type: DictionaryType,
+    page: number,
+    limit: number,
+    query = ""
+  ) =>
+    [
+      ...adminKeys.dictionaryByType(type),
+      "list",
+      page,
+      limit,
+      normalizeSearchQuery(query),
+    ] as const,
   tags: () => [...adminKeys.all, "tags"] as const,
   tagsList: (page: number, size: number, query = "") =>
     [

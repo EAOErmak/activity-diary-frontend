@@ -275,6 +275,8 @@ const ruBase = {
     tagLabel: "Тег",
     tagPlaceholder: "Начните вводить тег",
     tagLoading: "Загрузка тегов...",
+    openTagList: "Открыть список тегов",
+    clearTagSelection: "Очистить тег",
     nothingFound: "Ничего не найдено",
     noData: "Нет данных для отображения по выбранным фильтрам.",
     valueLabel: "Значение",

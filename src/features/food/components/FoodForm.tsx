@@ -366,13 +366,13 @@ export default function FoodForm(props: Props) {
         >
           <div className="px-4 py-3.5 sm:px-5 sm:py-4">
             <div className="space-y-3.5">
-              <section className="rounded-[22px] border border-border/70 bg-surface p-3 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-3.5">
+              <section className="rounded-[22px] bg-input p-3 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-3.5">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
-                        className="rounded-full border-border/70 bg-background px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em] text-muted-foreground"
+                        className="rounded-full border-transparent bg-surface px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em] text-muted-foreground"
                       >
                         1
                       </Badge>
@@ -390,8 +390,8 @@ export default function FoodForm(props: Props) {
                     className={cn(
                       "rounded-full px-3 py-1 transition-colors",
                       selectedOption
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
-                        : "border-border/70 bg-background text-muted-foreground"
+                        ? "border-transparent bg-emerald-500/10 text-emerald-700"
+                        : "border-transparent bg-surface text-muted-foreground"
                     )}
                   >
                     {t("food.selectedProduct")}
@@ -473,7 +473,7 @@ export default function FoodForm(props: Props) {
                               }
                             }}
                             placeholder={searchPlaceholder}
-                            className="h-11 rounded-[18px] pl-11 pr-12 text-sm"
+                            className="h-11 rounded-[18px] bg-[hsl(var(--input-hover))] pl-11 pr-12 text-sm"
                             role="combobox"
                             aria-expanded={isAutocompleteOpen}
                             aria-autocomplete="list"
@@ -497,7 +497,7 @@ export default function FoodForm(props: Props) {
                           </div>
 
                           {isAutocompleteOpen && (
-                            <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-[20px] border border-border/70 bg-popover shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
+                            <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-[20px] bg-popover shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
                               <div className="max-h-64 overflow-y-auto p-2">
                                 {optionsError ? (
                                   <div className="rounded-2xl px-3 py-3 text-sm text-destructive">
@@ -563,7 +563,7 @@ export default function FoodForm(props: Props) {
                   )}
                 />
 
-                <div className="mt-3 min-h-[4.1rem] rounded-[18px] border border-border/70 bg-background px-3.5 py-2.5">
+                <div className="mt-3 min-h-[4.1rem] rounded-[18px] bg-[hsl(var(--input-hover))] px-3.5 py-2.5">
                   <div className="flex h-full flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -584,8 +584,8 @@ export default function FoodForm(props: Props) {
                       className={cn(
                         "rounded-full px-3 py-1",
                         selectedOption
-                          ? "border-border/70 bg-surface text-muted-foreground"
-                          : "border-border/60 bg-background text-muted-foreground"
+                          ? "border-transparent bg-surface text-muted-foreground"
+                          : "border-transparent bg-surface/80 text-muted-foreground"
                       )}
                     >
                       {selectedOption ? `#${selectedOption.id}` : "—"}
@@ -594,13 +594,13 @@ export default function FoodForm(props: Props) {
                 </div>
               </section>
 
-              <section className="rounded-[22px] border border-border/70 bg-surface p-3 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-3.5">
+              <section className="rounded-[22px] bg-input p-3 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-3.5">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
-                        className="rounded-full border-border/70 bg-background px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em] text-muted-foreground"
+                        className="rounded-full border-transparent bg-surface px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em] text-muted-foreground"
                       >
                         2
                       </Badge>
@@ -615,7 +615,7 @@ export default function FoodForm(props: Props) {
 
                   <Badge
                     variant="outline"
-                    className="rounded-full border-border/70 bg-background px-3 py-1 text-muted-foreground"
+                    className="rounded-full border-transparent bg-surface px-3 py-1 text-muted-foreground"
                   >
                     100 g
                   </Badge>
@@ -645,7 +645,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
+                      <FormItem className="rounded-[18px] bg-[hsl(var(--input-hover))] p-3">
                         <FormLabel>{t("food.proteins")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -683,7 +683,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
+                      <FormItem className="rounded-[18px] bg-[hsl(var(--input-hover))] p-3">
                         <FormLabel>{t("food.fats")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -721,7 +721,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
+                      <FormItem className="rounded-[18px] bg-[hsl(var(--input-hover))] p-3">
                         <FormLabel>{t("food.carbs")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -759,7 +759,7 @@ export default function FoodForm(props: Props) {
                       },
                     }}
                     render={({ field }) => (
-                      <FormItem className="rounded-[18px] border border-border/70 bg-background p-3">
+                      <FormItem className="rounded-[18px] bg-[hsl(var(--input-hover))] p-3">
                         <FormLabel>{t("food.caloriesPerGram")}</FormLabel>
                         <FormControl>
                           <FoodNumberInput
@@ -778,7 +778,7 @@ export default function FoodForm(props: Props) {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border/70 bg-background px-4 py-3 sm:px-5">
+          <div className="shrink-0 bg-[hsl(var(--input-hover))] px-4 py-3 sm:px-5">
             <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
               {onCancel && (
                 <Button

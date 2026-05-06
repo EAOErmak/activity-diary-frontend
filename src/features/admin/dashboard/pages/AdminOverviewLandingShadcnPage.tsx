@@ -62,7 +62,10 @@ export default function AdminOverviewLandingShadcnPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+        <Badge
+          variant="outline"
+          className="w-fit rounded-full border-transparent px-3 py-1"
+        >
           {t("admin.overviewPage.badge")}
         </Badge>
         <div className="space-y-2">
@@ -81,7 +84,7 @@ export default function AdminOverviewLandingShadcnPage() {
 
           return (
             <Link key={section.to} to={section.to} className="block">
-              <Card className="h-full border border-border bg-surface transition-colors hover:border-primary/40 hover:bg-accent/30">
+              <Card className="h-full bg-surface transition-colors hover:bg-accent/30">
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">

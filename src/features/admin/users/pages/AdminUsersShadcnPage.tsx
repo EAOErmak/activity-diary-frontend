@@ -62,9 +62,9 @@ const ROLE_OPTIONS: Array<AdminUserDto["role"]> = [
 ];
 
 const ROLE_BADGE_CLASS: Record<AdminUserDto["role"], string> = {
-  USER: "border-border text-foreground",
-  PREMIUM: "border-primary/30 text-primary",
-  ADMIN: "border-destructive/30 text-destructive",
+  USER: "border-transparent bg-input text-foreground",
+  PREMIUM: "border-transparent bg-primary/10 text-primary",
+  ADMIN: "border-transparent bg-destructive/10 text-destructive",
 };
 
 export default function AdminUsersShadcnPage() {
@@ -230,7 +230,7 @@ export default function AdminUsersShadcnPage() {
         </Button>
       </div>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.usersPage.filtersTitle")}</CardTitle>
           <CardDescription>
@@ -291,7 +291,10 @@ export default function AdminUsersShadcnPage() {
           </div>
 
           <div className="flex justify-start lg:justify-end">
-            <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+            <Badge
+              variant="outline"
+              className="w-fit rounded-full border-transparent px-3 py-1"
+            >
               {t("admin.usersPage.foundCount", {
                 count: filteredUsers.length,
               })}
@@ -300,169 +303,173 @@ export default function AdminUsersShadcnPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.usersPage.listTitle")}</CardTitle>
           <CardDescription>
             {t("admin.usersPage.listDescription")}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>{t("admin.usersPage.userColumn")}</TableHead>
-                <TableHead>{t("admin.usersPage.roleColumn")}</TableHead>
-                <TableHead>{t("admin.usersPage.statusesColumn")}</TableHead>
-                <TableHead>{t("admin.usersPage.createdColumn")}</TableHead>
-                <TableHead className="w-[260px]">
-                  {t("admin.usersPage.actionsColumn")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    {t("admin.usersPage.loading")}
-                  </TableCell>
-                </TableRow>
-              ) : usersErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-destructive">
-                    {usersErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    {t("admin.usersPage.empty")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user) => {
-                  const isSelf = user.id === currentUserId;
+      </Card>
 
-                  return (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.id}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">{user.username}</span>
-                            {isSelf && (
-                              <Badge variant="outline" className="rounded-full">
-                                {t("admin.usersPage.you")}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {user.fullName}
-                          </p>
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">ID</TableHead>
+              <TableHead>{t("admin.usersPage.userColumn")}</TableHead>
+              <TableHead>{t("admin.usersPage.roleColumn")}</TableHead>
+              <TableHead>{t("admin.usersPage.statusesColumn")}</TableHead>
+              <TableHead>{t("admin.usersPage.createdColumn")}</TableHead>
+              <TableHead className="w-[260px]">
+                {t("admin.usersPage.actionsColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  {t("admin.usersPage.loading")}
+                </TableCell>
+              </TableRow>
+            ) : usersErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-destructive">
+                  {usersErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  {t("admin.usersPage.empty")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((user) => {
+                const isSelf = user.id === currentUserId;
+
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.id}</TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{user.username}</span>
+                          {isSelf && (
+                            <Badge
+                              variant="outline"
+                              className="rounded-full border-transparent bg-input"
+                            >
+                              {t("admin.usersPage.you")}
+                            </Badge>
+                          )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <Badge
-                            variant="outline"
-                            className={`rounded-full ${ROLE_BADGE_CLASS[user.role]}`}
-                          >
-                            {getRoleLabel(user.role)}
-                          </Badge>
-                          <Select
-                            value={user.role}
-                            disabled={isSelf || isMutating}
-                            onValueChange={(value) =>
-                              requestRoleChange(user, value as AdminUserDto["role"])
-                            }
-                          >
-                            <SelectTrigger className="min-w-[180px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ROLE_OPTIONS.map((role) => (
-                                <SelectItem key={role} value={role}>
-                                  {getRoleLabel(role)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge
-                            variant="outline"
-                            className={
-                              user.enabled
-                                ? "rounded-full border-primary/30 text-primary"
-                                : "rounded-full"
-                            }
-                          >
-                            {user.enabled
-                              ? t("admin.usersPage.active")
-                              : t("admin.usersPage.disabled")}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className={
-                              user.accountLocked
-                                ? "rounded-full border-destructive/30 text-destructive"
-                                : "rounded-full"
-                            }
-                          >
-                            {user.accountLocked
-                              ? t("admin.usersPage.locked")
-                              : t("admin.usersPage.unlocked")}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(user.createdAt).toLocaleDateString(locale)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant="surface"
-                            disabled={isSelf || isMutating}
-                            onClick={() => requestToggleEnabled(user)}
-                          >
-                            <ShieldCheck className="mr-2 h-4 w-4" />
-                            {user.enabled
-                              ? t("admin.usersPage.disableConfirm")
-                              : t("admin.usersPage.enableConfirm")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="surface"
-                            disabled={isSelf || isMutating}
-                            onClick={() => requestToggleLock(user)}
-                            className={
-                              user.accountLocked
-                                ? "text-primary"
-                                : "text-destructive"
-                            }
-                          >
-                            {user.accountLocked ? (
-                              <Unlock className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Lock className="mr-2 h-4 w-4" />
-                            )}
-                            {user.accountLocked
-                              ? t("admin.usersPage.unlockConfirm")
-                              : t("admin.usersPage.lockConfirm")}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          {user.fullName}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <Badge
+                          variant="outline"
+                          className={`rounded-full ${ROLE_BADGE_CLASS[user.role]}`}
+                        >
+                          {getRoleLabel(user.role)}
+                        </Badge>
+                        <Select
+                          value={user.role}
+                          disabled={isSelf || isMutating}
+                          onValueChange={(value) =>
+                            requestRoleChange(user, value as AdminUserDto["role"])
+                          }
+                        >
+                          <SelectTrigger className="min-w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLE_OPTIONS.map((role) => (
+                              <SelectItem key={role} value={role}>
+                                {getRoleLabel(role)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant="outline"
+                          className={
+                            user.enabled
+                              ? "rounded-full border-transparent bg-primary/10 text-primary"
+                              : "rounded-full border-transparent bg-input text-muted-foreground"
+                          }
+                        >
+                          {user.enabled
+                            ? t("admin.usersPage.active")
+                            : t("admin.usersPage.disabled")}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={
+                            user.accountLocked
+                              ? "rounded-full border-transparent bg-destructive/10 text-destructive"
+                              : "rounded-full border-transparent bg-input text-muted-foreground"
+                          }
+                        >
+                          {user.accountLocked
+                            ? t("admin.usersPage.locked")
+                            : t("admin.usersPage.unlocked")}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(user.createdAt).toLocaleDateString(locale)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="surface"
+                          disabled={isSelf || isMutating}
+                          onClick={() => requestToggleEnabled(user)}
+                        >
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          {user.enabled
+                            ? t("admin.usersPage.disableConfirm")
+                            : t("admin.usersPage.enableConfirm")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="surface"
+                          disabled={isSelf || isMutating}
+                          onClick={() => requestToggleLock(user)}
+                          className={
+                            user.accountLocked
+                              ? "text-primary"
+                              : "text-destructive"
+                          }
+                        >
+                          {user.accountLocked ? (
+                            <Unlock className="mr-2 h-4 w-4" />
+                          ) : (
+                            <Lock className="mr-2 h-4 w-4" />
+                          )}
+                          {user.accountLocked
+                            ? t("admin.usersPage.unlockConfirm")
+                            : t("admin.usersPage.lockConfirm")}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </Card>
 
       <AdminConfirmationDialog

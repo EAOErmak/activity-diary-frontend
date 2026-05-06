@@ -1,9 +1,11 @@
 import api from "./http/axiosInstance";
 import type { Tag } from "@/shared/types/tag";
-import type { ApiResponse } from "@/shared/types/api";
-import type { DictionaryEntity } from "@/shared/types/dictionary";
-
-type DictionaryOptionDto = Pick<DictionaryEntity, "id" | "label">;
+import type {
+  ApiResponse,
+  DropdownOption,
+  PageResponse,
+} from "@/shared/types/api";
+import { createEmptyPageResponse } from "@/shared/lib/entryDropdown";
 
 export async function getAllTags(q?: string): Promise<Tag[]> {
   const { data } = await api.get<ApiResponse<Tag[]>>(
@@ -15,27 +17,45 @@ export async function getAllTags(q?: string): Promise<Tag[]> {
   return data.data;
 }
 
-export async function getMetricsByTags(
-  tagIds: number[]
-): Promise<DictionaryEntity[]> {
+type GetMetricsByTagIdsParams = {
+  tagIds: number[];
+  page: number;
+  limit: number;
+  q?: string;
+};
+
+export async function getMetricsByTagIds({
+  tagIds,
+  page,
+  limit,
+  q,
+}: GetMetricsByTagIdsParams): Promise<PageResponse<DropdownOption>> {
   if (tagIds.length === 0) {
-    return [];
+    return createEmptyPageResponse(page, limit);
   }
 
   const params = new URLSearchParams();
   tagIds.forEach((tagId) => {
     params.append("tagIds", String(tagId));
   });
+  params.set("page", String(page));
+  params.set("limit", String(limit));
 
-  const { data } = await api.get<ApiResponse<DictionaryOptionDto[]>>(
+  const normalizedQuery = q?.trim();
+  if (normalizedQuery) {
+    params.set("q", normalizedQuery);
+  }
+
+  const { data } = await api.get<ApiResponse<PageResponse<DropdownOption>>>(
     "/tags/metrics",
     { params }
   );
 
-  return data.data.map((metric) => ({
-    id: metric.id,
-    type: "METRIC_NAME",
-    label: metric.label,
-    parentId: null,
-  }));
+  return {
+    ...data.data,
+    items: data.data.items.map((metric) => ({
+      id: metric.id,
+      label: metric.label,
+    })),
+  };
 }

@@ -69,6 +69,14 @@ function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
   return fallbackMessage;
 }
 
+function areChartTypeListsEqual(left: ChartType[], right: ChartType[]) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((value, index) => value === right[index]);
+}
+
 type AdminTagChartTypesManagerProps = {
   updatedTag?: Tag | null;
 };
@@ -83,6 +91,10 @@ export function AdminTagChartTypesManager({
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [selectedTagName, setSelectedTagName] = useState<string | null>(null);
   const [selectedChartType, setSelectedChartType] = useState<ChartType | null>(null);
+  const [linkedChartTypeIds, setLinkedChartTypeIds] = useState<ChartType[]>([]);
+  const [linkedChartTypesTagId, setLinkedChartTypesTagId] = useState<number | null>(
+    null
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [mutationErrorMessage, setMutationErrorMessage] = useState<string | null>(
@@ -119,6 +131,31 @@ export function AdminTagChartTypesManager({
     });
   }
 
+  function mapLinkChartTypeIds(linksToMap: AdminTagChartTypeLink[]) {
+    return sortChartTypes([...new Set(linksToMap.map((link) => link.chartType))]);
+  }
+
+  function debugState(event: string, payload?: Record<string, unknown>) {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    console.debug("[AdminTagChartTypesManager]", event, payload);
+  }
+
+  function resetSelectedChartType(reason: string) {
+    setSelectedChartType((current) => {
+      if (current != null) {
+        debugState("selectedChartType:reset", {
+          reason,
+          previousChartType: current,
+        });
+      }
+
+      return null;
+    });
+  }
+
   const tagsQuery = useQuery<Tag[], Error>(getTagListQueryOptions(debouncedTagQuery));
   const linksQuery = useQuery<AdminTagChartTypeLink[], Error>({
     ...getAdminTagChartTypesQueryOptions(selectedTagId ?? 0),
@@ -126,20 +163,38 @@ export function AdminTagChartTypesManager({
   });
 
   const availableTags = useMemo(() => {
-    const tags = sortTags(tagsQuery.data ?? []);
+    let tags = sortTags(tagsQuery.data ?? []);
 
-    if (updatedTag == null || !tags.some((tag) => tag.id === updatedTag.id)) {
-      return tags;
+    if (updatedTag != null && tags.some((tag) => tag.id === updatedTag.id)) {
+      tags = sortTags(
+        tags.map((tag) => (tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag))
+      );
     }
 
-    return sortTags(
-      tags.map((tag) => (tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag))
-    );
-  }, [locale, tagsQuery.data, updatedTag]);
+    // Keep the selected tag available in the Select even while the search field
+    // is filtering to a different term or refetching a new option list.
+    if (
+      selectedTagId != null &&
+      selectedTagName != null &&
+      !tags.some((tag) => tag.id === selectedTagId)
+    ) {
+      tags = sortTags([...tags, { id: selectedTagId, name: selectedTagName }]);
+    }
+
+    return tags;
+  }, [locale, selectedTagId, selectedTagName, tagsQuery.data, updatedTag]);
 
   const links = useMemo(
-    () => sortTagChartTypeLinks(linksQuery.data ?? []),
-    [linksQuery.data, locale]
+    () =>
+      sortTagChartTypeLinks(
+        linkedChartTypesTagId === selectedTagId
+          ? linkedChartTypeIds.map((chartType) => ({
+              tagId: selectedTagId ?? 0,
+              chartType,
+            }))
+          : []
+      ),
+    [linkedChartTypeIds, linkedChartTypesTagId, locale, selectedTagId]
   );
   const isLoadingTags = tagsQuery.isPending;
   const isLoadingLinks = selectedTagId != null && linksQuery.isPending;
@@ -152,6 +207,11 @@ export function AdminTagChartTypesManager({
     }
 
     if (selectedTagId === updatedTag.id) {
+      debugState("selectedTag:update", {
+        reason: "updatedTag-prop",
+        tagId: updatedTag.id,
+        tagName: updatedTag.name,
+      });
       setSelectedTagName(updatedTag.name);
       setTagQuery(updatedTag.name);
     }
@@ -159,38 +219,46 @@ export function AdminTagChartTypesManager({
 
   useEffect(() => {
     if (selectedTagId == null) {
-      return;
-    }
-
-    if (availableTags.some((tag) => tag.id === selectedTagId)) {
-      return;
-    }
-
-    setSelectedTagId(null);
-    setSelectedTagName(null);
-    setTagQuery("");
-    setSelectedChartType(null);
-    setMutationErrorMessage(null);
-  }, [availableTags, selectedTagId]);
-
-  useEffect(() => {
-    if (selectedTagId == null) {
-      setSelectedChartType(null);
+      setLinkedChartTypesTagId(null);
+      setLinkedChartTypeIds([]);
+      resetSelectedChartType("selectedTag-cleared");
       setMutationErrorMessage(null);
     }
   }, [selectedTagId]);
 
-  const linkedChartTypes = useMemo(
-    () => new Set(links.map((link) => link.chartType)),
-    [links]
+  useEffect(() => {
+    if (selectedTagId == null || linksQuery.data == null) {
+      return;
+    }
+
+    const nextLinkedChartTypeIds = mapLinkChartTypeIds(linksQuery.data);
+
+    setLinkedChartTypesTagId(selectedTagId);
+    setLinkedChartTypeIds((current) =>
+      areChartTypeListsEqual(current, nextLinkedChartTypeIds)
+        ? current
+        : nextLinkedChartTypeIds
+    );
+    debugState("linkedChartTypes:loaded", {
+      tagId: selectedTagId,
+      chartTypes: nextLinkedChartTypeIds,
+      source: "linksQuery.data",
+    });
+  }, [linksQuery.data, selectedTagId]);
+
+  const activeLinkedChartTypes = useMemo(
+    () => (linkedChartTypesTagId === selectedTagId ? linkedChartTypeIds : []),
+    [linkedChartTypeIds, linkedChartTypesTagId, selectedTagId]
   );
 
   const availableChartTypes = useMemo(
     () =>
       sortChartTypes(
-        ALL_CHART_TYPES.filter((chartType) => !linkedChartTypes.has(chartType))
+        ALL_CHART_TYPES.filter(
+          (chartType) => !activeLinkedChartTypes.includes(chartType)
+        )
       ),
-    [linkedChartTypes, locale]
+    [activeLinkedChartTypes, locale]
   );
 
   useEffect(() => {
@@ -199,42 +267,69 @@ export function AdminTagChartTypesManager({
         return current;
       }
 
-      return availableChartTypes.includes(current) ? current : null;
+      if (availableChartTypes.includes(current)) {
+        return current;
+      }
+
+      debugState("selectedChartType:reset", {
+        reason: "availableChartTypes-updated",
+        previousChartType: current,
+      });
+      return null;
     });
   }, [availableChartTypes]);
 
   function handleTagQueryChange(value: string) {
     setTagQuery(value);
 
-    const normalized = value.trim().toLowerCase();
-    if (!normalized) {
-      setSelectedTagId(null);
-      setSelectedTagName(null);
-      setSelectedChartType(null);
-      setMutationErrorMessage(null);
+    if (value.trim()) {
       return;
     }
 
-    if (selectedTagName && selectedTagName.toLowerCase() !== normalized) {
-      setSelectedTagId(null);
-      setSelectedTagName(null);
-      setSelectedChartType(null);
-      setMutationErrorMessage(null);
+    if (selectedTagId != null || selectedTagName != null) {
+      debugState("selectedTag:clear", {
+        reason: "tag-search-cleared",
+        tagId: selectedTagId,
+        tagName: selectedTagName,
+      });
     }
+
+    setSelectedTagId(null);
+    setSelectedTagName(null);
+    setLinkedChartTypesTagId(null);
+    setLinkedChartTypeIds([]);
+    resetSelectedChartType("tag-search-cleared");
+    setMutationErrorMessage(null);
   }
 
   function handleSelectTag(value: string) {
     const nextTagId = Number(value);
     const nextTag = availableTags.find((tag) => tag.id === nextTagId) ?? null;
 
-    setSelectedTagId(nextTagId);
-    setSelectedTagName(nextTag?.name ?? null);
-    setSelectedChartType(null);
-    setMutationErrorMessage(null);
-
-    if (nextTag) {
-      setTagQuery(nextTag.name);
+    if (nextTag == null) {
+      debugState("selectedTag:clear", {
+        reason: "tag-select-missing-option",
+        rawValue: value,
+      });
+      setSelectedTagId(null);
+      setSelectedTagName(null);
+      setLinkedChartTypesTagId(null);
+      setLinkedChartTypeIds([]);
+      resetSelectedChartType("tag-select-missing-option");
+      setMutationErrorMessage(null);
+      return;
     }
+
+    debugState("selectedTag:set", {
+      reason: "tag-select-value-change",
+      tagId: nextTag.id,
+      tagName: nextTag.name,
+    });
+    setSelectedTagId(nextTagId);
+    setSelectedTagName(nextTag.name);
+    resetSelectedChartType("tag-select-value-change");
+    setMutationErrorMessage(null);
+    setTagQuery(nextTag.name);
   }
 
   async function handleCreate() {
@@ -261,8 +356,19 @@ export function AdminTagChartTypesManager({
         adminKeys.tagChartTypesByTag(selectedTagId),
         (current = []) => sortTagChartTypeLinks([...current, createdLink])
       );
+      setLinkedChartTypesTagId(selectedTagId);
+      setLinkedChartTypeIds((current) => {
+        const nextLinkedChartTypeIds = sortChartTypes([
+          ...current,
+          createdLink.chartType,
+        ]);
+
+        return areChartTypeListsEqual(current, nextLinkedChartTypeIds)
+          ? current
+          : nextLinkedChartTypeIds;
+      });
       await syncTagChartTypeCachesAfterAdminMutation(queryClient, selectedTagId);
-      setSelectedChartType(null);
+      resetSelectedChartType("create-link-success");
       toast.success(
         t("admin.tagChartTypes.linkCreated", {
           chartType: getChartTypeLabel(selectedChartType),
@@ -295,6 +401,10 @@ export function AdminTagChartTypesManager({
         (current = []) =>
           current.filter((link) => link.chartType !== pendingDelete.chartType)
       );
+      setLinkedChartTypesTagId(selectedTagId);
+      setLinkedChartTypeIds((current) =>
+        current.filter((chartType) => chartType !== pendingDelete.chartType)
+      );
       await syncTagChartTypeCachesAfterAdminMutation(queryClient, selectedTagId);
       const deletedChartType = pendingDelete.chartType;
       setPendingDelete(null);
@@ -319,211 +429,219 @@ export function AdminTagChartTypesManager({
   }).trim();
 
   return (
-    <Card className="border border-border bg-surface">
-      <CardHeader className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div className="space-y-1">
-          <CardTitle>{t("admin.tagChartTypes.title")}</CardTitle>
-          <CardDescription>
-            {t("admin.tagChartTypes.description")}
-          </CardDescription>
-        </div>
-        <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-          <Link2 className="mr-2 h-3.5 w-3.5" />
-          {t("admin.tagChartTypes.linksCount", { count: links.length })}
-        </Badge>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Search className="h-4 w-4" />
-              {t("admin.tagChartTypes.tagSearchLabel")}
-            </div>
-            <Input
-              value={tagQuery}
-              onChange={(event) => handleTagQueryChange(event.target.value)}
-              placeholder={t("admin.tagChartTypes.tagSearchPlaceholder")}
-            />
+    <div className="space-y-4">
+      <Card className="bg-surface">
+        <CardHeader className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="space-y-1">
+            <CardTitle>{t("admin.tagChartTypes.title")}</CardTitle>
+            <CardDescription>
+              {t("admin.tagChartTypes.description")}
+            </CardDescription>
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Tags className="h-4 w-4" />
-              {t("admin.tagChartTypes.tagLabel")}
-            </div>
-            <Select
-              value={selectedTagId != null ? String(selectedTagId) : ""}
-              onValueChange={handleSelectTag}
-              disabled={availableTags.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    isLoadingTags && availableTags.length === 0
-                      ? t("admin.tagChartTypes.tagLoading")
-                      : availableTags.length === 0
-                        ? t("admin.tagChartTypes.tagEmpty")
-                        : t("admin.tagChartTypes.tagPlaceholder")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTags.map((tag) => (
-                  <SelectItem key={tag.id} value={String(tag.id)}>
-                    {tag.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {tagsErrorMessage && (
-          <p className="text-sm text-destructive">{tagsErrorMessage}</p>
-        )}
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BarChart3 className="h-4 w-4" />
-              {t("admin.tagChartTypes.chartTypeLabel")}
-            </div>
-            <Select
-              value={selectedChartType ?? ""}
-              onValueChange={(value) => setSelectedChartType(value || null)}
-              disabled={
-                selectedTagId == null ||
-                isLoadingLinks ||
-                availableChartTypes.length === 0
-              }
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    selectedTagId == null
-                      ? t("admin.tagChartTypes.chartTypePlaceholderSelectTag")
-                      : isLoadingLinks
-                        ? t("admin.tagChartTypes.chartTypePlaceholderLoading")
-                        : availableChartTypes.length === 0
-                          ? t("admin.tagChartTypes.chartTypePlaceholderAllLinked")
-                          : t("admin.tagChartTypes.chartTypePlaceholderSelect")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableChartTypes.map((chartType) => (
-                  <SelectItem key={chartType} value={chartType}>
-                    {getChartTypeLabel(chartType)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            onClick={handleCreate}
-            disabled={
-              isCreating ||
-              selectedTagId == null ||
-              selectedChartType == null
-            }
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            {isCreating
-              ? t("admin.tagChartTypes.creatingLink")
-              : t("admin.tagChartTypes.createLink")}
-          </Button>
-        </div>
+            <Link2 className="mr-2 h-3.5 w-3.5" />
+            {t("admin.tagChartTypes.linksCount", { count: links.length })}
+          </Badge>
+        </CardHeader>
 
-        {selectedTagId != null &&
-          !isLoadingLinks &&
-          !linksErrorMessage &&
-          availableChartTypes.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              {t("admin.tagChartTypes.allLinkedForTag")}
-            </p>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Search className="h-4 w-4" />
+                {t("admin.tagChartTypes.tagSearchLabel")}
+              </div>
+              <Input
+                value={tagQuery}
+                onChange={(event) => handleTagQueryChange(event.target.value)}
+                placeholder={t("admin.tagChartTypes.tagSearchPlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Tags className="h-4 w-4" />
+                {t("admin.tagChartTypes.tagLabel")}
+              </div>
+              <Select
+                value={selectedTagId != null ? String(selectedTagId) : ""}
+                onValueChange={handleSelectTag}
+                disabled={availableTags.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingTags && availableTags.length === 0
+                        ? t("admin.tagChartTypes.tagLoading")
+                        : availableTags.length === 0
+                          ? t("admin.tagChartTypes.tagEmpty")
+                          : t("admin.tagChartTypes.tagPlaceholder")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTags.map((tag) => (
+                    <SelectItem key={tag.id} value={String(tag.id)}>
+                      {tag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {tagsErrorMessage && (
+            <p className="text-sm text-destructive">{tagsErrorMessage}</p>
           )}
 
-        <div className="space-y-3">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BarChart3 className="h-4 w-4" />
+                {t("admin.tagChartTypes.chartTypeLabel")}
+              </div>
+              <Select
+                value={selectedChartType ?? ""}
+                onValueChange={(value) => setSelectedChartType(value || null)}
+                disabled={
+                  selectedTagId == null ||
+                  isLoadingLinks ||
+                  availableChartTypes.length === 0
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      selectedTagId == null
+                        ? t("admin.tagChartTypes.chartTypePlaceholderSelectTag")
+                        : isLoadingLinks
+                          ? t("admin.tagChartTypes.chartTypePlaceholderLoading")
+                          : availableChartTypes.length === 0
+                            ? t("admin.tagChartTypes.chartTypePlaceholderAllLinked")
+                            : t("admin.tagChartTypes.chartTypePlaceholderSelect")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableChartTypes.map((chartType) => (
+                    <SelectItem key={chartType} value={chartType}>
+                      {getChartTypeLabel(chartType)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={handleCreate}
+              disabled={
+                isCreating ||
+                selectedTagId == null ||
+                selectedChartType == null
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {isCreating
+                ? t("admin.tagChartTypes.creatingLink")
+                : t("admin.tagChartTypes.createLink")}
+            </Button>
+          </div>
+
+          {selectedTagId != null &&
+            !isLoadingLinks &&
+            !linksErrorMessage &&
+            availableChartTypes.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                {t("admin.tagChartTypes.allLinkedForTag")}
+              </p>
+            )}
+
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">{currentLinksTitle}</h3>
             <p className="text-sm text-muted-foreground">
               {t("admin.tagChartTypes.currentLinksDescription")}
             </p>
           </div>
+        </CardContent>
+      </Card>
 
-          <Table>
-            <TableHeader>
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("admin.tagChartTypes.chartTypeColumn")}</TableHead>
+              <TableHead className="w-[220px]">
+                {t("admin.tagChartTypes.enumColumn")}
+              </TableHead>
+              <TableHead className="w-32 text-right">
+                {t("admin.tagChartTypes.actionColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {selectedTagId == null ? (
               <TableRow>
-                <TableHead>{t("admin.tagChartTypes.chartTypeColumn")}</TableHead>
-                <TableHead className="w-[220px]">
-                  {t("admin.tagChartTypes.enumColumn")}
-                </TableHead>
-                <TableHead className="w-32 text-right">
-                  {t("admin.tagChartTypes.actionColumn")}
-                </TableHead>
+                <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagChartTypes.selectTagHint")}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selectedTagId == null ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagChartTypes.selectTagHint")}
+            ) : isLoadingLinks ? (
+              <TableRow>
+                <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagChartTypes.loadingLinks")}
+                </TableCell>
+              </TableRow>
+            ) : linksErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={3} className="py-8 text-center text-destructive">
+                  {linksErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : links.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                  {t("admin.tagChartTypes.emptyLinks")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              links.map((link) => (
+                <TableRow key={`${link.tagId}:${link.chartType}`}>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p className="font-medium">{getChartTypeLabel(link.chartType)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t("admin.tagChartTypes.backendRuleLabel")}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-transparent bg-input"
+                    >
+                      {link.chartType}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="surface"
+                      size="sm"
+                      disabled={isDeleting}
+                      onClick={() => setPendingDelete(link)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t("common.delete")}
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : isLoadingLinks ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagChartTypes.loadingLinks")}
-                  </TableCell>
-                </TableRow>
-              ) : linksErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-destructive">
-                    {linksErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : links.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    {t("admin.tagChartTypes.emptyLinks")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                links.map((link) => (
-                  <TableRow key={`${link.tagId}:${link.chartType}`}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{getChartTypeLabel(link.chartType)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {t("admin.tagChartTypes.backendRuleLabel")}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="rounded-full">
-                        {link.chartType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="surface"
-                        size="sm"
-                        disabled={isDeleting}
-                        onClick={() => setPendingDelete(link)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t("common.delete")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
 
       <AdminConfirmationDialog
         open={pendingDelete !== null}
@@ -549,6 +667,6 @@ export function AdminTagChartTypesManager({
         tone="danger"
         onConfirm={handleDelete}
       />
-    </Card>
+    </div>
   );
 }

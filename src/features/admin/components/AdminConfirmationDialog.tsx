@@ -42,7 +42,7 @@ export function AdminConfirmationDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="border border-border bg-surface text-foreground">
+      <AlertDialogContent className="bg-surface text-foreground">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

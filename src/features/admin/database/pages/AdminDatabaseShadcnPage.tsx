@@ -106,7 +106,10 @@ export default function AdminDatabaseShadcnPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+        <Badge
+          variant="outline"
+          className="w-fit rounded-full border-transparent px-3 py-1"
+        >
           {t("admin.databasePage.badge")}
         </Badge>
         <h1 className="text-3xl font-bold tracking-tight">
@@ -117,7 +120,7 @@ export default function AdminDatabaseShadcnPage() {
         </p>
       </div>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <CardTitle>{t("admin.databasePage.tablesTitle")}</CardTitle>
@@ -125,91 +128,95 @@ export default function AdminDatabaseShadcnPage() {
               {t("admin.databasePage.tablesDescription")}
             </CardDescription>
           </div>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
+          >
             {t("admin.databasePage.tableCount", {
               count: sortedTableTypes.length,
             })}
           </Badge>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("admin.databasePage.tableColumn")}</TableHead>
-                <TableHead>{t("admin.databasePage.identifierColumn")}</TableHead>
-                <TableHead className="w-40 text-right">
-                  {t("common.actions")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingTableTypes ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="py-8 text-center text-muted-foreground"
-                  >
-                    {t("admin.databasePage.loadingTableTypes")}
-                  </TableCell>
-                </TableRow>
-              ) : tableTypesErrorMessage ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="py-8 text-center text-destructive"
-                  >
-                    {tableTypesErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : sortedTableTypes.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="py-8 text-center text-muted-foreground"
-                  >
-                    {t("admin.databasePage.emptyTableTypes")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sortedTableTypes.map((tableType) => {
-                  const isClearingTable = clearingTarget === tableType.value;
-
-                  return (
-                    <TableRow key={tableType.value}>
-                      <TableCell className="font-medium">
-                        {formatTableDisplayName(tableType)}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm text-muted-foreground">
-                        {tableType.value}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="surface"
-                          size="sm"
-                          disabled={clearingTarget !== null}
-                          onClick={() =>
-                            setPendingAction({
-                              kind: "table",
-                              tableType,
-                            })
-                          }
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {isClearingTable
-                            ? t("admin.databasePage.clearing")
-                            : t("admin.databasePage.clearTableButton")}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
       </Card>
 
-      <Card className="border border-destructive/30 bg-surface">
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("admin.databasePage.tableColumn")}</TableHead>
+              <TableHead>{t("admin.databasePage.identifierColumn")}</TableHead>
+              <TableHead className="w-40 text-right">
+                {t("common.actions")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoadingTableTypes ? (
+              <TableRow>
+                <TableCell
+                  colSpan={3}
+                  className="py-8 text-center text-muted-foreground"
+                >
+                  {t("admin.databasePage.loadingTableTypes")}
+                </TableCell>
+              </TableRow>
+            ) : tableTypesErrorMessage ? (
+              <TableRow>
+                <TableCell
+                  colSpan={3}
+                  className="py-8 text-center text-destructive"
+                >
+                  {tableTypesErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : sortedTableTypes.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={3}
+                  className="py-8 text-center text-muted-foreground"
+                >
+                  {t("admin.databasePage.emptyTableTypes")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedTableTypes.map((tableType) => {
+                const isClearingTable = clearingTarget === tableType.value;
+
+                return (
+                  <TableRow key={tableType.value}>
+                    <TableCell className="font-medium">
+                      {formatTableDisplayName(tableType)}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-muted-foreground">
+                      {tableType.value}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="surface"
+                        size="sm"
+                        disabled={clearingTarget !== null}
+                        onClick={() =>
+                          setPendingAction({
+                            kind: "table",
+                            tableType,
+                          })
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {isClearingTable
+                          ? t("admin.databasePage.clearing")
+                          : t("admin.databasePage.clearTableButton")}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      <Card className="bg-surface">
         <CardHeader className="space-y-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
             <Database className="h-5 w-5" />
@@ -222,7 +229,7 @@ export default function AdminDatabaseShadcnPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex max-w-2xl items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-muted-foreground">
+          <div className="flex max-w-2xl items-start gap-3 rounded-2xl bg-destructive/5 p-4 text-sm text-muted-foreground">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
             <p>{t("admin.databasePage.fullResetWarning")}</p>
           </div>

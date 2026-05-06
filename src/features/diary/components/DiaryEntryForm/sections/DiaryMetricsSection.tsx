@@ -6,7 +6,9 @@ import { DiaryMetricItem } from "./DiaryMetricItem";
 import type { MetricsFormSectionValue } from "@/shared/types/metricForm";
 
 type Props = {
-  metricTypes: { id: number; label: string }[];
+  selectedTagIds?: number[];
+  metricTypes?: { id: number; label: string }[];
+  hasAvailableMetricOptions?: boolean;
   copyFirstMetricOnAppend?: boolean;
   hasSelectedTags?: boolean;
   disabled?: boolean;
@@ -14,7 +16,9 @@ type Props = {
 };
 
 export function DiaryMetricsSection({
+  selectedTagIds = [],
   metricTypes,
+  hasAvailableMetricOptions = false,
   copyFirstMetricOnAppend = false,
   hasSelectedTags = true,
   disabled = false,
@@ -72,6 +76,7 @@ export function DiaryMetricsSection({
         <DiaryMetricItem
           key={field.fieldKey}
           index={index}
+          selectedTagIds={selectedTagIds}
           metricTypes={metricTypes}
           disabled={disabled}
           canRemove={fields.length > 0}
@@ -79,11 +84,22 @@ export function DiaryMetricsSection({
         />
       ))}
 
+      {message && (
+        <p className="text-sm text-muted-foreground">{message}</p>
+      )}
+
       <Button
         type="button"
         variant="form"
         onClick={handleAddMetricClick}
-        disabled={disabled || (hasSelectedTags && metricTypes.length === 0)}
+        disabled={
+          disabled ||
+          (hasSelectedTags &&
+            !(
+              hasAvailableMetricOptions ||
+              (metricTypes != null && metricTypes.length > 0)
+            ))
+        }
       >
         {t("diary.addMetric")}
       </Button>

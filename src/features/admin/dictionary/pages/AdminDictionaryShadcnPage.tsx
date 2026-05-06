@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen, Plus, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -35,15 +35,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { syncDictionaryCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import { getAdminDictionaryByTypeQueryOptions } from "@/shared/lib/queryOptions";
 import type {
+  AdminDictionaryListResponse,
   DictionaryCreate,
   DictionaryResponse,
   DictionaryUpdate,
 } from "@/shared/types/adminDictionary";
 
 type Tab = "METRIC_NAME" | "METRIC_UNIT";
+
+const DEFAULT_PAGE = 0;
+const DEFAULT_LIMIT = 10;
 
 type PendingAction =
   | {
@@ -54,20 +59,45 @@ type PendingAction =
     }
   | null;
 
+function getVisiblePages(currentPage: number, totalPages: number) {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index);
+  }
+
+  const start = Math.max(0, Math.min(currentPage - 2, totalPages - 5));
+  return Array.from({ length: 5 }, (_, index) => start + index);
+}
+
 export default function AdminDictionaryShadcnPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("METRIC_NAME");
   const [label, setLabel] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [page, setPage] = useState(DEFAULT_PAGE);
   const [allowedRole, setAllowedRole] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
-  const { data: items = [], isPending: isLoadingItems, error } = useQuery<
-    DictionaryResponse[],
+  const debouncedSearchText = useDebouncedValue(searchText.trim(), 300);
+  const {
+    data,
+    isPending: isLoadingItems,
+    error,
+  } = useQuery<
+    AdminDictionaryListResponse,
     Error
-  >(getAdminDictionaryByTypeQueryOptions(tab));
+  >(
+    getAdminDictionaryByTypeQueryOptions({
+      type: tab,
+      page,
+      limit: DEFAULT_LIMIT,
+      q: debouncedSearchText,
+    })
+  );
+  const items = data?.items ?? [];
   const itemsErrorMessage = error?.message ?? null;
+  const visiblePages = getVisiblePages(page, data?.totalPages ?? 0);
 
   function getRoleLabel(role: string | null) {
     if (role === "ADMIN") return t("admin.roles.admin");
@@ -162,7 +192,7 @@ export default function AdminDictionaryShadcnPage() {
         </p>
       </div>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.dictionaryPage.typeTitle")}</CardTitle>
           <CardDescription>
@@ -171,21 +201,27 @@ export default function AdminDictionaryShadcnPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button
-            variant={tab === "METRIC_NAME" ? "primary" : "surface"}
-            onClick={() => setTab("METRIC_NAME")}
+            variant={tab === "METRIC_NAME" ? "primary" : "form"}
+            onClick={() => {
+              setTab("METRIC_NAME");
+              setPage(DEFAULT_PAGE);
+            }}
           >
             {t("admin.dictionaryPage.metricNameTab")}
           </Button>
           <Button
-            variant={tab === "METRIC_UNIT" ? "primary" : "surface"}
-            onClick={() => setTab("METRIC_UNIT")}
+            variant={tab === "METRIC_UNIT" ? "primary" : "form"}
+            onClick={() => {
+              setTab("METRIC_UNIT");
+              setPage(DEFAULT_PAGE);
+            }}
           >
             {t("admin.dictionaryPage.metricUnitTab")}
           </Button>
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader>
           <CardTitle>{t("admin.dictionaryPage.addTitle")}</CardTitle>
           <CardDescription>
@@ -236,7 +272,7 @@ export default function AdminDictionaryShadcnPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-surface">
+      <Card className="bg-surface">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <CardTitle>{t("admin.dictionaryPage.itemsTitle")}</CardTitle>
@@ -244,101 +280,193 @@ export default function AdminDictionaryShadcnPage() {
               {t("admin.dictionaryPage.itemsDescription")}
             </CardDescription>
           </div>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-            {t("admin.dictionaryPage.totalCount", { count: items.length })}
+          <Badge
+            variant="outline"
+            className="w-fit rounded-full border-transparent px-3 py-1"
+          >
+            {t("admin.dictionaryPage.totalCount", {
+              count: data?.totalElements ?? 0,
+            })}
           </Badge>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>{t("admin.dictionaryPage.nameColumn")}</TableHead>
-                <TableHead className="w-[240px]">
-                  {t("admin.dictionaryPage.accessColumn")}
-                </TableHead>
-                <TableHead className="w-32 text-center">
-                  {t("admin.dictionaryPage.activeColumn")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingItems ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.dictionaryPage.loading")}
-                  </TableCell>
-                </TableRow>
-              ) : itemsErrorMessage ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-destructive">
-                    {itemsErrorMessage}
-                  </TableCell>
-                </TableRow>
-              ) : items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                    {t("admin.dictionaryPage.empty")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{item.label}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.type}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={item.allowedRole ?? "ALL"}
-                        onValueChange={(value) =>
-                          requestRoleChange(item, value === "ALL" ? null : value)
-                        }
-                        disabled={isMutating}
-                      >
-                        <SelectTrigger className="min-w-[180px]">
-                          <SelectValue>{getRoleLabel(item.allowedRole)}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ALL">{t("admin.dictionaryPage.allAccess")}</SelectItem>
-                          <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
-                          <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
-                          <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="inline-flex items-center gap-3">
-                        <Badge
-                          variant="outline"
-                          className={
-                            item.active
-                              ? "rounded-full border-primary/30 text-primary"
-                              : "rounded-full"
-                          }
-                        >
-                          {item.active
-                            ? t("admin.dictionaryPage.yes")
-                            : t("admin.dictionaryPage.no")}
-                        </Badge>
-                        <Switch
-                          checked={item.active}
-                          onCheckedChange={() => requestToggle(item)}
-                          disabled={isMutating}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+        <CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Search className="h-4 w-4" />
+              {t("common.search")}
+            </div>
+            <Input
+              value={searchText}
+              onChange={(event) => {
+                setSearchText(event.target.value);
+                setPage(DEFAULT_PAGE);
+              }}
+              placeholder={t("admin.dictionaryPage.namePlaceholder")}
+              className="max-w-xl"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="surface"
+              size="sm"
+              disabled={!data?.hasPrevious}
+              onClick={() => setPage((current) => Math.max(DEFAULT_PAGE, current - 1))}
+            >
+              {t("common.previous")}
+            </Button>
+            <Button
+              variant="surface"
+              size="sm"
+              disabled={!data?.hasNext}
+              onClick={() => setPage((current) => current + 1)}
+            >
+              {t("common.next")}
+            </Button>
+            {visiblePages.map((pageIndex) => (
+              <Button
+                key={pageIndex}
+                variant={pageIndex === page ? "primary" : "surface"}
+                size="sm"
+                onClick={() => setPage(pageIndex)}
+              >
+                {pageIndex + 1}
+              </Button>
+            ))}
+          </div>
         </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden bg-surface">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">ID</TableHead>
+              <TableHead>{t("admin.dictionaryPage.nameColumn")}</TableHead>
+              <TableHead className="w-[240px]">
+                {t("admin.dictionaryPage.accessColumn")}
+              </TableHead>
+              <TableHead className="w-32 text-center">
+                {t("admin.dictionaryPage.activeColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoadingItems ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.dictionaryPage.loading")}
+                </TableCell>
+              </TableRow>
+            ) : itemsErrorMessage ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-destructive">
+                  {itemsErrorMessage}
+                </TableCell>
+              </TableRow>
+            ) : items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  {t("admin.dictionaryPage.empty")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.id}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.type}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={item.allowedRole ?? "ALL"}
+                      onValueChange={(value) =>
+                        requestRoleChange(item, value === "ALL" ? null : value)
+                      }
+                      disabled={isMutating}
+                    >
+                      <SelectTrigger className="min-w-[180px]">
+                        <SelectValue>{getRoleLabel(item.allowedRole)}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">{t("admin.dictionaryPage.allAccess")}</SelectItem>
+                        <SelectItem value="USER">{t("admin.roles.user")}</SelectItem>
+                        <SelectItem value="ADMIN">{t("admin.roles.admin")}</SelectItem>
+                        <SelectItem value="PREMIUM">{t("admin.roles.premium")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="inline-flex items-center gap-3">
+                      <Badge
+                        variant="outline"
+                        className={
+                          item.active
+                            ? "rounded-full border-transparent bg-primary/10 text-primary"
+                            : "rounded-full border-transparent bg-input text-muted-foreground"
+                        }
+                      >
+                        {item.active
+                          ? t("admin.dictionaryPage.yes")
+                          : t("admin.dictionaryPage.no")}
+                      </Badge>
+                      <Switch
+                        checked={item.active}
+                        onCheckedChange={() => requestToggle(item)}
+                        disabled={isMutating}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+        {data && data.totalPages > 0 && (
+          <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {t("admin.tagsPage.pageLabel", { page: String(data.page + 1) })} / {data.totalPages}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                {t("admin.dictionaryPage.totalCount", { count: data.totalElements })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="surface"
+                  size="sm"
+                  disabled={!data.hasPrevious}
+                  onClick={() => setPage((current) => Math.max(DEFAULT_PAGE, current - 1))}
+                >
+                  {t("common.previous")}
+                </Button>
+                {visiblePages.map((pageIndex) => (
+                  <Button
+                    key={`footer-${pageIndex}`}
+                    variant={pageIndex === page ? "primary" : "surface"}
+                    size="sm"
+                    onClick={() => setPage(pageIndex)}
+                  >
+                    {pageIndex + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="surface"
+                  size="sm"
+                  disabled={!data.hasNext}
+                  onClick={() => setPage((current) => current + 1)}
+                >
+                  {t("common.next")}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       <AdminConfirmationDialog
