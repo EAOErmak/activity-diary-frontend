@@ -120,10 +120,22 @@ export function getAdminTagsQueryOptions(
   } as const;
 }
 
-export function getAdminMetricLinksQueryOptions(metricNameId: number) {
+export function getAdminMetricLinksQueryOptions(params: {
+  metricNameId: number;
+  page?: number;
+  limit?: number;
+}) {
+  const page = params.page ?? 0;
+  const limit = params.limit ?? 10;
+
   return {
-    queryKey: adminKeys.metricLinksByMetricName(metricNameId),
-    queryFn: () => adminMetricLinksApi.getUnitsByMetricNameAdmin(metricNameId),
+    queryKey: adminKeys.metricLinksByMetricName(params.metricNameId, page, limit),
+    queryFn: () =>
+      adminMetricLinksApi.getUnitsByMetricNameAdmin({
+        metricNameId: params.metricNameId,
+        page,
+        limit,
+      }),
     staleTime: ONE_MINUTE_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,

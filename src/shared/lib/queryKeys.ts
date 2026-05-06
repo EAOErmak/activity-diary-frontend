@@ -137,8 +137,12 @@ export const adminKeys = {
       normalizeSearchQuery(query),
     ] as const,
   metricLinks: () => [...adminKeys.all, "metric-links"] as const,
-  metricLinksByMetricName: (metricNameId: NullableId) =>
-    [...adminKeys.metricLinks(), metricNameId ?? null] as const,
+  metricLinksByMetricName: (
+    metricNameId: NullableId,
+    page: number,
+    limit: number
+  ) =>
+    [...adminKeys.metricLinks(), "units", metricNameId ?? null, page, limit] as const,
   tagMetrics: () => [...adminKeys.all, "tag-metrics"] as const,
   tagMetricsByTag: (tagId: NullableId) =>
     [...adminKeys.tagMetrics(), tagId ?? null] as const,

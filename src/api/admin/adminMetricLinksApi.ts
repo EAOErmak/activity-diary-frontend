@@ -1,10 +1,16 @@
 import api from "../http/axiosInstance";
 
-import type { ApiResponse } from "@/shared/types/api";
+import type { ApiResponse, PageResponse } from "@/shared/types/api";
 import type {
   MetricLinkRequest,
   MetricLinkResponse,
 } from "@/shared/types/adminMetricLink";
+
+type GetUnitsByMetricNameAdminParams = {
+  metricNameId: number;
+  page?: number;
+  limit?: number;
+};
 
 export const createMetricLink = async (
   payload: MetricLinkRequest
@@ -27,10 +33,17 @@ export const deleteMetricLink = async (
 };
 
 export const getUnitsByMetricNameAdmin = async (
-  metricNameId: number
-): Promise<MetricLinkResponse[]> => {
-  const { data } = await api.get<ApiResponse<MetricLinkResponse[]>>(
-    `/admin/metric-links/metric-name/${metricNameId}/units`
+  {
+    metricNameId,
+    page = 0,
+    limit = 10,
+  }: GetUnitsByMetricNameAdminParams
+): Promise<PageResponse<MetricLinkResponse>> => {
+  const { data } = await api.get<ApiResponse<PageResponse<MetricLinkResponse>>>(
+    `/admin/metric-links/metric-name/${metricNameId}/units`,
+    {
+      params: { page, limit },
+    }
   );
 
   return data.data;

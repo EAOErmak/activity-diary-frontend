@@ -38,6 +38,7 @@ import {
   getAdminDictionaryByTypeQueryOptions,
   getAdminMetricLinksQueryOptions,
 } from "@/shared/lib/queryOptions";
+import type { PageResponse } from "@/shared/types/api";
 import type {
   AdminDictionaryListResponse,
   DictionaryResponse,
@@ -108,6 +109,7 @@ export default function AdminMetricLinksShadcnPage() {
   const [metricNamePage, setMetricNamePage] = useState(DEFAULT_PAGE);
   const [unitQuery, setUnitQuery] = useState("");
   const [unitPage, setUnitPage] = useState(DEFAULT_PAGE);
+  const [linkedUnitsPage, setLinkedUnitsPage] = useState(DEFAULT_PAGE);
   const [selectedMetricName, setSelectedMetricName] = useState<DictionaryResponse | null>(null);
   const [selectedMetricUnit, setSelectedMetricUnit] = useState<DictionaryResponse | null>(null);
   const [knownMetricUnits, setKnownMetricUnits] = useState<Record<number, DictionaryResponse>>(
@@ -139,16 +141,30 @@ export default function AdminMetricLinksShadcnPage() {
     })
   );
   const {
-    data: linkedUnits = [],
+    data: linkedUnitsResponse,
     isPending: isLoadingLinks,
     error: linkedUnitsError,
-  } = useQuery<MetricLinkResponse[], Error>({
-    ...getAdminMetricLinksQueryOptions(selectedMetricNameId ?? 0),
+  } = useQuery<PageResponse<MetricLinkResponse>, Error>({
+    ...getAdminMetricLinksQueryOptions({
+      metricNameId: selectedMetricNameId ?? 0,
+      page: linkedUnitsPage,
+      limit: DEFAULT_LIMIT,
+    }),
     enabled: selectedMetricNameId != null,
   });
 
   const metricNameItems = metricNamesQuery.data?.items ?? [];
   const metricUnitItems = metricUnitsQuery.data?.items ?? [];
+  const linkedUnits = linkedUnitsResponse?.items ?? [];
+  const linkedUnitsTotalElements = linkedUnitsResponse?.totalElements ?? 0;
+  const linkedUnitsCurrentPage = linkedUnitsResponse?.page ?? linkedUnitsPage;
+  const linkedUnitsTotalPages = Math.max(
+    linkedUnitsResponse?.totalPages ?? 0,
+    linkedUnitsPage + 1,
+    1
+  );
+  const hasLinkedUnitsNextPage = linkedUnitsResponse?.hasNext ?? false;
+  const hasLinkedUnitsPreviousPage = linkedUnitsResponse?.hasPrevious ?? false;
 
   useEffect(() => {
     setKnownMetricUnits((current) => mergeDictionaryLookup(current, metricUnitItems));
@@ -192,6 +208,8 @@ export default function AdminMetricLinksShadcnPage() {
   const dictionariesErrorMessage =
     metricNamesQuery.error?.message ?? metricUnitsQuery.error?.message ?? null;
   const linksErrorMessage = linkedUnitsError?.message ?? null;
+  const isLinkedUnitsInteractionDisabled =
+    selectedMetricNameId == null || isLoadingLinks || linksErrorMessage != null;
 
   async function handleCreate() {
     if (selectedMetricNameId == null) {
@@ -206,20 +224,10 @@ export default function AdminMetricLinksShadcnPage() {
 
     try {
       setIsCreating(true);
-      const createdLink = await adminMetricLinksApi.createMetricLink({
+      await adminMetricLinksApi.createMetricLink({
         metricNameId: selectedMetricNameId,
         metricUnitId: selectedMetricUnitId,
       });
-      queryClient.setQueryData<MetricLinkResponse[]>(
-        getAdminMetricLinksQueryOptions(selectedMetricNameId).queryKey,
-        (current = []) => {
-          if (current.some((link) => link.id === createdLink.id)) {
-            return current;
-          }
-
-          return [...current, createdLink];
-        }
-      );
       await syncMetricUnitLinkCachesAfterAdminMutation(
         queryClient,
         selectedMetricNameId
@@ -240,15 +248,15 @@ export default function AdminMetricLinksShadcnPage() {
 
     try {
       setIsDeleting(true);
+      const shouldMoveToPreviousPage =
+        linkedUnits.length === 1 && linkedUnitsPage > DEFAULT_PAGE;
       await adminMetricLinksApi.deleteMetricLink(
         selectedMetricNameId,
         pendingDelete.id
       );
-      queryClient.setQueryData<MetricLinkResponse[]>(
-        getAdminMetricLinksQueryOptions(selectedMetricNameId).queryKey,
-        (current = []) =>
-          current.filter((linkedUnit) => linkedUnit.id !== pendingDelete.id)
-      );
+      if (shouldMoveToPreviousPage) {
+        setLinkedUnitsPage((current) => Math.max(DEFAULT_PAGE, current - 1));
+      }
       await syncMetricUnitLinkCachesAfterAdminMutation(
         queryClient,
         selectedMetricNameId
@@ -309,7 +317,7 @@ export default function AdminMetricLinksShadcnPage() {
               className="w-fit rounded-full border-transparent px-3 py-1"
             >
               {t("admin.metricLinksPage.linksCount", {
-                count: linkedUnits.length,
+                count: linkedUnitsTotalElements,
               })}
             </Badge>
           </div>
@@ -328,6 +336,8 @@ export default function AdminMetricLinksShadcnPage() {
 
                   setSelectedMetricName(nextMetricName);
                   setSelectedMetricUnit(null);
+                  setLinkedUnitsPage(DEFAULT_PAGE);
+                  setPendingDelete(null);
                 }}
                 disabled={isLoadingDictionaries || metricNames.length === 0}
               >
@@ -439,9 +449,8 @@ export default function AdminMetricLinksShadcnPage() {
                   setSelectedMetricUnit(nextUnit);
                 }}
                 disabled={
-                  selectedMetricNameId == null ||
+                  isLinkedUnitsInteractionDisabled ||
                   isLoadingDictionaries ||
-                  isLoadingLinks ||
                   availableUnits.length === 0
                 }
               >
@@ -470,7 +479,7 @@ export default function AdminMetricLinksShadcnPage() {
               onClick={handleCreate}
               disabled={
                 isCreating ||
-                selectedMetricNameId == null ||
+                isLinkedUnitsInteractionDisabled ||
                 selectedMetricUnitId == null
               }
             >
@@ -500,9 +509,39 @@ export default function AdminMetricLinksShadcnPage() {
             className="w-fit rounded-full border-transparent px-3 py-1"
           >
             <Link2 className="mr-2 h-3.5 w-3.5" />
-            {linkedUnits.length}
+            {linkedUnitsTotalElements}
           </Badge>
         </CardHeader>
+        {selectedMetricNameId != null && (
+          <CardContent className="flex flex-col gap-3 pt-0 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {t("admin.metricLinksPage.pageLabel", {
+                page: String(linkedUnitsCurrentPage + 1),
+                totalPages: String(linkedUnitsTotalPages),
+              })}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!hasLinkedUnitsPreviousPage || isDeleting}
+                onClick={() =>
+                  setLinkedUnitsPage((current) => Math.max(DEFAULT_PAGE, current - 1))
+                }
+              >
+                {t("common.previous")}
+              </Button>
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!hasLinkedUnitsNextPage || isDeleting}
+                onClick={() => setLinkedUnitsPage((current) => current + 1)}
+              >
+                {t("common.next")}
+              </Button>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       <Card className="overflow-hidden bg-surface">
