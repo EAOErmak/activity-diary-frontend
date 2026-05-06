@@ -644,6 +644,7 @@ const enExtensions = {
       metricNamePlaceholder: "Select a metric name",
       linksCount: "Links: {{count}}",
       pageLabel: "Page {{page}} / {{totalPages}}",
+      noPages: "No pages",
       addLinkTitle: "Add link",
       addLinkDescription:
         "A new link defines which units the backend returns for the selected metric name.",

@@ -90,14 +90,9 @@ export async function syncMetricUnitLinkCachesAfterAdminMutation(
   queryClient: QueryClient,
   _metricNameId: number
 ) {
-  await Promise.all([
-    queryClient.invalidateQueries({
-      queryKey: adminKeys.metricLinks(),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: entryDropdownKeys.metricUnits(),
-    }),
-  ]);
+  await queryClient.invalidateQueries({
+    queryKey: entryDropdownKeys.metricUnits(),
+  });
 }
 
 export async function syncTagMetricCachesAfterAdminMutation(

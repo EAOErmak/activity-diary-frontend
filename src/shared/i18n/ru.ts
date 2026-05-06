@@ -645,6 +645,7 @@ const ruExtensions = {
       metricNamePlaceholder: "Выберите metric name",
       linksCount: "Связей: {{count}}",
       pageLabel: "Страница {{page}} / {{totalPages}}",
+      noPages: "Нет страниц",
       addLinkTitle: "Добавить связь",
       addLinkDescription:
         "Новая связь определяет, какие units вернет backend для выбранного metric name.",

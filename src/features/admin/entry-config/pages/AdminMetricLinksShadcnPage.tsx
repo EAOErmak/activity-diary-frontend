@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Link2, Plus, Ruler, Search, Trash2 } from "lucide-react";
+import { BookOpen, Link2, Plus, Ruler, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { adminMetricLinksApi } from "@/api/admin/adminMetricLinksApi";
 import { AdminConfirmationDialog } from "@/features/admin/components/AdminConfirmationDialog";
+import { PaginatedDropdownSelect } from "@/shared/components/PaginatedDropdownSelect";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -15,14 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { Input } from "@/shared/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
 import {
   Table,
   TableBody,
@@ -33,6 +26,10 @@ import {
 } from "@/shared/components/ui/table";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getIntlLocale } from "@/shared/i18n/locale";
+import {
+  ENTRY_DROPDOWN_PAGE_LIMIT,
+  ENTRY_DROPDOWN_SEARCH_DEBOUNCE_MS,
+} from "@/shared/lib/entryDropdown";
 import { syncMetricUnitLinkCachesAfterAdminMutation } from "@/shared/lib/adminCacheSync";
 import {
   getAdminDictionaryByTypeQueryOptions,
@@ -46,7 +43,7 @@ import type {
 import type { MetricLinkResponse } from "@/shared/types/adminMetricLink";
 
 const DEFAULT_PAGE = 0;
-const DEFAULT_LIMIT = 10;
+const LINKED_UNITS_PAGE_LIMIT = 10;
 
 function sortDictionaryItems(items: DictionaryResponse[], locale: string) {
   return [...items].sort((left, right) => {
@@ -64,18 +61,6 @@ function formatDictionaryOption(
   inactiveSuffix: string
 ) {
   return item.active ? item.label : `${item.label} (${inactiveSuffix})`;
-}
-
-function upsertDictionaryOption(
-  items: DictionaryResponse[],
-  selectedItem: DictionaryResponse | null,
-  locale: string
-) {
-  if (selectedItem == null || items.some((item) => item.id === selectedItem.id)) {
-    return sortDictionaryItems(items, locale);
-  }
-
-  return sortDictionaryItems([...items, selectedItem], locale);
 }
 
 function mergeDictionaryLookup(
@@ -119,52 +104,61 @@ export default function AdminMetricLinksShadcnPage() {
   const [pendingDelete, setPendingDelete] = useState<MetricLinkResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const debouncedMetricNameQuery = useDebouncedValue(metricNameQuery.trim(), 300);
-  const debouncedUnitQuery = useDebouncedValue(unitQuery.trim(), 300);
+  const debouncedMetricNameQuery = useDebouncedValue(
+    metricNameQuery,
+    ENTRY_DROPDOWN_SEARCH_DEBOUNCE_MS
+  );
+  const debouncedUnitQuery = useDebouncedValue(
+    unitQuery,
+    ENTRY_DROPDOWN_SEARCH_DEBOUNCE_MS
+  );
   const selectedMetricNameId = selectedMetricName?.id ?? null;
   const selectedMetricUnitId = selectedMetricUnit?.id ?? null;
 
   const metricNamesQuery = useQuery<AdminDictionaryListResponse, Error>(
-    getAdminDictionaryByTypeQueryOptions({
-      type: "METRIC_NAME",
-      page: metricNamePage,
-      limit: DEFAULT_LIMIT,
-      q: debouncedMetricNameQuery,
-    })
+    {
+      ...getAdminDictionaryByTypeQueryOptions({
+        type: "METRIC_NAME",
+        page: metricNamePage,
+        limit: ENTRY_DROPDOWN_PAGE_LIMIT,
+        q: debouncedMetricNameQuery,
+      }),
+      placeholderData: undefined,
+    }
   );
   const metricUnitsQuery = useQuery<AdminDictionaryListResponse, Error>(
-    getAdminDictionaryByTypeQueryOptions({
-      type: "METRIC_UNIT",
-      page: unitPage,
-      limit: DEFAULT_LIMIT,
-      q: debouncedUnitQuery,
-    })
+    {
+      ...getAdminDictionaryByTypeQueryOptions({
+        type: "METRIC_UNIT",
+        page: unitPage,
+        limit: ENTRY_DROPDOWN_PAGE_LIMIT,
+        q: debouncedUnitQuery,
+      }),
+      placeholderData: undefined,
+    }
   );
+  const linkedUnitsQueryOptions = getAdminMetricLinksQueryOptions({
+    metricNameId: selectedMetricNameId ?? 0,
+    page: linkedUnitsPage,
+    limit: LINKED_UNITS_PAGE_LIMIT,
+  });
   const {
-    data: linkedUnitsResponse,
+    data: unitsPage,
     isPending: isLoadingLinks,
     error: linkedUnitsError,
   } = useQuery<PageResponse<MetricLinkResponse>, Error>({
-    ...getAdminMetricLinksQueryOptions({
-      metricNameId: selectedMetricNameId ?? 0,
-      page: linkedUnitsPage,
-      limit: DEFAULT_LIMIT,
-    }),
+    ...linkedUnitsQueryOptions,
     enabled: selectedMetricNameId != null,
   });
 
   const metricNameItems = metricNamesQuery.data?.items ?? [];
   const metricUnitItems = metricUnitsQuery.data?.items ?? [];
-  const linkedUnits = linkedUnitsResponse?.items ?? [];
-  const linkedUnitsTotalElements = linkedUnitsResponse?.totalElements ?? 0;
-  const linkedUnitsCurrentPage = linkedUnitsResponse?.page ?? linkedUnitsPage;
-  const linkedUnitsTotalPages = Math.max(
-    linkedUnitsResponse?.totalPages ?? 0,
-    linkedUnitsPage + 1,
-    1
-  );
-  const hasLinkedUnitsNextPage = linkedUnitsResponse?.hasNext ?? false;
-  const hasLinkedUnitsPreviousPage = linkedUnitsResponse?.hasPrevious ?? false;
+  const linkedUnits = unitsPage?.items ?? [];
+  const linkedUnitsTotalElements = unitsPage?.totalElements ?? 0;
+  const linkedUnitsCurrentPage = unitsPage?.page ?? linkedUnitsPage;
+  const linkedUnitsTotalPages = unitsPage?.totalPages ?? 0;
+  const hasLinkedUnitsNextPage = unitsPage?.hasNext ?? false;
+  const hasLinkedUnitsPreviousPage = unitsPage?.hasPrevious ?? false;
 
   useEffect(() => {
     setKnownMetricUnits((current) => mergeDictionaryLookup(current, metricUnitItems));
@@ -175,25 +169,50 @@ export default function AdminMetricLinksShadcnPage() {
       return;
     }
 
-    setSelectedMetricName(metricNameItems[0] ?? null);
-  }, [metricNameItems, selectedMetricName]);
-
-  const metricNames = useMemo(
-    () => upsertDictionaryOption(metricNameItems, selectedMetricName, locale),
-    [locale, metricNameItems, selectedMetricName]
-  );
+    setSelectedMetricName(sortDictionaryItems(metricNameItems, locale)[0] ?? null);
+  }, [locale, metricNameItems, selectedMetricName]);
 
   const linkedUnitIds = useMemo(
     () => new Set(linkedUnits.map((unit) => unit.id)),
     [linkedUnits]
   );
 
-  const availableUnits = useMemo(() => {
-    const filteredUnits = metricUnitItems.filter((unit) => !linkedUnitIds.has(unit.id));
-    return upsertDictionaryOption(filteredUnits, selectedMetricUnit, locale).filter(
-      (unit) => !linkedUnitIds.has(unit.id) || unit.id === selectedMetricUnitId
-    );
-  }, [linkedUnitIds, locale, metricUnitItems, selectedMetricUnit, selectedMetricUnitId]);
+  const metricNameOptions = useMemo(
+    () => sortDictionaryItems(metricNameItems, locale),
+    [locale, metricNameItems]
+  );
+  const metricNameDropdownItems = useMemo(
+    () =>
+      metricNameOptions.map((metricName) => ({
+        id: metricName.id,
+        label: formatDictionaryOption(metricName, inactiveSuffix),
+      })),
+    [inactiveSuffix, metricNameOptions]
+  );
+  const availableUnitOptions = useMemo(
+    () =>
+      sortDictionaryItems(
+        metricUnitItems.filter((unit) => !linkedUnitIds.has(unit.id)),
+        locale
+      ),
+    [linkedUnitIds, locale, metricUnitItems]
+  );
+  const unitDropdownItems = useMemo(
+    () =>
+      availableUnitOptions.map((unit) => ({
+        id: unit.id,
+        label: formatDictionaryOption(unit, inactiveSuffix),
+      })),
+    [availableUnitOptions, inactiveSuffix]
+  );
+  const selectedMetricNameLabel =
+    selectedMetricName == null
+      ? null
+      : formatDictionaryOption(selectedMetricName, inactiveSuffix);
+  const selectedMetricUnitLabel =
+    selectedMetricUnit == null
+      ? null
+      : formatDictionaryOption(selectedMetricUnit, inactiveSuffix);
 
   const linkedUnitsWithMeta = useMemo(
     () =>
@@ -204,12 +223,16 @@ export default function AdminMetricLinksShadcnPage() {
     [knownMetricUnits, linkedUnits]
   );
 
-  const isLoadingDictionaries = metricNamesQuery.isPending || metricUnitsQuery.isPending;
-  const dictionariesErrorMessage =
-    metricNamesQuery.error?.message ?? metricUnitsQuery.error?.message ?? null;
   const linksErrorMessage = linkedUnitsError?.message ?? null;
   const isLinkedUnitsInteractionDisabled =
     selectedMetricNameId == null || isLoadingLinks || linksErrorMessage != null;
+  const linkedUnitsPaginationLabel =
+    linkedUnitsTotalPages === 0
+      ? t("admin.metricLinksPage.noPages")
+      : t("admin.metricLinksPage.pageLabel", {
+          page: String(linkedUnitsCurrentPage + 1),
+          totalPages: String(linkedUnitsTotalPages),
+        });
 
   async function handleCreate() {
     if (selectedMetricNameId == null) {
@@ -228,11 +251,17 @@ export default function AdminMetricLinksShadcnPage() {
         metricNameId: selectedMetricNameId,
         metricUnitId: selectedMetricUnitId,
       });
+      await queryClient.invalidateQueries({
+        queryKey: linkedUnitsQueryOptions.queryKey,
+        exact: true,
+      });
       await syncMetricUnitLinkCachesAfterAdminMutation(
         queryClient,
         selectedMetricNameId
       );
       setSelectedMetricUnit(null);
+      setUnitQuery("");
+      setUnitPage(DEFAULT_PAGE);
       toast.success(t("admin.metricLinksPage.linkCreated"));
     } catch {
       // axios interceptor already shows the backend error
@@ -250,10 +279,27 @@ export default function AdminMetricLinksShadcnPage() {
       setIsDeleting(true);
       const shouldMoveToPreviousPage =
         linkedUnits.length === 1 && linkedUnitsPage > DEFAULT_PAGE;
+      const nextLinkedUnitsPage = shouldMoveToPreviousPage
+        ? linkedUnitsPage - 1
+        : linkedUnitsPage;
       await adminMetricLinksApi.deleteMetricLink(
         selectedMetricNameId,
         pendingDelete.id
       );
+      await queryClient.invalidateQueries({
+        queryKey: linkedUnitsQueryOptions.queryKey,
+        exact: true,
+      });
+      if (shouldMoveToPreviousPage) {
+        await queryClient.invalidateQueries({
+          queryKey: getAdminMetricLinksQueryOptions({
+            metricNameId: selectedMetricNameId,
+            page: nextLinkedUnitsPage,
+            limit: LINKED_UNITS_PAGE_LIMIT,
+          }).queryKey,
+          exact: true,
+        });
+      }
       if (shouldMoveToPreviousPage) {
         setLinkedUnitsPage((current) => Math.max(DEFAULT_PAGE, current - 1));
       }
@@ -298,17 +344,44 @@ export default function AdminMetricLinksShadcnPage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Search className="h-4 w-4" />
-                {t("common.search")}
+                <BookOpen className="h-4 w-4" />
+                {t("admin.metricLinksPage.metricNameLabel")}
               </div>
-              <Input
-                value={metricNameQuery}
-                onChange={(event) => {
-                  setMetricNameQuery(event.target.value);
+              <PaginatedDropdownSelect
+                value={selectedMetricNameId}
+                selectedLabel={selectedMetricNameLabel}
+                placeholder={t("admin.metricLinksPage.metricNamePlaceholder")}
+                searchValue={metricNameQuery}
+                items={metricNameDropdownItems}
+                page={metricNamesQuery.data?.page ?? metricNamePage}
+                totalPages={metricNamesQuery.data?.totalPages ?? 0}
+                hasNext={metricNamesQuery.data?.hasNext ?? false}
+                hasPrevious={metricNamesQuery.data?.hasPrevious ?? false}
+                isLoading={metricNamesQuery.isPending}
+                isError={metricNamesQuery.isError}
+                searchMode="trigger"
+                loadingLabel={t("admin.metricLinksPage.metricNameLoading")}
+                emptyLabel="No results"
+                errorLabel={t("common.error")}
+                onSearchChange={(nextValue) => {
+                  setMetricNameQuery(nextValue);
                   setMetricNamePage(DEFAULT_PAGE);
                 }}
-                placeholder={t("admin.metricLinksPage.metricNameLabel")}
-                className="max-w-xl"
+                onPageChange={setMetricNamePage}
+                onSelect={(selectedOption) => {
+                  const nextMetricName =
+                    metricNameOptions.find((metricName) => metricName.id === selectedOption.id) ??
+                    null;
+
+                  setSelectedMetricName(nextMetricName);
+                  setMetricNameQuery("");
+                  setMetricNamePage(DEFAULT_PAGE);
+                  setSelectedMetricUnit(null);
+                  setUnitQuery("");
+                  setUnitPage(DEFAULT_PAGE);
+                  setLinkedUnitsPage(DEFAULT_PAGE);
+                  setPendingDelete(null);
+                }}
               />
             </div>
 
@@ -321,72 +394,7 @@ export default function AdminMetricLinksShadcnPage() {
               })}
             </Badge>
           </div>
-
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <BookOpen className="h-4 w-4" />
-                {t("admin.metricLinksPage.metricNameLabel")}
-              </div>
-              <Select
-                value={selectedMetricNameId != null ? String(selectedMetricNameId) : ""}
-                onValueChange={(value) => {
-                  const nextMetricName =
-                    metricNames.find((metricName) => metricName.id === Number(value)) ?? null;
-
-                  setSelectedMetricName(nextMetricName);
-                  setSelectedMetricUnit(null);
-                  setLinkedUnitsPage(DEFAULT_PAGE);
-                  setPendingDelete(null);
-                }}
-                disabled={isLoadingDictionaries || metricNames.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isLoadingDictionaries
-                        ? t("admin.metricLinksPage.metricNameLoading")
-                        : t("admin.metricLinksPage.metricNamePlaceholder")
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {metricNames.map((metricName) => (
-                    <SelectItem key={metricName.id} value={String(metricName.id)}>
-                      {formatDictionaryOption(metricName, inactiveSuffix)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="surface"
-                size="sm"
-                disabled={!metricNamesQuery.data?.hasPrevious}
-                onClick={() =>
-                  setMetricNamePage((current) => Math.max(DEFAULT_PAGE, current - 1))
-                }
-              >
-                {t("common.previous")}
-              </Button>
-              <Button
-                variant="surface"
-                size="sm"
-                disabled={!metricNamesQuery.data?.hasNext}
-                onClick={() => setMetricNamePage((current) => current + 1)}
-              >
-                {t("common.next")}
-              </Button>
-            </div>
-          </div>
         </CardContent>
-        {dictionariesErrorMessage && (
-          <CardContent className="pt-0">
-            <p className="text-sm text-destructive">{dictionariesErrorMessage}</p>
-          </CardContent>
-        )}
       </Card>
 
       <Card className="bg-surface">
@@ -400,79 +408,53 @@ export default function AdminMetricLinksShadcnPage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Search className="h-4 w-4" />
-                {t("common.search")}
-              </div>
-              <Input
-                value={unitQuery}
-                onChange={(event) => {
-                  setUnitQuery(event.target.value);
-                  setUnitPage(DEFAULT_PAGE);
-                }}
-                placeholder={t("admin.metricLinksPage.unitLabel")}
-                className="max-w-xl"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="surface"
-                size="sm"
-                disabled={!metricUnitsQuery.data?.hasPrevious}
-                onClick={() => setUnitPage((current) => Math.max(DEFAULT_PAGE, current - 1))}
-              >
-                {t("common.previous")}
-              </Button>
-              <Button
-                variant="surface"
-                size="sm"
-                disabled={!metricUnitsQuery.data?.hasNext}
-                onClick={() => setUnitPage((current) => current + 1)}
-              >
-                {t("common.next")}
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Ruler className="h-4 w-4" />
                 {t("admin.metricLinksPage.unitLabel")}
               </div>
-              <Select
-                value={selectedMetricUnitId != null ? String(selectedMetricUnitId) : ""}
-                onValueChange={(value) => {
+              <PaginatedDropdownSelect
+                value={selectedMetricUnitId}
+                selectedLabel={selectedMetricUnitLabel}
+                placeholder={
+                  selectedMetricNameId == null
+                    ? t("admin.metricLinksPage.unitPlaceholderSelectMetric")
+                    : t("admin.metricLinksPage.unitPlaceholderSelect")
+                }
+                searchValue={unitQuery}
+                items={unitDropdownItems}
+                page={metricUnitsQuery.data?.page ?? unitPage}
+                totalPages={metricUnitsQuery.data?.totalPages ?? 0}
+                hasNext={metricUnitsQuery.data?.hasNext ?? false}
+                hasPrevious={metricUnitsQuery.data?.hasPrevious ?? false}
+                isLoading={metricUnitsQuery.isPending}
+                isError={metricUnitsQuery.isError}
+                disabled={isLinkedUnitsInteractionDisabled}
+                searchMode="trigger"
+                loadingLabel={t("common.loading")}
+                emptyLabel={
+                  unitQuery.trim().length > 0
+                    ? "No results"
+                    : t("admin.metricLinksPage.unitPlaceholderAllLinked")
+                }
+                errorLabel={t("common.error")}
+                triggerTitle={
+                  selectedMetricNameId == null
+                    ? t("admin.metricLinksPage.unitPlaceholderSelectMetric")
+                    : undefined
+                }
+                onSearchChange={(nextValue) => {
+                  setUnitQuery(nextValue);
+                  setUnitPage(DEFAULT_PAGE);
+                }}
+                onPageChange={setUnitPage}
+                onSelect={(selectedOption) => {
                   const nextUnit =
-                    availableUnits.find((unit) => unit.id === Number(value)) ?? null;
+                    availableUnitOptions.find((unit) => unit.id === selectedOption.id) ?? null;
 
                   setSelectedMetricUnit(nextUnit);
+                  setUnitQuery("");
+                  setUnitPage(DEFAULT_PAGE);
                 }}
-                disabled={
-                  isLinkedUnitsInteractionDisabled ||
-                  isLoadingDictionaries ||
-                  availableUnits.length === 0
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      selectedMetricNameId == null
-                        ? t("admin.metricLinksPage.unitPlaceholderSelectMetric")
-                        : availableUnits.length === 0
-                          ? t("admin.metricLinksPage.unitPlaceholderAllLinked")
-                          : t("admin.metricLinksPage.unitPlaceholderSelect")
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableUnits.map((unit) => (
-                    <SelectItem key={unit.id} value={String(unit.id)}>
-                      {formatDictionaryOption(unit, inactiveSuffix)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <Button
@@ -512,36 +494,6 @@ export default function AdminMetricLinksShadcnPage() {
             {linkedUnitsTotalElements}
           </Badge>
         </CardHeader>
-        {selectedMetricNameId != null && (
-          <CardContent className="flex flex-col gap-3 pt-0 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {t("admin.metricLinksPage.pageLabel", {
-                page: String(linkedUnitsCurrentPage + 1),
-                totalPages: String(linkedUnitsTotalPages),
-              })}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="surface"
-                size="sm"
-                disabled={!hasLinkedUnitsPreviousPage || isDeleting}
-                onClick={() =>
-                  setLinkedUnitsPage((current) => Math.max(DEFAULT_PAGE, current - 1))
-                }
-              >
-                {t("common.previous")}
-              </Button>
-              <Button
-                variant="surface"
-                size="sm"
-                disabled={!hasLinkedUnitsNextPage || isDeleting}
-                onClick={() => setLinkedUnitsPage((current) => current + 1)}
-              >
-                {t("common.next")}
-              </Button>
-            </div>
-          </CardContent>
-        )}
       </Card>
 
       <Card className="overflow-hidden bg-surface">
@@ -627,6 +579,33 @@ export default function AdminMetricLinksShadcnPage() {
             )}
           </TableBody>
         </Table>
+        {selectedMetricNameId != null && (
+          <CardContent className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {linkedUnitsPaginationLabel}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!hasLinkedUnitsPreviousPage || isDeleting}
+                onClick={() =>
+                  setLinkedUnitsPage((current) => Math.max(DEFAULT_PAGE, current - 1))
+                }
+              >
+                {t("common.previous")}
+              </Button>
+              <Button
+                variant="surface"
+                size="sm"
+                disabled={!hasLinkedUnitsNextPage || isDeleting}
+                onClick={() => setLinkedUnitsPage((current) => current + 1)}
+              >
+                {t("common.next")}
+              </Button>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       <AdminConfirmationDialog
