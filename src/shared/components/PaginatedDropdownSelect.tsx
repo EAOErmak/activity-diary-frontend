@@ -248,7 +248,7 @@ export function PaginatedDropdownSelect({
 
       <PopoverContent
         align="start"
-        className="rounded-2xl p-2.5"
+        className="rounded-2xl bg-surfaceMuted p-2.5"
         style={
           dropdownWidth == null
             ? undefined
