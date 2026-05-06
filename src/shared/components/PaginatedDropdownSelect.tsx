@@ -1,5 +1,5 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Input } from "@/shared/components/ui/input";
@@ -60,6 +60,7 @@ export function PaginatedDropdownSelect({
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [isTriggerTextCleared, setIsTriggerTextCleared] = useState(false);
   const triggerRef = useRef<HTMLElement | null>(null);
   const triggerInputRef = useRef<HTMLInputElement | null>(null);
   const [contentWidth, setContentWidth] = useState<number | null>(null);
@@ -79,8 +80,12 @@ export function PaginatedDropdownSelect({
   }, [items, selectedLabel, value]);
 
   const pageLabel = `Page ${Math.max(page + 1, 1)} / ${Math.max(totalPages, 1)}`;
+  const shouldShowSelectedLabelInTrigger =
+    searchMode === "trigger" &&
+    searchValue.length === 0 &&
+    !isTriggerTextCleared;
   const triggerDisplayValue =
-    searchMode === "trigger" && searchValue.length === 0
+    shouldShowSelectedLabelInTrigger
       ? selectedDisplayLabel
       : searchValue;
   const dropdownWidth =
@@ -112,8 +117,15 @@ export function PaginatedDropdownSelect({
     };
   }, []);
 
+  useEffect(() => {
+    if (!open) {
+      setIsTriggerTextCleared(false);
+    }
+  }, [open]);
+
   const handleTriggerSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setOpen(true);
+    setIsTriggerTextCleared(false);
     onSearchChange(event.target.value);
   };
 
@@ -145,6 +157,17 @@ export function PaginatedDropdownSelect({
     triggerRef.current = node;
   };
 
+  const handleClearTriggerText = () => {
+    setIsTriggerTextCleared(true);
+    onSearchChange("");
+    onPageChange(0);
+    setOpen(true);
+
+    requestAnimationFrame(() => {
+      triggerInputRef.current?.focus();
+    });
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
@@ -162,6 +185,7 @@ export function PaginatedDropdownSelect({
               aria-haspopup="listbox"
               className={cn(
                 "pr-11",
+                open ? "cursor-text" : "cursor-pointer",
                 searchValue.length === 0 &&
                   selectedDisplayLabel.length > 0 &&
                   "text-foreground",
@@ -174,12 +198,29 @@ export function PaginatedDropdownSelect({
               onClick={() => setOpen(true)}
               onChange={handleTriggerSearchChange}
             />
-            <ChevronDown
-              className={cn(
-                "pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform",
-                open && "rotate-180"
-              )}
-            />
+            {open ? (
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                aria-label={t("common.reset")}
+                title={t("common.reset")}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  handleClearTriggerText();
+                }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : (
+              <ChevronDown
+                className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
+            )}
           </div>
         ) : (
           <button
@@ -218,6 +259,16 @@ export function PaginatedDropdownSelect({
         }
         onOpenAutoFocus={(event) => {
           if (searchMode === "trigger") {
+            event.preventDefault();
+          }
+        }}
+        onInteractOutside={(event) => {
+          const target = event.target;
+
+          if (
+            target instanceof Node &&
+            triggerRef.current?.contains(target)
+          ) {
             event.preventDefault();
           }
         }}
