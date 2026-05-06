@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -213,7 +214,7 @@ function MetricValueRow({
         disabled={disabled}
         aria-label={t("diary.removeMetricValue")}
       >
-        x
+        <X className="h-4 w-4" />
       </Button>
     </div>
   );
@@ -491,7 +492,7 @@ export function DiaryMetricItem({
             onClick={onRemove}
             aria-label={t("diary.removeMetric")}
           >
-            x
+            <X className="h-4 w-4" />
           </Button>
         )}
       </div>
