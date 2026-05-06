@@ -233,19 +233,19 @@ export function PaginatedDropdownSelect({
 
           <div className="min-h-[13.5rem]">
             {isLoading ? (
-              <div className="flex min-h-[13.5rem] items-center justify-center text-sm text-muted-foreground">
+              <div className="flex min-h-[13.5rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-muted-foreground">
                 {loadingLabel ?? t("common.loading")}
               </div>
             ) : isError ? (
-              <div className="flex min-h-[13.5rem] items-center justify-center text-sm text-destructive">
+              <div className="flex min-h-[13.5rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-destructive">
                 {errorLabel ?? t("common.error")}
               </div>
             ) : items.length === 0 ? (
-              <div className="flex min-h-[13.5rem] items-center justify-center text-sm text-muted-foreground">
+              <div className="flex min-h-[13.5rem] items-center justify-center rounded-xl bg-input/70 px-3 text-center text-sm text-muted-foreground">
                 {emptyLabel ?? "No results"}
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1" role="listbox">
                 {items.map((item) => {
                   const isSelected = value === item.id;
 
@@ -253,9 +253,13 @@ export function PaginatedDropdownSelect({
                     <button
                       key={item.id}
                       type="button"
+                      role="option"
+                      aria-selected={isSelected}
                       className={cn(
-                        "flex h-9 w-full items-center justify-between rounded-xl px-3 text-left text-sm",
+                        "flex h-9 w-full items-center justify-between rounded-xl bg-input/70 px-3 text-left text-sm text-foreground",
                         "transition-colors hover:bg-accent hover:text-accent-foreground",
+                        "focus-visible:bg-accent focus-visible:text-accent-foreground",
+                        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                         isSelected && "bg-accent text-accent-foreground"
                       )}
                       onMouseDown={(event) => event.preventDefault()}
@@ -282,9 +286,10 @@ export function PaginatedDropdownSelect({
             <button
               type="button"
               className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                "rounded-full bg-input/70 px-3 py-1 text-xs font-medium text-foreground transition-colors",
                 "hover:bg-accent hover:text-accent-foreground",
-                "disabled:cursor-not-allowed disabled:opacity-50"
+                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                "disabled:cursor-not-allowed disabled:bg-input/50 disabled:text-muted-foreground disabled:opacity-50"
               )}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => onPageChange(Math.max(0, page - 1))}
@@ -298,9 +303,10 @@ export function PaginatedDropdownSelect({
             <button
               type="button"
               className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                "rounded-full bg-input/70 px-3 py-1 text-xs font-medium text-foreground transition-colors",
                 "hover:bg-accent hover:text-accent-foreground",
-                "disabled:cursor-not-allowed disabled:opacity-50"
+                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                "disabled:cursor-not-allowed disabled:bg-input/50 disabled:text-muted-foreground disabled:opacity-50"
               )}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => onPageChange(page + 1)}
