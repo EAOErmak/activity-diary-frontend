@@ -115,6 +115,7 @@ function MetricValueRow({
                 isLoading={unitOptionsQuery.isLoading}
                 isError={unitOptionsQuery.isError}
                 disabled={disabled || selectedMetricTypeId == null}
+                searchMode="trigger"
                 searchPlaceholder={t("common.search")}
                 loadingLabel={t("diary.unitsLoading")}
                 emptyLabel="No results"
@@ -131,6 +132,8 @@ function MetricValueRow({
                 onPageChange={setUnitPage}
                 onSelect={(selectedUnit) => {
                   field.onChange(selectedUnit.id);
+                  setUnitSearch("");
+                  setUnitPage(0);
                   form.setValue(
                     `metrics.${metricIndex}.values.${valueIndex}.unitName`,
                     selectedUnit.label,
