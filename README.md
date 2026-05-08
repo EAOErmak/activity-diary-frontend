@@ -50,6 +50,13 @@ Activity Diary is a comprehensive, feature-rich web application designed to help
 
 ---
 
+## 🔗 Repositories
+
+- **Frontend Repository**: [activity-diary-frontend](https://github.com/EAOErmak/activity-diary-frontend)
+- **Desktop Repository**: [activity-diary-desktop](https://github.com/EAOErmak/activity-diary-desktop) (For building the desktop version of the application)
+
+---
+
 ## 🛠️ Getting Started
 
 ### Prerequisites
