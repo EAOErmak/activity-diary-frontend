@@ -72,9 +72,11 @@ export default function AppRouter() {
           <Route path="/admin/dictionary" element={<AdminDictionaryPage />} />
           <Route path="/admin/metric-links" element={<AdminMetricLinksPage />} />
           <Route path="/admin/foods" element={<AdminGeneralFoodsPage />} />
+          <Route path="/admin/food" element={<Navigate to="/admin/foods" replace />} />
           <Route path="/admin/users" element={<Navigate to="/admin/dictionary" replace />} />
           <Route path="/admin/users/create" element={<Navigate to="/admin/dictionary" replace />} />
           <Route path="/admin/database" element={<Navigate to="/admin/dictionary" replace />} />
+          <Route path="/admin/*" element={<Navigate to="/admin/dictionary" replace />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
