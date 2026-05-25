@@ -6,7 +6,6 @@ import {
   Shield,
   Sun,
   Tags,
-  UtensilsCrossed,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -26,11 +25,6 @@ export default function AdminPanelLayout() {
       to: "/admin/dictionary",
       label: t("admin.dictionaries"),
       icon: BookOpen,
-    },
-    {
-      to: "/admin/foods",
-      label: t("admin.foods"),
-      icon: UtensilsCrossed,
     },
     {
       to: "/admin/metric-links",
