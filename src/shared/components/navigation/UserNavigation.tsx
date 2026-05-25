@@ -5,16 +5,10 @@ import {
   SheetDescription,
 } from "@/shared/components/ui/sheet";
 import {
-  Calendar,
   LayoutDashboard,
   LogOut,
   NotebookPen,
-  Layers,
-  Target,
-  Settings,
   ShieldCheck,
-  UserCircle2,
-  UtensilsCrossed,
 } from "lucide-react";
 
 import userImgBlack from "@/assets/AD_black.svg";
@@ -44,7 +38,6 @@ export default function UserNavigation({ onNavigate }: Props) {
       : theme === "dark"
       ? userImgWhite
       : userImgBlack;
-  const isPremium = role === "PREMIUM" || role === "ADMIN";
   const isDesktop = isDesktopApp;
 
   const handleLogout = () => {
@@ -67,46 +60,10 @@ export default function UserNavigation({ onNavigate }: Props) {
       show: true,
     },
     {
-      to: "/calendar",
-      label: t("navigation.calendar"),
-      icon: Calendar,
-      show: true,
-    },
-    {
-      to: "/entry-templates",
-      label: t("navigation.templates"),
-      icon: Layers,
-      show: true,
-    },
-    {
-      to: "/food",
-      label: t("navigation.food"),
-      icon: UtensilsCrossed,
-      show: true,
-    },
-    {
-      to: "/goals",
-      label: t("navigation.goals"),
-      icon: Target,
-      show: true,
-    },
-    {
-      to: "/settings",
-      label: t("navigation.settings"),
-      icon: Settings,
-      show: !isDesktop,
-    },
-    {
-      to: "/profile",
-      label: t("navigation.profile"),
-      icon: UserCircle2,
-      show: !isDesktop,
-    },
-    {
       to: "/dashboard",
       label: t("navigation.analytics"),
       icon: LayoutDashboard,
-      show: isPremium,
+      show: true,
     },
   ];
 
@@ -169,13 +126,12 @@ export default function UserNavigation({ onNavigate }: Props) {
             );
           })}
 
-        {isPremium && <div className="my-2 h-px bg-border/70" />}
-    
         {/* ===== ADMIN ===== */}
         {role === "ADMIN" && (
           <>
+            <div className="my-2 h-px bg-border/70" />
             <NavLink
-              to="/admin"
+              to="/admin/dictionary"
               onClick={onNavigate}
               className={({ isActive }) =>
                 [

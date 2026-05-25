@@ -1,15 +1,12 @@
 import {
   ArrowLeft,
   BookOpen,
-  Database,
-  LayoutDashboard,
   Link2,
   Moon,
   Shield,
   Sun,
   Tags,
   UtensilsCrossed,
-  Users,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -25,16 +22,6 @@ export default function AdminPanelLayout() {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const navItems = [
-    {
-      to: "/admin",
-      label: t("admin.overview"),
-      icon: LayoutDashboard,
-    },
-    {
-      to: "/admin/users",
-      label: t("admin.users"),
-      icon: Users,
-    },
     {
       to: "/admin/dictionary",
       label: t("admin.dictionaries"),
@@ -55,18 +42,9 @@ export default function AdminPanelLayout() {
       label: t("admin.tags"),
       icon: Tags,
     },
-    {
-      to: "/admin/database",
-      label: t("admin.database"),
-      icon: Database,
-    },
   ] as const;
 
   function isActivePath(path: string) {
-    if (path === "/admin") {
-      return location.pathname === path;
-    }
-
     return (
       location.pathname === path ||
       location.pathname.startsWith(`${path}/`)
